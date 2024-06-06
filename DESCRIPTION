@@ -18,6 +18,7 @@ Imports:
     FlowSOM,
     ggplot2,
     grid,
+    methods,
     Rtsne,
     scattermore,
     umap,
