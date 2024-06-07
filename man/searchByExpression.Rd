@@ -24,8 +24,10 @@ Search MST for nodes with certain marker expressions.
 file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 fsom <- FlowSOM::FlowSOM(file,
                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-                         nClus = 15,
-                         seed = 42)
+                         nClus = 10,
+                         seed = 42,
+                         xdim = 6,
+                         ydim = 6)
 
 searchByExpression(fsom,
                    levels = c("BUV661-A" = "high",

@@ -6,6 +6,10 @@
 \usage{
 set_dir_rds_unedited(new_dir_rds_unedited)
 }
+\arguments{
+\item{new_dir_rds_unedited}{A string defining the new directory for unedited
+RDS files.}
+}
 \description{
 Edit dir_rds_unedited
 }

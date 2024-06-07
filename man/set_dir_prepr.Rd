@@ -6,6 +6,10 @@
 \usage{
 set_dir_prepr(new_dir_prepr)
 }
+\arguments{
+\item{new_dir_prepr}{A string defining the new directory for preprocessed .fcs
+files.}
+}
 \description{
 Edit dir_prepr
 }

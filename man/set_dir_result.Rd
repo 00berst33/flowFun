@@ -6,6 +6,9 @@
 \usage{
 set_dir_result(new_dir_result)
 }
+\arguments{
+\item{new_dir_result}{A string defining the new directory for analysis results.}
+}
 \description{
 Edit dir_result
 }

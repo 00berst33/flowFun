@@ -34,12 +34,14 @@ Plot a heatmap of cluster MFIs.
 file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 fsom <- FlowSOM::FlowSOM(file,
                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-                         nClus = 15,
-                         seed = 42)
+                         nClus = 10,
+                         seed = 42,
+                         xdim = 6,
+                         ydim = 6)
 
 # Plot all clusters
 plotClusterMFIs(fsom)
 
-# Plot only clusters belonging to metaclusters 9 and 12
-plotClusterMFIs(fsom, metaclusters = c(9, 12))
+# Plot only clusters belonging to metaclusters 9 and 10
+plotClusterMFIs(fsom, metaclusters = c(9, 10))
 }

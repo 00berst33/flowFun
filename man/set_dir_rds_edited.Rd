@@ -6,6 +6,10 @@
 \usage{
 set_dir_rds_edited(new_dir_rds_edited)
 }
+\arguments{
+\item{new_dir_rds_edited}{A string defining the new directory for edited
+RDS files.}
+}
 \description{
 Edit dir_rds_edited
 }

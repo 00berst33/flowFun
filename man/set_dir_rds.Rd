@@ -6,6 +6,9 @@
 \usage{
 set_dir_rds(new_dir_rds)
 }
+\arguments{
+\item{new_dir_rds}{A string defining the new directory for all RDS files.}
+}
 \description{
 Edit dir_rds
 }

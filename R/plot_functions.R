@@ -17,28 +17,31 @@
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
+#'                          
 #' plotMetaclusterMFIs(fsom)
 plotMetaclusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed, ...) {
 
-  mfi_mat = FlowSOM::GetMetaclusterMFIs(fsom = fsom, colsUsed = FALSE, prettyColnames = FALSE)
-  mfi_mat = mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
-  colnames(mfi_mat) = fsom$prettyColnames[colnames(mfi_mat)]
-  rownames(mfi_mat) = levels(FlowSOM::GetMetaclusters(fsom))
+  mfi_mat <- FlowSOM::GetMetaclusterMFIs(fsom = fsom, colsUsed = FALSE, prettyColnames = FALSE)
+  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
+  colnames(mfi_mat) <- fsom$prettyColnames[colnames(mfi_mat)]
+  rownames(mfi_mat) <- levels(FlowSOM::GetMetaclusters(fsom))
 
-  default_options = list(border = TRUE,
+  default_options <- list(border = TRUE,
                          show_row_names = TRUE,
                          heatmap_legend_param = list(
                            title = "Expression",
                            title_gp = grid::gpar(fontsize = 9),
                            labels_gp = grid::gpar(fontsize = 8)))
 
-  additional_options = list(...)
+  additional_options <- list(...)
 
-  heatmap_options = utils::modifyList(default_options, additional_options)
+  heatmap_options <- utils::modifyList(default_options, additional_options)
 
-  mfi_heatmap = do.call(ComplexHeatmap::Heatmap, c(list(matrix = as.matrix(mfi_mat)), heatmap_options))
+  mfi_heatmap <- do.call(ComplexHeatmap::Heatmap, c(list(matrix = as.matrix(mfi_mat)), heatmap_options))
 
   return(mfi_heatmap)
 }
@@ -64,31 +67,33 @@ plotMetaclusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed, ..
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
 #' # Plot all clusters
 #' plotClusterMFIs(fsom)
 #'
-#' # Plot only clusters belonging to metaclusters 9 and 12
-#' plotClusterMFIs(fsom, metaclusters = c(9, 12))
+#' # Plot only clusters belonging to metaclusters 9 and 10
+#' plotClusterMFIs(fsom, metaclusters = c(9, 10))
 plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
                            metaclusters = NULL, ...) {
 
-  mfi_mat = FlowSOM::GetClusterMFIs(fsom, colsUsed = FALSE, prettyColnames = FALSE)
-  mfi_mat = mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
+  mfi_mat <- FlowSOM::GetClusterMFIs(fsom, colsUsed = FALSE, prettyColnames = FALSE)
+  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
 
   if (!is.null(metaclusters)) {
-    ind = fsom$metaclustering %in% metaclusters
+    ind <- fsom$metaclustering %in% metaclusters
     if (!(TRUE %in% ind)) {
       stop("No clusters exist in the given metacluster(s).")
     }
-    mfi_mat = mfi_mat[ind, ]
+    mfi_mat <- mfi_mat[ind, ]
   }
 
-  colnames(mfi_mat) = fsom$prettyColnames[colnames(mfi_mat)]
+  colnames(mfi_mat) <- fsom$prettyColnames[colnames(mfi_mat)]
 
-  default_options = list(border = TRUE,
+  default_options <- list(border = TRUE,
                          show_row_names = TRUE,
                          show_column_dend = FALSE,
                          row_names_gp = grid::gpar(fontsize = 4),
@@ -99,11 +104,11 @@ plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
                            title_gp = grid::gpar(fontsize = 9),
                            labels_gp = grid::gpar(fontsize = 8)))
 
-  additional_options = list(...)
+  additional_options <- list(...)
 
-  heatmap_options = utils::modifyList(default_options, additional_options)
+  heatmap_options <- utils::modifyList(default_options, additional_options)
 
-  mfi_heatmap = do.call(ComplexHeatmap::Heatmap, c(list(matrix = as.matrix(mfi_mat)), heatmap_options))
+  mfi_heatmap <- do.call(ComplexHeatmap::Heatmap, c(list(matrix = as.matrix(mfi_mat)), heatmap_options))
 
   return(mfi_heatmap)
 }
@@ -126,8 +131,10 @@ plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
 #' searchByExpression(fsom,
 #'                    levels = c("BUV661-A" = "high",
@@ -138,12 +145,12 @@ plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
 #'                               "APC-Cy7-A" = "high",
 #'                               "Alexa Fluor 700-A" = "high"))
 searchByExpression = function(fsom, levels) {
-  query = levels
-  query_res = FlowSOM::QueryStarPlot(fsom, query, equalNodeSize = TRUE, plot = FALSE)
-  cell_types = factor(rep("False", fsom$map$nNodes),
+  query <- levels
+  query_res <- FlowSOM::QueryStarPlot(fsom, query, equalNodeSize = TRUE, plot = FALSE)
+  cell_types <- factor(rep("False", fsom$map$nNodes),
                       levels = c("False", "True"))
-  cell_types[query_res$selected] = "True"
-  FlowSOM::PlotStars(fsom, backgroundValues = cell_types)
+  cell_types[query_res$selected] <- "True"
+  FlowSOM::PlotStars(fsom, backgroundValues <- cell_types)
 }
 
 #' plotLabeled2DScatter
@@ -183,26 +190,28 @@ searchByExpression = function(fsom, levels) {
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
 #' # Returns a single plot colored by metacluster
 #' plotLabeled2DScatter(fsom,
-#'                      channelpair = c("APC-Cy7-A", "BUV563-A"),
-#'                      metaclusters = c(3, 7, 10),
+#'                      channelpair = c("APC-Cy7-A", "BUV615-P-A"),
+#'                      metaclusters = c(1, 2, 7),
 #'                      label_type = "metacluster")
 #'
 #' # Also returns a single plot colored by metacluster
 #' plotLabeled2DScatter(fsom,
-#'                      channelpair = c("BUV805-A", "APC-Cy7-A"),
-#'                      clusters = c(30, 89),
-#'                      metaclusters = c(3, 7, 10),
+#'                      channelpair = c("APC-Cy7-A", "BUV805-A"),
+#'                      clusters = c(25, 33),
+#'                      metaclusters = c(1, 4),
 #'                      label_type = "cluster")
 #'
 #' # Returns a list of two plots, once for each cluster
 #' p = plotLabeled2DScatter(fsom,
-#'                          channelpair = c("BUV805-A", "APC-Cy7-A"),
-#'                          clusters = c(4, 78),
+#'                          channelpair = c("APC-Cy7-A", "BUV805-A"),
+#'                          clusters = c(4, 19),
 #'                          label_type = "cluster")
 #' print(p[[1]])
 #' print(p[[2]])
@@ -213,32 +222,32 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
     stop("clusters and/or metaclusters must be a vector of indices.")
 
   } else if (is.null(clusters) && !is.null(metaclusters)) {
-    all_clust = which(fsom$metaclustering %in% metaclusters)
+    all_clust <- which(fsom$metaclustering %in% metaclusters)
 
   } else if (!is.null(clusters) && is.null(metaclusters)) {
-    all_clust = clusters
+    all_clust <- clusters
 
   } else if (!is.null(clusters) && !is.null(metaclusters)) {
-    meta_nodes = which(fsom$metaclustering %in% metaclusters)
-    all_clust = unique(c(meta_nodes, clusters))
+    meta_nodes <- which(fsom$metaclustering %in% metaclusters)
+    all_clust <- unique(c(meta_nodes, clusters))
 
   }
 
   if (is.character(metaclusters)) {
-    metaclusters = which(levels(fsom$metaclustering) %in% metaclusters)
+    metaclusters <- which(levels(fsom$metaclustering) %in% metaclusters)
   } else if (is.numeric(metaclusters)) {
-    metaclusters = list(metaclusters)
+    metaclusters <- list(metaclusters)
   }
 
   if (length(all_clust) == 1) {
-    mfis = matrix(FlowSOM::GetClusterMFIs(fsom)[all_clust, channelpair],
+    mfis <- matrix(FlowSOM::GetClusterMFIs(fsom)[all_clust, channelpair],
                   nrow = 1,
                   dimnames = list(all_clust, channelpair))
   } else {
-    mfis = FlowSOM::GetClusterMFIs(fsom)[all_clust, channelpair]
+    mfis <- FlowSOM::GetClusterMFIs(fsom)[all_clust, channelpair]
   }
 
-  df = as.data.frame(mfis)
+  df <- as.data.frame(mfis)
 
   switch(label_type,
          cluster = {labs <- rownames(df)},
@@ -246,7 +255,7 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
          stop("label_type must be either 'cluster' or 'metacluster'")
   )
 
-  p = FlowSOM::Plot2DScatters(fsom = fsom,
+  p <- FlowSOM::Plot2DScatters(fsom = fsom,
                               channelpairs = list(channelpair),
                               clusters = clusters,
                               metaclusters = metaclusters,
@@ -255,12 +264,12 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
                               centers = FALSE)
 
   if (!is.null(metaclusters)) {
-    p = p[[length(p)]] + ggplot2::geom_label(data = df,
+    p <- p[[length(p)]] + ggplot2::geom_label(data = df,
                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
                                              color = "black", size = 2.5, fontface = "bold")
   } else {
     for (i in 1:length(p)) {
-      p[[i]] = p[[i]] + ggplot2::geom_label(data = df,
+      p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
                                             color = "black", size = 2.5, fontface = "bold")
     }
@@ -285,30 +294,39 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
 #' plotUMAP(fsom)
 #'
-#' plotUMAP(fsom, num_cells = 10000)
+#' plotUMAP(fsom)
 plotUMAP = function(fsom, num_cells = 5000) {
-
+  X1 <- X2 <- Metacluster <- NULL
   set.seed(42)
-  inds = sample(nrow(fsom$data), num_cells)
-
-  dat = fsom$data[inds, fsom$map$colsUsed]
+  
+  nrows <- nrow(fsom$data)
+  
+  if (num_cells < nrows) {
+    inds <- sample(nrows, num_cells)
+  } else {
+    inds <- 1:nrows
+  }
+  
+  dat <- fsom$data[inds, fsom$map$colsUsed]
 
   umap = umap::umap(dat)
 
-  meta_vec = FlowSOM::GetMetaclusters(fsom)[inds]
+  meta_vec <- FlowSOM::GetMetaclusters(fsom)[inds]
 
   # add parameter for choosing order of legend
 
-  umap_df = data.frame(umap$layout, Metacluster = meta_vec, Indices = inds)
+  umap_df <- data.frame(umap$layout, Metacluster = meta_vec, Indices = inds)
 
-  p = ggplot2::ggplot(umap_df) +
-    scattermore::geom_scattermore(ggplot2::aes(x = umap_df$X1, y = umap_df$X2,
-                                               color = umap_df$Metacluster),
+  p <- ggplot2::ggplot(umap_df) +
+    scattermore::geom_scattermore(ggplot2::aes(x = X1, y = X2,
+                                               color = Metacluster),
                                   pointsize = 2) +
     ggplot2::theme_void()
 
@@ -333,16 +351,18 @@ plotUMAP = function(fsom, num_cells = 5000) {
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
-#' plotUMAPOld(fsom, num_cells = 5000)
+#' plotUMAPOld(fsom, num_cells = 2500)
 #'
-#' plotUMAPOld(fsom, num_cells = 5000, point_size = 3, seed = 42)
+#' plotUMAPOld(fsom, num_cells = 2500, point_size = 3, seed = 42)
 plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
 
-  umap = FlowSOM::PlotDimRed(fsom = fsom,
+  umap <- FlowSOM::PlotDimRed(fsom = fsom,
                              colorBy = "metaclusters",
                              colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
                              cTotal = num_cells,
@@ -351,8 +371,8 @@ plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
                                dimred$layout
                              })
 
-  umap$layers[[1]]$geom_params$pointsize = point_size
-  umap$layers[[2]]$geom_params$max.overlaps = 50
+  umap$layers[[1]]$geom_params$pointsize <- point_size
+  umap$layers[[2]]$geom_params$max.overlaps <- 50
 
   return(umap)
 }
@@ -375,23 +395,25 @@ plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
 #' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 #' fsom <- FlowSOM::FlowSOM(file,
 #'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
+#'                          nClus = 10,
+#'                          seed = 42,
+#'                          xdim = 6,
+#'                          ydim = 6)
 #'
-#' plotTSNE(fsom, num_cells = 5000)
+#' plotTSNE(fsom, num_cells = 2500)
 #'
-#' plotTSNE(fsom, num_cells = 5000, point_size = 3, seed = 42)
+#' plotTSNE(fsom, num_cells = 2500, point_size = 3, seed = 42)
 plotTSNE = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
 
-  tsne = FlowSOM::PlotDimRed(fsom = fsom,
+  tsne <- FlowSOM::PlotDimRed(fsom = fsom,
                              colorBy = "metaclusters",
                              colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
                              cTotal = num_cells,
                              dimred = Rtsne::Rtsne)
 
-  tsne$layers[[1]]$geom_params$pointsize = point_size
-  tsne$layers[[2]]$geom_params$max.overlaps = 50
+  tsne$layers[[1]]$geom_params$pointsize <- point_size
+  tsne$layers[[2]]$geom_params$max.overlaps <- 50
 
   return(tsne)
 }

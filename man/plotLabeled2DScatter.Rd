@@ -52,26 +52,28 @@ The (meta)cluster number labels are included on every plot.
 file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 fsom <- FlowSOM::FlowSOM(file,
                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-                         nClus = 15,
-                         seed = 42)
+                         nClus = 10,
+                         seed = 42,
+                         xdim = 6,
+                         ydim = 6)
 
 # Returns a single plot colored by metacluster
 plotLabeled2DScatter(fsom,
-                     channelpair = c("APC-Cy7-A", "BUV563-A"),
-                     metaclusters = c(3, 7, 10),
+                     channelpair = c("APC-Cy7-A", "BUV615-P-A"),
+                     metaclusters = c(1, 2, 7),
                      label_type = "metacluster")
 
 # Also returns a single plot colored by metacluster
 plotLabeled2DScatter(fsom,
-                     channelpair = c("BUV805-A", "APC-Cy7-A"),
-                     clusters = c(30, 89),
-                     metaclusters = c(3, 7, 10),
+                     channelpair = c("APC-Cy7-A", "BUV805-A"),
+                     clusters = c(25, 33),
+                     metaclusters = c(1, 4),
                      label_type = "cluster")
 
 # Returns a list of two plots, once for each cluster
 p = plotLabeled2DScatter(fsom,
-                         channelpair = c("BUV805-A", "APC-Cy7-A"),
-                         clusters = c(4, 78),
+                         channelpair = c("APC-Cy7-A", "BUV805-A"),
+                         clusters = c(4, 19),
                          label_type = "cluster")
 print(p[[1]])
 print(p[[2]])

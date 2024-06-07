@@ -6,6 +6,9 @@
 \usage{
 set_dir_agg(new_dir_agg)
 }
+\arguments{
+\item{new_dir_agg}{A string defining the new directory for aggregate files.}
+}
 \description{
 Edit dir_agg
 }
