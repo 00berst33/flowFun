@@ -27,10 +27,12 @@ Plot a UMAP dimension reduction of FlowSOM data, colored by metacluster.
 file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
 fsom <- FlowSOM::FlowSOM(file,
                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-                         nClus = 15,
-                         seed = 42)
+                         nClus = 10,
+                         seed = 42,
+                         xdim = 6,
+                         ydim = 6)
 
-plotUMAPOld(fsom, num_cells = 5000)
+plotUMAPOld(fsom, num_cells = 2500)
 
-plotUMAPOld(fsom, num_cells = 5000, point_size = 3, seed = 42)
+plotUMAPOld(fsom, num_cells = 2500, point_size = 3, seed = 42)
 }

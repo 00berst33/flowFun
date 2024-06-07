@@ -29,5 +29,5 @@ fsom <- FlowSOM::FlowSOM(file,
 
 plotUMAP(fsom)
 
-plotUMAP(fsom, num_cells = 10000)
+plotUMAP(fsom)
 }
