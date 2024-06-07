@@ -1,84 +1,3 @@
-#' plotTSNE
-#'
-#' Plot a t-SNE dimension reduction of FlowSOM data, colored by metacluster.
-#'
-#' @param fsom The FlowSOM object whose data you would like to plot.
-#' @param num_cells The total number of cells you would like to use for the
-#' dimension reduction.
-#' @param point_size Optional parameter to adjust the size of the plotted points.
-#' Default is 1.5.
-#' @param seed Optional parameter to set a seed for reproducibility.
-#'
-#' @return A t-SNE plot made with ggplot2.
-#' @export
-#'
-#' @examples
-#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
-#'
-#' plotTSNE(fsom, num_cells = 5000)
-#'
-#' plotTSNE(fsom, num_cells = 5000, point_size = 3, seed = 42)
-plotTSNE = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-
-  tsne = FlowSOM::PlotDimRed(fsom = fsom,
-                             colorBy = "metaclusters",
-                             colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
-                             cTotal = num_cells,
-                             dimred = Rtsne::Rtsne)
-
-  tsne$layers[[1]]$geom_params$pointsize = point_size
-  tsne$layers[[2]]$geom_params$max.overlaps = 50
-
-  return(tsne)
-}
-
-#' plotUMAPOld
-#'
-#' Plot a UMAP dimension reduction of FlowSOM data, colored by metacluster.
-#'
-#' @param fsom The FlowSOM object whose data you would like to plot.
-#' @param num_cells The total number of cells you would like to use for the
-#' dimension reduction.
-#' @param point_size Optional parameter to adjust the size of the plotted points.
-#' Default is 1.5.
-#' @param seed Optional parameter to set a seed for reproducibility.
-#'
-#' @return A UMAP plot made with ggplot2.
-#' @export
-#'
-#' @examples
-#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 15,
-#'                          seed = 42)
-#'
-#' plotUMAPOld(fsom, num_cells = 5000)
-#'
-#' plotUMAPOld(fsom, num_cells = 5000, point_size = 3, seed = 42)
-plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-
-  umap = FlowSOM::PlotDimRed(fsom = fsom,
-                             colorBy = "metaclusters",
-                             colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
-                             cTotal = num_cells,
-                             dimred = umap::umap,
-                             extractLayout = function(dimred) {
-                               dimred$layout
-                               })
-
-  umap$layers[[1]]$geom_params$pointsize = point_size
-  umap$layers[[2]]$geom_params$max.overlaps = 50
-
-  return(umap)
-}
-
 #' plotMetaclusterMFIs
 #'
 #' Plot a heatmap of metacluster MFIs.
@@ -295,7 +214,6 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
 
   } else if (is.null(clusters) && !is.null(metaclusters)) {
     all_clust = which(fsom$metaclustering %in% metaclusters)
-    metaclusters = list(metaclusters)
 
   } else if (!is.null(clusters) && is.null(metaclusters)) {
     all_clust = clusters
@@ -303,8 +221,13 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
   } else if (!is.null(clusters) && !is.null(metaclusters)) {
     meta_nodes = which(fsom$metaclustering %in% metaclusters)
     all_clust = unique(c(meta_nodes, clusters))
-    metaclusters = list(metaclusters)
 
+  }
+
+  if (is.character(metaclusters)) {
+    metaclusters = which(levels(fsom$metaclustering) %in% metaclusters)
+  } else if (is.numeric(metaclusters)) {
+    metaclusters = list(metaclusters)
   }
 
   if (length(all_clust) == 1) {
@@ -390,4 +313,85 @@ plotUMAP = function(fsom, num_cells = 5000) {
     ggplot2::theme_void()
 
   return(p)
+}
+
+#' plotUMAPOld
+#'
+#' Plot a UMAP dimension reduction of FlowSOM data, colored by metacluster.
+#'
+#' @param fsom The FlowSOM object whose data you would like to plot.
+#' @param num_cells The total number of cells you would like to use for the
+#' dimension reduction.
+#' @param point_size Optional parameter to adjust the size of the plotted points.
+#' Default is 1.5.
+#' @param seed Optional parameter to set a seed for reproducibility.
+#'
+#' @return A UMAP plot made with ggplot2.
+#' @export
+#'
+#' @examples
+#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
+#' fsom <- FlowSOM::FlowSOM(file,
+#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
+#'                          nClus = 15,
+#'                          seed = 42)
+#'
+#' plotUMAPOld(fsom, num_cells = 5000)
+#'
+#' plotUMAPOld(fsom, num_cells = 5000, point_size = 3, seed = 42)
+plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  umap = FlowSOM::PlotDimRed(fsom = fsom,
+                             colorBy = "metaclusters",
+                             colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
+                             cTotal = num_cells,
+                             dimred = umap::umap,
+                             extractLayout = function(dimred) {
+                               dimred$layout
+                             })
+
+  umap$layers[[1]]$geom_params$pointsize = point_size
+  umap$layers[[2]]$geom_params$max.overlaps = 50
+
+  return(umap)
+}
+
+#' plotTSNE
+#'
+#' Plot a t-SNE dimension reduction of FlowSOM data, colored by metacluster.
+#'
+#' @param fsom The FlowSOM object whose data you would like to plot.
+#' @param num_cells The total number of cells you would like to use for the
+#' dimension reduction.
+#' @param point_size Optional parameter to adjust the size of the plotted points.
+#' Default is 1.5.
+#' @param seed Optional parameter to set a seed for reproducibility.
+#'
+#' @return A t-SNE plot made with ggplot2.
+#' @export
+#'
+#' @examples
+#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
+#' fsom <- FlowSOM::FlowSOM(file,
+#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
+#'                          nClus = 15,
+#'                          seed = 42)
+#'
+#' plotTSNE(fsom, num_cells = 5000)
+#'
+#' plotTSNE(fsom, num_cells = 5000, point_size = 3, seed = 42)
+plotTSNE = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  tsne = FlowSOM::PlotDimRed(fsom = fsom,
+                             colorBy = "metaclusters",
+                             colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
+                             cTotal = num_cells,
+                             dimred = Rtsne::Rtsne)
+
+  tsne$layers[[1]]$geom_params$pointsize = point_size
+  tsne$layers[[2]]$geom_params$max.overlaps = 50
+
+  return(tsne)
 }
