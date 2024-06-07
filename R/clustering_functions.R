@@ -102,3 +102,227 @@ createFilteredAggregate = function(fsom, num_cells, clusters = NULL,
                                      outputFile = paste0(dir_agg(), agg_name))
   return(agg)
 }
+
+# cluster_subset() may be used if you wish to select the markers to use for
+# clustering yourself, rather than use PCA. It takes in an aggregate .fcs file,
+# (likely created by the filter_frames() function defined above) and clusters the
+# cells within it using the specified markers of interest. For example:
+#
+# tcell_fsom = cluster_subset(aggregate = tcell_agg,
+#                             fsom_filename = "tcell_fsom",
+#                             markers_to_cluster = c("CD3", "CD8", "CD4", "TCRgd"),
+#                             num_clus = 20)
+#
+# Here, we are using the aggregate file created in the example for filter_frames()
+# above, and using it to create a new FlowSOM clustering with 20 metaclusters.
+# The resulting FlowSOM object will be saved to the "RDS/Unedited/" directory with
+# the name "tcell_fsom.rds". The clustering will be done with the markers CD3,
+# CD8, CD4, and TCRgd.
+#
+# The parameters represent the following:
+# aggregate: An aggregate .fcs file.
+#
+# fsom_filename: The name of the saved .rds file containing the resulting
+#   FlowSOM object. You do not need to include ".rds" in the string.
+#
+# markers_to_cluster: The markers you would like to use for reclustering. If
+#   there are no markers from the initial clustering that you wish to exclude,
+#   you may simply pass the "markers_to_cluster" object you defined at the
+#   beginning of the file.
+#
+# num_clus: The number of metaclusters you would like FlowSOM to create.
+
+cluster_subset = function(aggregate, fsom_filename, markers_to_cluster, num_clus) {
+
+  fsom_subset = FlowSOM(aggregate,
+                        colsToUse = markers_to_cluster,
+                        nClus = num_clus,
+                        xdim = 10,
+                        ydim = 10,
+                        seed = 42)
+
+  saveRDS(fsom_subset, paste0(dir_rds_unedited, fsom_filename, ".rds"))
+
+  return(fsom_subset)
+}
+
+#####################
+# FUNCTIONS FOR PCA #
+#####################
+
+# agg_pca() reads in an aggregate .fcs file (likely created by the
+# filter_frames() function) and returns the result of performing PCA on its
+# data matrix.
+
+agg_pca = function(aggregate, markers_to_cluster) {
+  dat = aggregate[,which(pData(parameters(aggregate))$desc %in% markers_to_cluster)]
+  dat = exprs(dat)
+  pca = prcomp(dat)
+  return(pca)
+}
+
+# plot_fsom_pca() takes in a prcomp object (created by the agg_pca function)
+# and produces a scree plot, which may be used to determine which principal
+# components should be used in the analysis. Typically, there is a distinct
+# "elbow" in the plot, where the amount of variance explained by each component
+# becomes drastically smaller. So, if this elbow appears at principal component
+# 5, you would use components 1-5 to recluster your data. If there is no
+# obvious elbow, it is instead reasonable to use whichever number of components
+# explains roughly 80% of the variance.
+
+plot_fsom_pca = function(pca_obj) {
+  df = data.frame(var_explained = pca_obj$sdev^2/sum(pca_obj$sdev^2),
+                  m = c(1:length(pca_obj$sdev)))
+
+  p = ggplot(df, aes(x = m, y = var_explained)) + geom_point() + geom_line() +
+    labs(x = "M", y = "Variance Explained", title = "Scree Plot") +
+    scale_x_continuous(breaks = seq(1, length(pca_obj$sdev), 1))
+  print(p)
+}
+
+# Helper to convert a FlowSOM object created on principal components into an
+# equivalent FlowSOM object defined in terms of channels instead. The
+# cluster/metacluster assignments for each cell remains the same, but the
+# resulting FlowSOM object is able to be used with built-in FlowSOM functions
+# like PlotStars(), Plot2DScatters(), etc. Therefore the earlier defined functions
+# plot_clust() and search_fun() also work on the resulting object.
+
+convert_pca_fsom = function(fsom, agg, dir_prepr) {
+  fsom$data = exprs(agg)
+
+  # metaclusterMFIs
+  fsom$map$metaclusterMFIs = data.frame(exprs(agg),
+                                        mcl = fsom$metaclustering[fsom$map$mapping[, 1]],
+                                        check.names = FALSE) %>%
+    dplyr::group_by(mcl, .drop = FALSE) %>%
+    dplyr::summarise_all(stats::median) %>%
+    dplyr::select(-mcl) %>%
+    data.frame(row.names = levels(fsom$metaclustering),
+               check.names = FALSE)
+
+
+  node_df = data.frame(fsom$data,
+                       node = fsom$map$mapping[, 1],
+                       check.names = FALSE) %>%
+    dplyr::group_by(node, .drop = FALSE)
+
+  cv_fun = function(dat) {
+    stats::sd(dat)/mean(dat)
+  }
+
+  functions = c(stats::median, stats::sd, stats::mad, cv_fun)
+  names(functions) = c("medianValues", "sdValues", "madValues", "cvValues")
+
+  for (i in 1:length(functions)) {
+    fsom$map[[names(functions)[i]]] = node_df %>%
+      dplyr::summarise_all(functions[i]) %>%
+      dplyr::select(-node) %>%
+      data.frame(row.names = 1:fsom$map$nNodes,
+                 check.names = FALSE)
+    colnames(fsom$map[[names(functions)[i]]]) = sub(paste0("_", names(functions)[i]),
+                                                    "",
+                                                    colnames(fsom$map[[names(functions)[i]]]))
+    fsom$map[[names(functions)[i]]] = as(fsom$map[[names(functions)[i]]], "matrix")
+  }
+
+  # pctgs
+  pctgs = rep(0, fsom$map$nNodes)
+  names(pctgs) = as.character(seq_len(fsom$map$nNodes))
+  pctgs_tmp = table(fsom$map$mapping[, 1]) / nrow(fsom$map$mapping)
+  pctgs[names(pctgs_tmp)] = pctgs_tmp
+  fsom$map$pctgs = pctgs
+
+  # prettyColnames
+  filename = list.files(dir_prepr, full.names = TRUE)[1]
+  ff = read.FCS(filename)
+  all_markers = pData(parameters(ff))$desc
+  all_channels = pData(parameters(ff))$name
+  marker_df = na.omit(data.frame(marker = all_markers,
+                                 channel = all_channels))
+  rownames(marker_df) = NULL
+
+  agg_colnames = colnames(exprs(agg))
+  new_pretty_colnames = c()
+  for (colname in agg_colnames) {
+    if (colname %in% marker_df$channel) {
+      ind = which(marker_df$channel == colname)
+      new_pretty_colnames = c(new_pretty_colnames,
+                              paste0(marker_df$marker[ind], " <",
+                                     marker_df$channel[ind], ">"))
+    } else {
+      new_pretty_colnames = c(new_pretty_colnames,
+                              paste0(colname, " <", colname, ">"))
+    }
+  }
+  names(new_pretty_colnames) = colnames(agg)
+  fsom$prettyColnames = new_pretty_colnames
+
+  # colsUsed
+  fsom$map$colsUsed = GetChannels(fsom, marker_df$marker)
+
+  return(fsom)
+}
+
+# cluster_subset_pca() may be used if you wish to use PCA for reclustering. It
+# takes in an aggregate .fcs file (likely created by the filter_frames()
+# function), and clusters the cells within it using the specified principal
+# components. For example, say we wanted to use the aggregate file created
+# in the example for the filter_frames() function above for reclustering, and
+# we wanted to do the reclustering using PCA. The process would look like the
+# following:
+#
+# tcell_pca = agg_pca(tcell_agg)
+#
+# plot_fsom_pca(tcell_pca) # EXAMINE PLOT TO DETERMINE APPROPRIATE NUM. OF COMPONENTS
+#
+# tcell_fsom = cluster_subset_pca(aggregate = tcell_agg,
+#                                 fsom_filename = "tcell_fsom",
+#                                 prcomp = tcell_pca,
+#                                 num_components = 5,
+#                                 num_clus = 20)
+#
+# The parameters for cluster_subset_pca() represent the following:
+# aggregate: An aggregate .fcs file.
+#
+# fsom_filename: The name of the saved .rds file containing the resulting
+#   FlowSOM object. You do not need to include ".rds" in the string.
+#
+# prcomp: A prcomp object resulting from the fsom_pca() function.
+#
+# num_components: The number of principal components you wish to include in the
+#   analysis. This should be determined by examining the plot produced by
+#   plot_fsom_pca().
+#
+# num_clus: The number of metaclusters you would like FlowSOM to create.
+#
+# convert_to_channels: Boolean specifying whether or not the resulting FlowSOM
+# object's data should be converted from principal components to channels. By
+# default, this is true. Changing this is not recommended.
+
+cluster_subset_pca = function(aggregate, fsom_filename, prcomp, num_components,
+                              num_clus, xdim = 10, ydim = 10,
+                              dir_prepr, convert_to_channels = TRUE) {
+
+  selected_pca_cols = prcomp$x[, 1:num_components]
+
+  fsom_input = cbind(selected_pca_cols,
+                     exprs(aggregate[, c("File", "Original_ID", "Original_ID2")]))
+
+  fsom_subset = FlowSOM(fsom_input,
+                        colsToUse = colnames(fsom_input[,1:num_components]),
+                        nClus = num_clus,
+                        xdim = xdim,
+                        ydim = ydim,
+                        seed = 84)
+
+  if (convert_to_channels) {
+    fsom_subset = convert_pca_fsom(fsom_subset, aggregate, dir_prepr)
+  }
+
+  fsom_subset$map$codes = t(t(fsom_subset$map$codes %*% t(prcomp$rotation[,1:num_components])) +
+                              prcomp$center)
+
+  saveRDS(fsom_subset, paste0(dir_rds_unedited, fsom_filename, ".rds"))
+
+  return(fsom_subset)
+}
