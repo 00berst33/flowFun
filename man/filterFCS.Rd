@@ -7,7 +7,7 @@
 filterFCS(ff, clusters = NULL, metaclusters = NULL)
 }
 \arguments{
-\item{ff}{A flowFrame.}
+\item{ff}{A \code{\link[flowCore]{flowFrame}}.}
 
 \item{clusters}{A character vector specifying which clusters to keep. Default
 is \code{NULL}.}

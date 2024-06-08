@@ -27,4 +27,5 @@ Imports:
     stats,
     umap,
     utils,
+    viridis,
     viridisLite

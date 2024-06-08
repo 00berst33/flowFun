@@ -27,7 +27,7 @@ centers to be labeled with the cluster or metacluster they belong to, either
 }
 \value{
 A list of scatterplots or single scatterplot made with ggplot and
-\code{FlowSOM::Plot2DScatters}.
+\code{\link[FlowSOM:Plot2DScatters]{FlowSOM::Plot2DScatters()}}.
 }
 \description{
 Plot 2D scatterplots of FlowSOM clusters, with (meta)cluster number labels for
