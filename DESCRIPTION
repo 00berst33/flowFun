@@ -25,6 +25,7 @@ Imports:
     Rtsne,
     scattermore,
     stats,
+    tidyr,
     umap,
     utils,
     viridis,
