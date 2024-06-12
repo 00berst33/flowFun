@@ -21,10 +21,10 @@ used for clustering).}
 \item{metaclusters}{A vector specifying which metaclusters whose clusters
 you would like to include in the plot. If NULL (default), all clusters are included.}
 
-\item{...}{Additional parameters to pass to \code{ComplexHeatmap::Heatmap()}.}
+\item{...}{Additional parameters to pass to \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}}.}
 }
 \value{
-A heatmap of MFIs made with \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}}, where each
+A heatmap of MFIs made with \code{ComplexHeatmap::Heatmap()}, where each
 column is a marker of interest, and each row is a cluster.
 }
 \description{

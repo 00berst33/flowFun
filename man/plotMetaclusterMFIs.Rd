@@ -13,10 +13,10 @@ plotMetaclusterMFIs(fsom, markers_of_interest = fsom$map$colsUsed, ...)
 would like to include in the plot. Default is \code{fsom$map$colsUsed} (the
 markers used for clustering).}
 
-\item{...}{Additional parameters to pass to \code{ComplexHeatmap::Heatmap()}.}
+\item{...}{Additional parameters to pass to \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}}.}
 }
 \value{
-A heatmap of MFIs made with \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}},
+A heatmap of MFIs made with \code{ComplexHeatmap::Heatmap()},
 where each column is a marker of interest, and each row is a metacluster.
 }
 \description{
@@ -30,6 +30,6 @@ fsom <- FlowSOM::FlowSOM(file,
                          seed = 42,
                          xdim = 6,
                          ydim = 6)
-                         
+
 plotMetaclusterMFIs(fsom)
 }

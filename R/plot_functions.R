@@ -527,3 +527,150 @@ plotSampleProportions = function(fsom, reg_expr = NULL) {
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 6)) +
     ggplot2::scale_fill_viridis_d(option = "turbo")
 }
+
+#' removeFilepath
+#'
+#' Helper to remove filepath from a filename.
+#'
+#' @param filenames A list of filenames.
+#'
+#' @return A list of filenames.
+#'
+#' @export
+removeFilepath = function(filenames) {
+  contains_path = grepl("/", filenames)
+  new_filenames = ifelse(contains_path, sub(".*/", "", filenames), filenames)
+  return(new_filenames)
+}
+
+#' plotClusterGroupProportions
+#'
+#' Plot group proportions by cluster in an MST or grid.
+#'
+#' @param fsom A FlowSOM object.
+#' @param groups A list of lists, specifying the groups of interest and their file
+#' names.
+#' @param view A string specifying which version of the plot you would like returned
+#' either "MST" or "grid".
+#'
+#' @details
+#' For each cluster, a pie chart displaying the proportions
+#' of each given group within said cluster is created. They
+#' may be visualized as either an MST or a grid. The pie chart in
+#' the bottom left may serve as a point of reference, as it shows what we would
+#' expect the proportions to be if there was no difference between groups.
+#'
+#' @return An MST or grid plot.
+#'
+#' @export
+plotClusterGroupProportions <- function(fsom, groups, view = c("MST", "grid")) {
+  dir_clustr <- dir_clustr()
+
+  file_names <- list.files(path = dir_clustr,
+                           full.names = FALSE)
+  all_group_files <- c()
+  for (group in groups) {
+    all_group_files <- c(all_group_files, group)
+  }
+
+  sample_names <- file_names[fsom$data[,"File"]]
+  ind <- which(paste0(dir_clustr, sample_names) %in% all_group_files)
+
+  if (length(ind) < length(sample_names)) {
+    sample_names <- sample_names[ind]
+    fsom <- FlowSOM::FlowSOMSubset(fsom, ind)
+  }
+
+  group_indicator <- rep("Unknown", length(sample_names))
+
+  # check names for both "file_names" and "groups"
+  for (i in 1:length(groups)) {
+    groups[[i]] <- removeFilepath(groups[[i]])
+    group_indicator[sample_names %in% unlist(groups[names(groups)[i]])] <- names(groups)[i]
+  }
+
+  file_pie_plot <- FlowSOM::PlotPies(fsom = fsom,
+                                     cellTypes = factor(group_indicator),
+                                     colorPalette = viridisLite::viridis(length(groups), option = "inferno"),
+                                     equalNodeSize = TRUE,
+                                     maxNodeSize = ifelse(view == "MST", 0.7, 1),
+                                     view = view)
+
+  group_proportions <- sapply(groups, length)
+  group_proportions <- group_proportions / sum(group_proportions)
+
+  angles <- cumsum(2 * pi * group_proportions)
+  start_angles <- c(0, utils::head(angles, -1))
+
+  file_pie_plot <- FlowSOM::AddStarsPies(p = file_pie_plot,
+                                         arcs = data.frame(x0 = 0,
+                                                           y0 = 0,
+                                                           start = start_angles,
+                                                           end = angles,
+                                                           value = 1,
+                                                           Markers = names(groups)),
+                                         colorPalette = viridisLite::viridis(length(groups), option = "inferno")
+  )
+
+  return(file_pie_plot)
+}
+
+#' plotClusterFileProportions
+#'
+#' Plots file distributions by cluster in an MST or grid.
+#'
+#' @param fsom A FlowSOM object.
+#' @param view A string specifying which version of the plot you would like returned
+#' either "MST" or "grid".
+#' @param reg_expr Optional, a regular expression to rename filenames.
+#'
+#' @details
+#' The pie chart in the bottom left may serve as a point of reference,
+#' as it shows what one would expect the proportions to be if
+#' there was no difference between samples, and if the clustering
+#' went well. Note that if a metacluster or cluster is made up
+#' mostly of one sample's cells, this does not necessarily mean that the
+#' clustering is flawed, and may instead indicate that the relevant sample has
+#' unique biological characteristics.
+#'
+#' @return An MST or grid plot.
+#'
+#' @export
+plotClusterFileProportions <- function(fsom, view = c("MST", "grid"), reg_expr = NULL) {
+  sample_names <- list.files(path = dir_clustr(),
+                             full.names = FALSE)
+
+  if (!is.null(reg_expr)) {
+    sample_names <- sub(reg_expr, "\\1", sample_names)
+  }
+
+  file_num <- length(sample_names)
+
+  file_pie_plot <- FlowSOM::PlotPies(fsom = fsom,
+                                     cellTypes = factor(sample_names[fsom$data[,"File"]]),
+                                     colorPalette = viridisLite::viridis(file_num, option = "turbo"),
+                                     equalNodeSize = TRUE,
+                                     maxNodeSize = ifelse(view == "MST", 0.7, 1),
+                                     view = view)
+
+  proportions <- sapply(1:length(sample_names), function(i) {
+    num_cells <- length(which(fsom$data[, "File"] == i))
+    return(num_cells)
+  })
+
+  proportions <- proportions / sum(proportions)
+
+  angles <- cumsum(2 * pi * proportions)
+  start_angles <- c(0, utils::head(angles, -1))
+
+  file_pie_plot <- FlowSOM::AddStarsPies(p = file_pie_plot,
+                                         arcs = data.frame(x0 = 0,
+                                                           y0 = 0,
+                                                           start = start_angles,
+                                                           end = angles,
+                                                           value = 1,
+                                                           Markers = sample_names),
+                                         colorPalette = viridisLite::viridis(file_num, option = "turbo"))
+
+  return(file_pie_plot)
+}

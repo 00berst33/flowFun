@@ -27,10 +27,10 @@ By default, this function creates a directory structure as follows:
 \item Clustered Files (\code{dir_clustr})
 }
 \item Info
-\item RDS
+\item RDS (\code{dir_rds})
 \itemize{
-\item Unedited
-\item Edited
+\item Unedited (\code{dir_rds_unedited})
+\item Edited (\code{dir_rds_edited})
 }
 \item Preprocessing Results
 \itemize{
