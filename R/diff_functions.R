@@ -412,3 +412,80 @@ doDAAnalysis <- function(design_matrix, count_mat, contrasts, factors,
                                                   "_", dir_tables, "_edger.csv")))
   }
 }
+
+
+
+#' prepareControls
+#' 
+#' Prepare isotype or FMO controls for calculating delta MFI.
+#' 
+#' @details
+#' Additional details...
+#' 
+#' @export
+prepareControls <- function(sample_df, control_col, marker, orig_fsom, fsom_name = NULL, 
+                            agg_name = NULL, subsetted_meta = NULL) { # agg_name unnecessary if you add metadata
+  cols_of_interest <- c(colnames(sample_df)[1], control_cols)
+  sample_df <- sample_df[, cols_of_interest]
+  
+  ind <- which(names(control_cols) == marker)
+  
+  col <- control_col[ind]
+  
+  # change the order of the if statements
+  if (!is.null(fsom_name) && !(is.null(agg_name))) {
+    print("Using the FlowSOM object defined in `fsom_name`...")
+    agg_fmo <- flowCore::read.FCS(agg_names[ind])
+    fmo_fsom <- readRDS(paste0(dir_rds_edited(), fsom_name[ind]))
+    
+  } else if (!is.null(subsetted_meta)) {
+    frames <- lapply(list.files(fmo_clustr_dir[ind], full.names = TRUE), flowCore::read.FCS)
+    
+    meta_name <- readRDS(paste0(dir_rds_edited(), "full_meta_names.rds")) # !!! edit
+    meta_ind <- which(meta_name %in% subsetted_meta)
+    
+    frames <- lapply(frames, filterFCS, metaclusters = meta_ind)
+    
+    names(frames) <- marker_list[[names(col)]]
+    
+    fs <- methods::as(frames, "flowSet")
+    
+    agg_fmo <- FlowSOM::AggregateFlowFrames(fs,
+                                            cTotal = nrow(orig_fsom$data),
+                                            writeOutput = TRUE,
+                                            outputFile = paste0(dir_agg(), "aggregate_", 
+                                                                col, "_", str, ".fcs"))
+    
+    fmo_fsom <- FlowSOM::NewData(orig_fsom, agg_fmo)
+    
+    saveRDS(fmo_fsom, paste0(dir_rds_edited(), col, "_", str, ".rds"))
+    
+  } else {
+    # Create aggregate files from cells in FMO/Iso files.
+    agg_fmo <- FlowSOM::AggregateFlowFrames(marker_list[[marker]],
+                                            cTotal = nrow(orig_fsom$data),
+                                            writeOutput = TRUE,
+                                            keepOrder = TRUE,
+                                            outputFile = paste0(dir_agg(), "aggregate_", col, ".fcs"))
+    
+    # Map above aggregate file to FlowSOM object of interest.
+    fmo_fsom <- FlowSOM::NewData(orig_fsom, agg_fmo)
+    
+    saveRDS(fmo_fsom, paste0(dir_rds_edited(), col, "_fsom.rds"))
+    saveRDS(meta_names, paste0(dir_rds_edited(), "full_meta_names.rds"))
+    
+    dir_save <- paste0("Data/Clustered ", col, " Files/") # !!!
+    
+    if(!dir.exists(dir_save)) {
+      dir.create(dir_save)
+    }
+    
+    FlowSOM::SaveClustersToFCS(fsom = fmo_fsom,
+                               originalFiles = marker_list[[names(col)]], 
+                               outputDir = dir_save)
+  }
+  
+  # Convert the file name to numbers and store them as vectors. This is necessary
+  # because FlowSOM objects represent each file as a number rather than a name.
+  fmo_num = match(fmo_info[[col]], unique(fmo_info[[col]]))
+}
