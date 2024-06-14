@@ -7,18 +7,19 @@
 prepareControls(
   sample_df,
   ctrl_col,
-  dir_clustr_ctrl,
+  dir_prepr_ctrl,
   marker,
   orig_fsom,
   fsom_name = NULL,
   agg_name = NULL,
+  dir_clustr_ctrl = NULL,
   subsetted_meta = NULL
 )
 }
 \arguments{
 \item{ctrl_col}{The name of the column containing control filenames.}
 
-\item{dir_clustr_ctrl}{The directory containing preprocessed control files.}
+\item{dir_prepr_ctrl}{The directory containing preprocessed control files.}
 
 \item{marker}{The marker that this control corresponds to.}
 
