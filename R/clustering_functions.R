@@ -362,8 +362,8 @@ addMetadataToFlowSOM <- function(fsom, aggregate, parent = NULL) {
   }
 
   fsom$metadata <- list(
-    aggregate_file <- aggregate@description$FILENAME
-    if (!is.null) {
+    aggregate_file <- aggregate@description$FILENAME,
+    if (!is.null(parent)) {
       parent_fsom <- parent
     }
     # preprocessed_files_dir <- dir_prepr

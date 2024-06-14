@@ -13,7 +13,7 @@ prepareSampleInfo(
 )
 }
 \arguments{
-\item{filepath}{A filepath to a .csv file.}
+\item{filepath}{A filepath to a .csv file containing sample info.}
 
 \item{name_col}{The name of the column containing the experiment's sample names.}
 
@@ -22,8 +22,9 @@ prepareSampleInfo(
 \item{cols_to_use}{A character vector specifying the column names other than
 sample name and filename that are relevant for the experiment.}
 
-\item{samples_to_remove}{A vector defining any samples that should be excluded
-from the analysis. Default is none (\code{NULL}).}
+\item{samples_to_remove}{An integer vector defining the rows of any samples
+that should be excluded from the analysis, either because they were discarded
+during preprocessing or are not of interest. Default is none (\code{NULL}).}
 }
 \value{
 A data frame containing sample information.
@@ -42,7 +43,7 @@ design matrix used for analysis.
 \emph{REMOVE} differences from orig. script: columns not of interest are removed,
 rather than keeping all columns and storing that info as a variable. filename
 remains in the data frame. all columns other than filename and sample names
-have make.names() applied.
-
-\emph{NOTE} dir_prepr() must be set properly for this function to work
+have make.names() applied. instead of ordering and removing rows with
+prepr_files, they are ordered alphabetically according to filename; this is
+the same as how list.files() reads in filenames. \emph{add option to override?}
 }

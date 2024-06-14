@@ -26,8 +26,8 @@ comparisons <- list(
   male_vs_female = list(Sex = list("male", "female")),
   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
   )
-  
+
 factors <- makeFactorDF(sample_df, comparisons)
-  
+
 contrasts <- makeContrastsMatrix(factors, comparisons)
 }
