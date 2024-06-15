@@ -680,7 +680,7 @@ if (TRUE) {
         fSOM_sub = FlowSOMSubset(fSOM, inds)
       }
       
-      # Get cluster-sample medians.
+      # Get metacluster-sample medians.
       sample_medians = data.frame(fSOM_sub$data,
                                   sample = fSOM_sub$data[, "File"],
                                   check.names = FALSE) %>%

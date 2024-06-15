@@ -344,30 +344,37 @@ clusterSubsetWithPCA <- function(aggregate, fsom_name, pca_obj, num_components,
   return(fsom_subset)
 }
 
-#' addMetadataToFlowSOM
+#' editFlowSOMMetaData
 #'
 #' @param fsom A FlowSOM object to annotate.
-#' @param aggregate The aggregate .fcs file used to create the given FlowSOM object.
-#' @param parent A filepath to a parent FlowSOM object's .rds file, if the given 
-#' FlowSOM object is a reclustering
+#' @param metadata A named list of metadata to add to the FlowSOM object.
+#' @param clear Boolean, should the existing metadata be cleared before editing.
+#' 
+#' @details
+#' It is useful to keep track of:
+#'  - aggregate file used for clustering
+#'    - number of cells aggregated
+#'    - which files were used and in what order they were read
+#'  - which directory contains the clustered files resulting from the FlowSOM object
+#'  - any parent FlowSOM objects, if current FlowSOM object is a reclustering
 #' 
 #' @keywords internal
 #'
-#' @return A FlowSOM object with added metadata.
+#' @return A FlowSOM object with edited metadata.
 #'
 #' @export
-addMetadataToFlowSOM <- function(fsom, aggregate, parent = NULL) {
+editFlowSOMMetaData <- function(fsom, metadata, clear = NULL) {
   if (!inherits(fsom, "FlowSOM")) {
     stop("fsom must be a FlowSOM object.")
   }
-
-  fsom$metadata <- list(
-    aggregate_file <- aggregate@description$FILENAME,
-    if (!is.null(parent)) {
-      parent_fsom <- parent
-    }
-    # preprocessed_files_dir <- dir_prepr
-  )
+  
+  if (clear) {
+    fsom$metaData <- NULL
+  }
+  
+  for (name in names(metadata)) {
+    fsom$metaData[[name]] <- metadata[[name]]
+  }
 
   return(fsom)
 }

@@ -40,10 +40,6 @@ like NAC vs. No NAC. Each column should be named after what it represents.
 This file will be read in as a data frame and will be used to construct the
 design matrix used for analysis.
 
-\emph{REMOVE} differences from orig. script: columns not of interest are removed,
-rather than keeping all columns and storing that info as a variable. filename
-remains in the data frame. all columns other than filename and sample names
-have make.names() applied. instead of ordering and removing rows with
-prepr_files, they are ordered alphabetically according to filename; this is
-the same as how list.files() reads in filenames. \emph{add option to override?}
+\emph{REMOVE} differences from orig. script: all columns other than filename and sample names
+have make.names() applied.
 }
