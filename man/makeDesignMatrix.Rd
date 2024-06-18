@@ -29,5 +29,5 @@ comparisons <- list(
 
 factors <- makeFactorDF(sample_df, comparisons)
 
-design_matrix <- makeDesignMatrix(factors, comparisons)
+design <- makeDesignMatrix(factors, comparisons)
 }

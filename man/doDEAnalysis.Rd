@@ -64,4 +64,5 @@ Perform differential expression analysis on markers of interest.
 Additional details...
 
 !!! counts parameter may be useless
+!!! consolidate factors and sample_df parameters
 }

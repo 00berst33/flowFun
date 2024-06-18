@@ -15,7 +15,7 @@ plotClusterMFIs(
 \item{fsom}{The FlowSOM object whose data you would like to plot.}
 
 \item{markers_of_interest}{A character vector specifying which markers you
-would like to include in the plot. Default is fsom$map$colsUsed (the markers
+would like to include in the plot. Default is \code{fsom$map$colsUsed} (the markers
 used for clustering).}
 
 \item{metaclusters}{A vector specifying which metaclusters whose clusters

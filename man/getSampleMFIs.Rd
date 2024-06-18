@@ -14,5 +14,5 @@ Must have a \code{"File"} column in the data matrix.}
 A data frame, where each row is a sample, and each column is a channel/marker.
 }
 \description{
-getSampleMFIs
+A helper function to get sample MFIs.
 }
