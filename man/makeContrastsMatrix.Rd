@@ -9,8 +9,10 @@ makeContrastsMatrix(sample_df, comparisons)
 \arguments{
 \item{sample_df}{A data frame, generated either manually or by \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
-\item{comparisons}{A named list of named lists, defining the groups to be
-compared during analysis.}
+\item{comparisons}{A list of comparisons, where each comparison is further
+defined by a list of factor levels. Each comparison and group of factor
+levels should be named. See examples for further detail on how this parameter
+should be defined.}
 }
 \value{
 A matrix, where each column corresponds to a comparison, and each row
@@ -20,12 +22,13 @@ corresponds to a group.
 Generate a contrasts matrix. (edit example)
 }
 \examples{
-samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", c("Sex", "Disease"))
-
 comparisons <- list(
   male_vs_female = list(Sex = list("male", "female")),
   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
-  )
+)
+
+filepath <- system.file("extdata", "sample_information.csv", package = "flowFun")
+samples <- prepareSampleInfo(filepath, "Sample.Name", "File.Name", comparisons)
 
 contrasts <- makeContrastsMatrix(samples, comparisons)
 }

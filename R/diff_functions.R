@@ -5,8 +5,10 @@
 #' @param filepath A filepath to a .csv file containing sample info.
 #' @param name_col The name of the column containing the experiment's sample names.
 #' @param filename_col The name of the column containing the experiment's .fcs file names.
-#' @param comparisons A named list of named lists, defining the groups to be
-#' compared during analysis.
+#' @param comparisons A list of comparisons, where each comparison is further
+#' defined by a list of factor levels. Each comparison and group of factor
+#' levels should be named. See examples for further detail on how this parameter
+#' should be defined.
 #' @param samples_to_remove An integer vector defining the rows of any samples
 #' that should be excluded from the analysis, either because they were discarded
 #' during preprocessing or are not of interest. Default is none (\code{NULL}).
@@ -14,10 +16,10 @@
 #' @details
 #' If you have a .csv file specifying sample information, it can be read in and
 #' prepared by this function. It MUST have columns for file names and sample
-#' names, and any additional columns may specify parameters of interest,
+#' names, and any additional columns should specify parameters of interest,
 #' like NAC vs. No NAC. Each column should be named after what it represents.
-#' This file will be read in as a data frame and will be used to construct the
-#' design matrix used for analysis.
+#' This file will be read in as a data frame and will be used for comparative
+#' analysis.
 #'
 #' *REMOVE* differences from orig. script: all columns other than filename and sample names
 #' have make.names() applied.
@@ -26,6 +28,62 @@
 #' @return A data frame containing sample information.
 #'
 #' @export
+#'
+#' @examples
+#' # It is important that `comparisons` is defined properly.
+#'
+#' # The first level should be named lists, defining each comparison of interest.
+#' # The lists within each of these comparisons should include at least two levels
+#' # of a group factor to be compared. To compare two groups within another
+#' # group (i.e. NAC vs. No NAC in females only), specify the level(s)
+#' # of interest for both of these factors. For example:
+#' comparisons <- list(
+#'   male_vs_female = list(Sex = list("male", "female")),
+#'   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
+#' )
+#'
+#' # Here, at the first level of the object, there are two comparisons, named
+#' # "male_vs_female", and "male_vs_female_mibc".
+#'
+#' # They are further defined by lists of factor levels;
+#' # `list(Sex = list("male", "female"))` and
+#' # `list(Disease = "MIBC", Sex = list("male", "female"))`, respectively.
+#'
+#' # So, the first element defines the comparison male vs. female,
+#' # and the second element defines the comparison MIBC male vs. MIBC female.
+#'
+#' # Defining a comparison such as `list(Sex = "male", Disease = "MIBC")`,
+#' # where only one level is given for each factor, is useless.
+#'
+#' # Every element in the list defining a comparison must be named, and correspond
+#' # to a column in the file found at `filepath`. So, in this example, the given
+#' # file must have a column named "Sex", with entries "male" or "female", and
+#' # a column named "Disease", with entries "MIBC".
+#'
+#' # Finally, note that if a column has many different possible entries - for example,
+#' # if the "Disease" column had entries "MIBC", "NMIBC", and "Ctrl" - it is only
+#' # necessary to list the groups of interest. So in this case, the above example
+#' # is still appropriate.
+#'
+#' # Read in .csv file
+#' filepath <- system.file("extdata", "sample_information.csv", package = "flowFun")
+#' sample_df <- prepareSampleInfo(filepath,
+#'                                name_col = "Sample_ID",
+#'                                filename_col = "Filenames",
+#'                                comparisons = comparisons)
+#'
+#' # Note the added "group" column
+#' print(head(sample_df))
+#'
+#' # Read in the same file, this time removing a couple samples
+#' sample_df.rm <- prepareSampleInfo(filepath,
+#'                                   name_col = "Sample_ID",
+#'                                   filename_col = "Filenames",
+#'                                   comparisons = comparisons,
+#'                                   samples_to_remove = c(2, 4))
+#'
+#' # Row names do not change when samples are removed
+#' print(head(sample_df.rm))
 prepareSampleInfo <- function(filepath, name_col, filename_col, comparisons,
                               samples_to_remove = NULL) {
   # Read in .csv file.
@@ -92,6 +150,34 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, comparisons,
   return(sample_df)
 }
 
+#' prepareControlInfo
+#'
+#' use in clusterControls ?
+#'
+#' @param markers ...
+#' @param ctrl_cols ...
+#' @param ctrl_prepr_dirs ...
+#' @param ctrl_clustr_dirs ...
+#' @param parent_ctrl_fsom ...
+#'
+#' @return A data frame with FMO/Isotype control information.
+#'
+#' @export
+prepareControlInfo <- function(markers, ctrl_cols, ctrl_prepr_dirs,
+                               ctrl_clustr_dirs = NULL, parent_ctrl_fsom = NULL) {
+  ctrl_df <- data.frame("Column.Name" = ctrl_cols,
+                        "Prepr.Dir" = ctrl_prepr_dirs,
+                        row.names = markers)
+
+  if (!is.null(ctrl_clustr_dirs)) {
+    ctrl_df <- data.frame(ctrl_df,
+                          "Clustered.Parent.Dir" = ctrl_clustr_dirs,
+                          "Parent.fsom" = parent_ctrl_fsom)
+  }
+
+  return(ctrl_df)
+}
+
 #' makeFactorDF
 #'
 #' !!! original function now mostly merged with prepareSampleInfo(), only really
@@ -153,7 +239,8 @@ makeFactorDF <- function (sample_info, comparisons) {
 #' @export
 #'
 #' @examples
-#' samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", comparisons)
+#' filepath <- system.file("extdata", "sample_information.csv", package = "flowFun")
+#' samples <- prepareSampleInfo(filepath, "Sample.Name", "File.Name", comparisons)
 #'
 #' design <- makeDesignMatrix(samples)
 makeDesignMatrix <- function(sample_df) {
@@ -177,12 +264,13 @@ makeDesignMatrix <- function(sample_df) {
 #' @export
 #'
 #' @examples
-#' samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", c("Sex", "Disease"))
-#'
 #' comparisons <- list(
 #'   male_vs_female = list(Sex = list("male", "female")),
 #'   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
-#'   )
+#' )
+#'
+#' filepath <- system.file("extdata", "sample_information.csv", package = "flowFun")
+#' samples <- prepareSampleInfo(filepath, "Sample.Name", "File.Name", comparisons)
 #'
 #' contrasts <- makeContrastsMatrix(samples, comparisons)
 makeContrastsMatrix <- function(sample_df, comparisons) {
@@ -498,32 +586,6 @@ clusterControls <- function(sample_df, ctrl_col, dir_prepr_ctrl, marker, fsom,
   }
 
   return(ctrl_fsom)
-}
-
-#' prepareControlInfo
-#'
-#' @param markers ...
-#' @param ctrl_cols ...
-#' @param ctrl_prepr_dirs ...
-#' @param ctrl_clustr_dirs ...
-#' @param parent_ctrl_fsom ...
-#'
-#' @return A data frame with FMO/Isotype control information.
-#'
-#' @export
-prepareControlInfo <- function(markers, ctrl_cols, ctrl_prepr_dirs,
-                               ctrl_clustr_dirs = NULL, parent_ctrl_fsom = NULL) {
-  ctrl_df <- data.frame("Column.Name" = ctrl_cols,
-                        "Prepr.Dir" = ctrl_prepr_dirs,
-                        row.names = markers)
-
-  if (!is.null(ctrl_clustr_dirs)) {
-      ctrl_df <- data.frame(ctrl_df,
-                            "Clustered.Parent.Dir" = ctrl_clustr_dirs,
-                            "Parent.fsom" = parent_ctrl_fsom)
-  }
-
-  return(ctrl_df)
 }
 
 #' getSampleMFIs

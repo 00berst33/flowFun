@@ -27,5 +27,5 @@ prepareControlInfo(
 A data frame with FMO/Isotype control information.
 }
 \description{
-prepareControlInfo
+use in clusterControls ?
 }

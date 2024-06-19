@@ -17,7 +17,8 @@ sample.
 Generate a design matrix. (edit example)
 }
 \examples{
-samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", comparisons)
+filepath <- system.file("extdata", "sample_information.csv", package = "flowFun")
+samples <- prepareSampleInfo(filepath, "Sample.Name", "File.Name", comparisons)
 
 design <- makeDesignMatrix(samples)
 }
