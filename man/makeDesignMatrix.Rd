@@ -4,13 +4,10 @@
 \alias{makeDesignMatrix}
 \title{makeDesignMatrix}
 \usage{
-makeDesignMatrix(factors, comparisons)
+makeDesignMatrix(sample_df)
 }
 \arguments{
-\item{factors}{A data frame, generated either manually or by \code{\link[=makeFactorDF]{makeFactorDF()}}.}
-
-\item{comparisons}{A named list of named lists, defining the groups to be
-compared during analysis. See example for how this variable should be defined.}
+\item{sample_df}{A data frame, generated either manually or by \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 }
 \value{
 A matrix where each column is a group of interest, and each row is a
@@ -20,14 +17,7 @@ sample.
 Generate a design matrix. (edit example)
 }
 \examples{
-samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", c("Sex", "Disease"))
+samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", comparisons)
 
-comparisons <- list(
-  male_vs_female = list(Sex = list("male", "female")),
-  male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
-  )
-
-factors <- makeFactorDF(sample_df, comparisons)
-
-design <- makeDesignMatrix(factors, comparisons)
+design <- makeDesignMatrix(samples)
 }

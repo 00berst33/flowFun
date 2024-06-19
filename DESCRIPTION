@@ -23,6 +23,7 @@ Imports:
     grid,
     limma,
     magrittr,
+    MASS,
     methods,
     Rtsne,
     scattermore,

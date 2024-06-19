@@ -8,7 +8,7 @@ prepareSampleInfo(
   filepath,
   name_col,
   filename_col,
-  cols_to_use,
+  comparisons,
   samples_to_remove = NULL
 )
 }
@@ -19,8 +19,8 @@ prepareSampleInfo(
 
 \item{filename_col}{The name of the column containing the experiment's .fcs file names.}
 
-\item{cols_to_use}{A character vector specifying the column names other than
-sample name and filename that are relevant for the experiment.}
+\item{comparisons}{A named list of named lists, defining the groups to be
+compared during analysis.}
 
 \item{samples_to_remove}{An integer vector defining the rows of any samples
 that should be excluded from the analysis, either because they were discarded
@@ -42,4 +42,5 @@ design matrix used for analysis.
 
 \emph{REMOVE} differences from orig. script: all columns other than filename and sample names
 have make.names() applied.
+\emph{note} need to make edits to better incorporate controls
 }

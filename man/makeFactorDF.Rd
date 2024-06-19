@@ -4,11 +4,10 @@
 \alias{makeFactorDF}
 \title{makeFactorDF}
 \usage{
-makeFactorDF(sample_df, comparisons)
+makeFactorDF(sample_info, comparisons)
 }
 \arguments{
-\item{sample_df}{A data frame containing sample information, generated either
-manually or by \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
+\item{sample_info}{A list of lists containing sample information}
 
 \item{comparisons}{A named list of named lists, defining the groups to be
 compared during analysis. See example for how this variable should be defined.}
@@ -17,5 +16,6 @@ compared during analysis. See example for how this variable should be defined.}
 A data frame of factors, with an added column for group.
 }
 \description{
-! consider merging with prepareSampleInfo()
+!!! original function now mostly merged with prepareSampleInfo(), only really
+necessary if sampleinfo is given as a list
 }

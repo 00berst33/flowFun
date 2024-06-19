@@ -4,13 +4,13 @@
 \alias{makeContrastsMatrix}
 \title{makeContrastsMatrix}
 \usage{
-makeContrastsMatrix(factors, comparisons)
+makeContrastsMatrix(sample_df, comparisons)
 }
 \arguments{
-\item{factors}{A data frame, generated either manually or by \code{\link[=makeFactorDF]{makeFactorDF()}}.}
+\item{sample_df}{A data frame, generated either manually or by \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
 \item{comparisons}{A named list of named lists, defining the groups to be
-compared during analysis. See example for how this variable should be defined.}
+compared during analysis.}
 }
 \value{
 A matrix, where each column corresponds to a comparison, and each row
@@ -27,7 +27,5 @@ comparisons <- list(
   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
   )
 
-factors <- makeFactorDF(sample_df, comparisons)
-
-contrasts <- makeContrastsMatrix(factors, comparisons)
+contrasts <- makeContrastsMatrix(samples, comparisons)
 }

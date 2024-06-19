@@ -5,8 +5,8 @@
 #' @param filepath A filepath to a .csv file containing sample info.
 #' @param name_col The name of the column containing the experiment's sample names.
 #' @param filename_col The name of the column containing the experiment's .fcs file names.
-#' @param cols_to_use A character vector specifying the column names other than
-#' sample name and filename that are relevant for the experiment.
+#' @param comparisons A named list of named lists, defining the groups to be
+#' compared during analysis.
 #' @param samples_to_remove An integer vector defining the rows of any samples
 #' that should be excluded from the analysis, either because they were discarded
 #' during preprocessing or are not of interest. Default is none (\code{NULL}).
@@ -21,11 +21,12 @@
 #'
 #' *REMOVE* differences from orig. script: all columns other than filename and sample names
 #' have make.names() applied.
+#' *note* need to make edits to better incorporate controls
 #'
 #' @return A data frame containing sample information.
 #'
 #' @export
-prepareSampleInfo <- function(filepath, name_col, filename_col, cols_to_use,
+prepareSampleInfo <- function(filepath, name_col, filename_col, comparisons,
                               samples_to_remove = NULL) {
   # Read in .csv file.
   sample_df <- utils::read.csv(file = filepath,
@@ -38,8 +39,16 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, cols_to_use,
 
   # add check that filenames in .csv file exist in the preprocessed dir?
 
+  # Get names of columns relevant for comparative analysis
+  comp_factors <- c()
+  for (i in 1:length(comparisons)) {
+    new_atts <- attributes(comparisons[[i]])$names
+    new_atts <- new_atts[!(new_atts %in% comp_factors)]
+    comp_factors <- append(comp_factors, new_atts)
+  }
+
   # Check for typos.
-  input_cols <- c(name_col, filename_col, cols_to_use)
+  input_cols <- c(name_col, filename_col, comp_factors)
   invalid_cols <- which(!(input_cols %in% colnames(sample_df)))
   if (length(invalid_cols) > 0) {
     stop(paste(input_cols[invalid_cols], collapse = ", "), " are not valid column names. ",
@@ -47,10 +56,11 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, cols_to_use,
          paste(colnames(sample_df), collapse = ", "))
   }
 
-  # Move sample name and filename columns to the first two positions of the data frame.
+  # Move sample name, filename, and `comp_factors` columns to the front of the data frame
   sample_df <- sample_df[, c(name_col,
                              filename_col,
-                             setdiff(names(sample_df), c(name_col, filename_col)))]
+                             comp_factors,
+                             setdiff(names(sample_df), c(name_col, filename_col, comp_factors)))]
 
   # Edit column names and row entries to be R friendly, excluding sample and filenames.
   sample_df[, -c(1,2)] <- sapply(sample_df[, -c(1,2)], make.names)
@@ -58,7 +68,7 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, cols_to_use,
   # Remove samples that were excluded from the analysis from the data frame
   # `sample_df`, and reorder its rows such that they are the same as
   # the file order in `dir_prepr()`.
-  prepr_files <- list.files(path = dir_prepr())
+  prepr_files <- sample_df[[filename_col]][-c(30, 40)]#list.files(path = dir_prepr())
   matched_ind <- match(prepr_files, sample_df[[filename_col]])
   sample_df <- sample_df[matched_ind, ]
   rownames(sample_df) <- seq(1, length(prepr_files))
@@ -71,48 +81,60 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, cols_to_use,
   # Reorder rows alphabetically
   # sample_df <- sample_df[order(sample_df[[filename_col]]), ] # relevant when dir_prepr() not used
 
+  # Create a new "group" column that concatenates the factors for comparisons.
+  sample_df$group <- do.call(paste, c(sample_df[comp_factors], sep = "_"))
+
+  # Convert the columns in the "factors" data frame to factors.
+  sample_df[] <- lapply(sample_df, as.factor)
+
+  # add choice to relevel?
+
   return(sample_df)
 }
 
 #' makeFactorDF
 #'
-#' ! consider merging with prepareSampleInfo()
+#' !!! original function now mostly merged with prepareSampleInfo(), only really
+#' necessary if sampleinfo is given as a list
 #'
-#' @param sample_df A data frame containing sample information, generated either
-#' manually or by [prepareSampleInfo()].
+#' @param sample_info A list of lists containing sample information
 #' @param comparisons A named list of named lists, defining the groups to be
 #' compared during analysis. See example for how this variable should be defined.
 #'
 #' @return A data frame of factors, with an added column for group.
 #'
 #' @export
-makeFactorDF <- function (sample_df, comparisons) {
+makeFactorDF <- function (sample_info, comparisons) {
   # Create factors data frame, which will be used to create our design matrix.
-  factors = data.frame(row.names = sample_df[, 1], check.names = FALSE)
-  for (i in 1:length(sample_df[, 1])) {
-    idx = grep(paste(sample_df[i, 1], collapse = "|"), rownames(factors))
-    for (a in colnames(sample_df)[-2]) { # originally `vars_of_interest`
+  sample_names <- c()
+  for (i in 1:length(sample_info)) {
+    sample_names <- c(sample_names, sample_info[[i]][[1]])
+  }
+  factors <- data.frame(row.names = sample_names, check.names = FALSE) # consider using file names read from dir_prepr() instead
+  for (i in 1:length(sample_info)) {
+    idx <- grep(paste(sample_info[[i]][[1]], collapse = "|"), rownames(factors))
+    for (a in attributes(sample_info[[i]])$names[-1]) {
       if (!(a %in% attributes(factors)$names)) {
-        factors[[a]] = NA
+        factors[[a]] <- NA
       }
-      factors[[a]][idx] = sample_df[i, a]
+      factors[[a]][idx] <- sample_info[[i]][[a]]
     }
   }
 
   # Determine the factors that should be used to create a "group" factor that
   # combines individual factors.
-  comp_factors = c()
+  comp_factors <- c()
   for (i in 1:length(comparisons)) {
-    new_atts = attributes(comparisons[[i]])$names
-    new_atts = new_atts[!(new_atts %in% comp_factors)]
-    comp_factors = append(comp_factors, new_atts)
+    new_atts <- attributes(comparisons[[i]])$names
+    new_atts <- new_atts[!(new_atts %in% comp_factors)]
+    comp_factors <- append(comp_factors, new_atts)
   }
 
   # Create a new "group" column that concatenates the factors for comparisons.
-  factors$group = do.call(paste, c(factors[comp_factors], sep = "_"))
+  factors$group <- do.call(paste, c(factors[comp_factors], sep = "_"))
 
   # Convert the columns in the "factors" data frame to factors.
-  factors[] = lapply(factors, as.factor)
+  factors[] <- lapply(factors, as.factor)
 
   # add choice to relevel?
 
@@ -123,9 +145,7 @@ makeFactorDF <- function (sample_df, comparisons) {
 #'
 #' Generate a design matrix. (edit example)
 #'
-#' @param factors A data frame, generated either manually or by [makeFactorDF()].
-#' @param comparisons A named list of named lists, defining the groups to be
-#' compared during analysis. See example for how this variable should be defined.
+#' @param sample_df A data frame, generated either manually or by [prepareSampleInfo()].
 #'
 #' @return A matrix where each column is a group of interest, and each row is a
 #' sample.
@@ -133,19 +153,13 @@ makeFactorDF <- function (sample_df, comparisons) {
 #' @export
 #'
 #' @examples
-#' samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", c("Sex", "Disease"))
+#' samples <- prepareSampleInfo("filepath", "Sample.Name", "File.Name", comparisons)
 #'
-#' comparisons <- list(
-#'   male_vs_female = list(Sex = list("male", "female")),
-#'   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
-#'   )
-#'
-#' factors <- makeFactorDF(sample_df, comparisons)
-#'
-#' design <- makeDesignMatrix(factors, comparisons)
-makeDesignMatrix <- function(factors, comparisons) {
-  design <- stats::model.matrix(~ 0 + factors$group)
-  colnames(design) <- gsub("factors$group", "", colnames(design), fixed = TRUE)
+#' design <- makeDesignMatrix(samples)
+makeDesignMatrix <- function(sample_df) {
+  design <- stats::model.matrix(~ 0 + sample_df$group)
+  colnames(design) <- gsub("sample_df$group", "", colnames(design), fixed = TRUE)
+  rownames(design) <- rownames(sample_df)
 
   return(design)
 }
@@ -155,6 +169,7 @@ makeDesignMatrix <- function(factors, comparisons) {
 #' Generate a contrasts matrix. (edit example)
 #'
 #' @inheritParams makeDesignMatrix
+#' @inheritParams prepareSampleInfo
 #'
 #' @return A matrix, where each column corresponds to a comparison, and each row
 #' corresponds to a group.
@@ -169,45 +184,43 @@ makeDesignMatrix <- function(factors, comparisons) {
 #'   male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female"))
 #'   )
 #'
-#' factors <- makeFactorDF(sample_df, comparisons)
-#'
-#' contrasts <- makeContrastsMatrix(factors, comparisons)
-makeContrastsMatrix <- function(factors, comparisons) {
+#' contrasts <- makeContrastsMatrix(samples, comparisons)
+makeContrastsMatrix <- function(sample_df, comparisons) {
 
   # Create design matrix.
-  design <- makeDesignMatrix(factors, comparisons)
+  design <- makeDesignMatrix(sample_df)
 
   # Define comparisons by groups.
   grp_comps = list()
   i = 0
   for (comp in comparisons) {
     i = i+1
-    factors_idx1 = rep(TRUE, nrow(factors))
-    factors_idx2 = rep(TRUE, nrow(factors))
+    factors_idx1 = rep(TRUE, nrow(sample_df))
+    factors_idx2 = rep(TRUE, nrow(sample_df))
     for (a in attributes(comp)$names) {
       # If an attribute in comp has only one element, this implies it is the same
       # for both factor levels to be compared.
       if (length(comp[[a]])==1) {comp[[a]] = list(comp[[a]], comp[[a]])}
-      # Get the logical row indices of the factors dataframe that correspond to the
+      # Get the logical row indices of the sample_df dataframe that correspond to the
       # groups to be compared.
-      factors_idx1_a = rep(FALSE, nrow(factors))
+      factors_idx1_a = rep(FALSE, nrow(sample_df))
       for (grp_var in comp[[a]][[1]]) {
-        factors_idx1_a = factors_idx1_a | (factors[[a]]==grp_var)
+        factors_idx1_a = factors_idx1_a | (sample_df[[a]]==grp_var)
       }
       factors_idx1 = factors_idx1 & factors_idx1_a
-      factors_idx2_a = rep(FALSE, nrow(factors))
+      factors_idx2_a = rep(FALSE, nrow(sample_df))
       for (grp_var in comp[[a]][[2]]) {
-        factors_idx2_a = factors_idx2_a | (factors[[a]]==grp_var)
+        factors_idx2_a = factors_idx2_a | (sample_df[[a]]==grp_var)
       }
       factors_idx2 = factors_idx2 & factors_idx2_a
     }
     # Store the names of groups for each comparison in a list of vectors.
     ### Without prepending group factor names by "group":
-    grp1 = unique(factors$group[factors_idx1])
-    grp2 = unique(factors$group[factors_idx2])
+    grp1 = unique(sample_df$group[factors_idx1])
+    grp2 = unique(sample_df$group[factors_idx2])
     ### With prepending group factor names by "group":
-    # grp1 = paste0("group", unique(factors$group[factors_idx1]))
-    # grp2 = paste0("group", unique(factors$group[factors_idx2]))
+    # grp1 = paste0("group", unique(sample_df$group[factors_idx1]))
+    # grp2 = paste0("group", unique(sample_df$group[factors_idx2]))
     if (!is.null(attributes(comparisons))) {
       att_name = attributes(comparisons)$names[i]
       if (is.character(att_name) && att_name != "" && !is.null(att_name)) {
@@ -256,8 +269,8 @@ makeContrastsMatrix <- function(factors, comparisons) {
 #' Generate matrix of sample/metacluster cell counts.
 #'
 #' @param fsom A FlowSOM object.
-#' @param factors A data frame containing sample information, generated by
-#' [makeFactorDF()].
+#' @param sample_df A data frame containing sample information, generated by
+#' [prepareSampleInfo()].
 #' @param meta_names A vector of metacluster names of interest. By default, all
 #' metacluster names are used.
 #' @param min_cells An integer, the minimum number of cells a metacluster should
@@ -270,19 +283,19 @@ makeContrastsMatrix <- function(factors, comparisons) {
 #' represents a metacluster.
 #'
 #' @export
-makeCountMatrix <- function(fsom, factors, meta_names = levels(fsom$metaclustering),
+makeCountMatrix <- function(fsom, sample_df, meta_names = levels(fsom$metaclustering),
                             min_cells = 3, min_samples = NULL) {
-  if (nrow(factors) > 0) {
+  if (nrow(sample_df) > 0) {
 
     # Set `min_samples` if it is NULL
     if (is.null(min_samples)) {
-      min_samples <- nrow(factors)/2
+      min_samples <- nrow(sample_df)/2
     }
 
     counts <- c()
 
     # For each sample
-    for (i in 1:nrow(factors)) {
+    for (i in 1:nrow(sample_df)) {
       # Get all cells belonging to the current sample
       ind <- which(fsom$data[, "File"] == i)
 
@@ -304,7 +317,7 @@ makeCountMatrix <- function(fsom, factors, meta_names = levels(fsom$metaclusteri
     }
 
     # Rename columns and rows.
-    colnames(counts) <- rownames(factors)
+    colnames(counts) <- sample_df[, 1]
     rownames(counts) <- meta_names
 
     # Filter count matrix based on given minimum number of cells and samples
@@ -345,25 +358,25 @@ makeCountMatrix <- function(fsom, factors, meta_names = levels(fsom$metaclusteri
 #' [edgeR::glmFit()], [edgeR::glmLRT()], [edgeR::topTags()].
 #'
 #' @export
-doDAAnalysis <- function(design, counts, contrasts, factors,
+doDAAnalysis <- function(design, counts, contrasts, sample_df,
                          norm_method = c("TMM", "TMMwsp", "RLE", "upperquartile", "none"),
                          dir_tables = NULL) {
 
-  # Get sample info from factors object
-  sample_info <- factors[, -c(1, ncol(factors))] # remove?
+  # Get sample info from sample_df object
+  sample_info <- sample_df[, -c(1, ncol(sample_df))] # remove?
 
   # Create DGEList object
   if (!is.null(norm_method)) { # if user wants to normalize data
     norm_factors <- edgeR::calcNormFactors(counts, method = norm_method)
     dge_list <- edgeR::DGEList(counts = counts,
                                samples = sample_info,
-                               group = factors$group,
+                               group = sample_df$group,
                                norm.factors = norm_factors,
                                remove.zeros = TRUE)
   } else {
     dge_list <- edgeR::DGEList(counts = counts,
                                samples = sample_info,
-                               group = factors$group,
+                               group = sample_df$group,
                                remove.zeros = TRUE)
   }
 
@@ -582,7 +595,6 @@ getSampleMetaMatrix = function(df_full, col_to_use) {
 #' @param fsom A FlowSOM object, as generated by \code{\link[FlowSOM]{FlowSOM}}, or
 #' [clusterSubsetWithPCA()].
 #' @param sample_df A data frame of sample info, as generated by [prepareSampleInfo()].
-#' @param factors A factor data frame as created by [makeFactorDF()].
 #' @param markers_of_interest A character vector of markers to test for differential
 #' expression.
 #' @param meta_names A character vector of metacluster names to test. Default is
@@ -602,13 +614,12 @@ getSampleMetaMatrix = function(df_full, col_to_use) {
 #' @details
 #' Additional details...
 #'
-#' !!! counts parameter may be useless
-#' !!! consolidate factors and sample_df parameters
+#' !!! counts parameter may be useless, Group column in `df_full` no longer needed
 #'
 #' @return A list of lists containing test results and data matrices.
 #'
 #' @export
-doDEAnalysis <- function(fsom, sample_df, factors, design, contrasts, counts,
+doDEAnalysis <- function(fsom, sample_df, design, contrasts, counts,
                          markers_of_interest, meta_names = NULL,
                          prepr_transform = NULL, controls_df = NULL,
                          ctrl_fsom_names = NULL, subsetted_meta = NULL) {
@@ -732,20 +743,20 @@ doDEAnalysis <- function(fsom, sample_df, factors, design, contrasts, counts,
       rownames(trans_matrix) <- "Transformed Exp."
 
       # Remove samples with too few cells from count matrix, if necessary
-      # Note: `counts` is found via `factors`, so samples not of interest are already removed
-      if (length(missing_samples) > 0) {
-        count_row <- counts[k, -missing_samples] # does the same need to be done for design?
-      } else {                                      # what if a sample has enough cells in one meta/sample
-        count_row <- counts[k, ]                 # pair for one marker but not the other?
-      }
+      # Note: `counts` is found via `sample_df`, so samples not of interest are already removed
+      # if (length(missing_samples) > 0) {
+      #   count_row <- counts[k, -missing_samples] # does the same need to be done for design?
+      # } else {                                      # what if a sample has enough cells in one meta/sample
+      #   count_row <- counts[k, ]                 # pair for one marker but not the other?
+      # }
 
       # Make data frame to store info about this metacluster.
       df <- data.frame(t(expr_matrix),
                        t(trans_matrix),
-                       # counts = count_row, # unnecessary?
+                       # counts = count_row,
                        sample = sample_df[rownames(sample_medians), 1],
                        cell_type = meta_names[k],
-                       Group = factors$group, #######
+                       # Group = sample_df$group,
                        check.names = FALSE)
 
       # Append to greater data frame.
@@ -829,7 +840,7 @@ calculateSE <- function(x) {
 #'
 #' @param input A matrix, data frame, or path to a .csv file, where each row is
 #' a sample and each column is a metacluster.
-#' @param factors A factor data frame as generated by [makeFactorDF()].
+#' @param sample_df A factor data frame as generated by [prepareSampleInfo()].
 #' @param grps_of_interest A list defining which groups to plot.
 #' @param upper_lim The y-axis upper limit.
 #'
@@ -837,7 +848,9 @@ calculateSE <- function(x) {
 #' The names and order of the groups defined in \code{grps_of_interest} should
 #' appear in the same way you would like them to appear in the bar plot. Make
 #' sure that the group names you supply are the same as they appear in the
-#' \code{factors} object.
+#' \code{sample_df} object.
+#'
+#' !!! should be able to better use tidyr and dplyr here
 #'
 #' @return A bar plot drawn with \code{\link[ggplot2]{ggplot2}}.
 #'
@@ -849,19 +862,23 @@ calculateSE <- function(x) {
 #'                          "Female Ctrl" = c("female_Ctrl_X"),
 #'                          "Male MIBC" = c("male_MIBC_No.NAC", "male_MIBC_NAC"),
 #'                          "Female MIBC" = c("female_MIBC_No.NAC", "female_MIBC_NAC"))
-plotGroupMFIBars <- function(input, factors, grps_of_interest, upper_lim = NULL) {
+plotGroupMFIBars <- function(input, sample_df, grps_of_interest, upper_lim = NULL) {
   Group <- value <- name <- NULL
 
+  # Get input as data frame
   if (is.character(input)) {
-    orig_df <- utils::read.csv(csv_file, check.names = FALSE)
+    orig_df <- utils::read.csv(input, check.names = FALSE)
   } else if (is.matrix(input)) {
     orig_df <- as.data.frame(input, check.names = FALSE)
   }
 
-  orig_df <- cbind(orig_df, factor_group = factors$group)
-
+  # Add group column to input
+  orig_df <- cbind(orig_df, factor_group = sample_df$group) # !!! this column is later removed,
+                                                          # binding it shouldn't be necessary
+  # Remove sample ID column
   df <- orig_df[,-1]
 
+  # Convert entries to numeric
   for (col in colnames(df)) {
     if (col != "factor_group") {
       df[, col] <- as.numeric(df[, col])
@@ -872,6 +889,7 @@ plotGroupMFIBars <- function(input, factors, grps_of_interest, upper_lim = NULL)
   df <- df %>%
     dplyr::mutate(factor_group <- as.factor(factor_group))
 
+  # Create new column defining which group of interest each sample belongs to
   df$Group <- factor(seq(1:nrow(df)), levels = names(grps_of_interest))
   for (i in 1:nrow(df)) {
     group <- as.character(df$factor_group[i])
@@ -882,27 +900,35 @@ plotGroupMFIBars <- function(input, factors, grps_of_interest, upper_lim = NULL)
     }
   }
 
+  # Remove group column not of interest
   df <- df[, -(which(colnames(df) == "factor_group"))]
+
+  # Data frame to plot a data point for each sample
   point_df <- tidyr::pivot_longer(df, cols = -Group)
 
+  # Calculate medians for each group
   median_df <- df %>%
     dplyr::group_by(Group) %>%
     dplyr::summarise_if(is.numeric, stats::median, na.rm = TRUE) %>%
     dplyr::ungroup()
 
+  # Calculate standard errors for each group
   se_df <- df %>%
     dplyr::group_by(Group) %>%
     dplyr::summarise_if(is.numeric, calculateSE) %>%
     dplyr::ungroup()
 
+  # Pivot data to long format
   med_dat_long <- tidyr::pivot_longer(median_df, cols = -Group)
   se_dat_long <- tidyr::pivot_longer(se_df, cols = -Group)
 
+  # If `upper_lim` is null, approximate appropriate value
   if (is.null(upper_lim)) {
     upper_lim <- max(med_dat_long$value)
     upper_lim <- upper_lim + (upper_lim/2)
   }
 
+  # Draw plot
   ggplot2::ggplot(med_dat_long, ggplot2::aes(x = name, y = value, fill = Group)) +
     ggplot2::geom_bar(stat = "identity", position = "dodge", color = "black") +
     ggplot2::geom_point(data = point_df,
@@ -921,4 +947,176 @@ plotGroupMFIBars <- function(input, factors, grps_of_interest, upper_lim = NULL)
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, hjust = 1, size = 8),
                    aspect.ratio = 0.6) +
     ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, upper_lim))
+}
+
+#' getDensity
+#'
+#' Helper for plotting by density
+#'
+#' @param x x coordinates
+#' @param y y coordinates
+#' @param ... Additional parameters to pass to [MASS::kde2d()].
+#'
+#' @keywords internal
+#'
+#' @return A matrix of the estimated density.
+#'
+#' @export
+getDensity <- function(x, y, ...) {
+  dens <- MASS::kde2d(x, y, ...)
+  ix <- findInterval(x, dens$x)
+  iy <- findInterval(y, dens$y)
+  ii <- cbind(ix, iy)
+  return(dens$z[ii])
+}
+
+#' plotGroupUMAPs
+#'
+#' Plot colored UMAPs for each group of interest.
+#'
+#' @param fsom A FlowSOM object.
+#' @param sample_df A factor data frame as generated by [prepareSampleInfo()].
+#' @param grps_of_interest A list specifying the groups of interest, in terms
+#' of file names.
+#' @param umap A UMAP plot as generated by [plotUMAP()]. If \code{NULL}
+#' (default), a new UMAP will be generated for the plots.
+#' @param color_by A string specifying how you would like the UMAP plot to be colored.
+#' Your options are "density" or a marker or channel of interest. Default is "density".
+#' @param num_cells The number of cells you would like to be sampled for each
+#' group. Default is 5000.
+#' @param seed Optional, a seed for reproducibility.
+#'
+#' @details
+#' If any group has fewer than \code{num_cells}, then the number of cells to use
+#' for plotting will be taken from the group with the lowest cell count.
+#'
+#' !!! add check for total cells being greater than number used to make fsom
+#' when umap = NULL
+#'
+#' @return Plots faceted by group drawn with \code{\link[ggplot2]{ggplot2}}.
+#'
+#' @export
+plotGroupUMAPs <- function(fsom, sample_df, grps_of_interest, umap = NULL,
+                           color_by = "density", num_cells = 5000, seed = NULL) {
+  # Set seed if desired
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+
+  # If no UMAP given
+  if (is.null(umap)) {
+    fsom_inds <- c()
+    group_vec <- rep(1, length(grps_of_interest) * num_cells)
+    for (group in names(grps_of_interest)) {
+      # Get sample indices belonging to current group
+      # Note that `rownames(sample_df)` corresponds to the sample's number in `fsom$data[, "File"]`
+      grp_samples <- rownames(sample_df)[which(sample_df$group %in% grps_of_interest[[group]])]
+      # Get cell indices of `fsom` belonging to current group
+      inds <- which(fsom$data[, "File"] %in% grp_samples)
+      # Sample `num_cells` for current group of interest
+      samp <- sample(inds, num_cells)
+      fsom_inds <- c(fsom_inds, samp)
+
+      # Assign group name for each cell
+      upper_bound <- which(names(grps_of_interest) == group) * num_cells
+      grp_inds <- seq((upper_bound - num_cells + 1), upper_bound)
+      group_vec[grp_inds] <- group
+    }
+
+    # Subset data and generate parent UMAP
+    fsom <- FlowSOM::FlowSOMSubset(fsom, fsom_inds)
+    umap <- plotUMAP(fsom, length(fsom_inds))
+    umap_df <- umap$data
+
+  } else { # if a parent UMAP was given
+    umap_df <- umap$data
+
+    # Get group name for each cell
+    group_vec <- fsom$data[umap_df$Indices, "File"]
+    for (group in names(grps_of_interest)) {
+      grp_samples <- rownames(sample_df)[which(sample_df$group %in% grps_of_interest[[group]])] # samples belonging to current group
+      inds <- which(group_vec %in% grp_samples) # cell indices of `dat` belonging to current group
+      group_vec[inds] <- group
+
+    }
+
+    # Get group counts
+    tab <- table(factor(group_vec, levels = names(grps_of_interest)))
+    grp_inds <- c()
+
+    # If there is a group with no cells, stop
+    if (any(tab == 0)) {
+      stop(paste("There are no cells in group", names(tab)[which(tab == 0)],
+                 "in the given UMAP. Generate a new one by either setting `umap = NULL`,",
+                 "or using the function `plotUMAP()`."))
+
+      # If all groups have more cells than `num_cells`
+    } else if (all(tab > num_cells)) {
+      subtra <- num_cells
+      grp_inds <- 1:length(grps_of_interest)
+
+      # If groups have disproportionate cell counts
+    } else if (any(tab > min(tab))) {
+      subtra <- min(tab)
+      grp_inds <- which(tab > min(tab))
+
+      print(paste("There are some groups with less than", num_cells,
+                  "cells. Plotting UMAPs with", subtra, "cells each instead."))
+    }
+    # Resample each group's cells either according to the `num_cells` argument,
+    # or the group with the lowest cell count
+    for (grp_ind in grp_inds) {
+      diff <- tab[grp_ind] - subtra
+      old_inds <- which(group_vec == names(tab[grp_ind]))
+      samp <- sample(old_inds, diff) # indices of points to remove
+
+      # Remove sampled cells
+      umap_df <- umap_df[-samp, ]
+      group_vec <- group_vec[-samp]
+    }
+  }
+
+  # Initialize parameters
+  X1 <- X2 <- values <- NULL
+
+  # Get point values and legend name
+  if (color_by == "density") {
+    # Calculate density values
+    Density <- rep(1, length(group_vec))
+    for (group in names(grps_of_interest)) {
+      inds <- which(group_vec == group)
+      Density[inds] <- getDensity(umap_df[inds, 1], umap_df[inds, 2], n = 100)
+    }
+
+    # Append density column to data frame
+    umap_df <- data.frame(umap_df, group = group_vec, values = Density/max(Density))
+    legend_name <- "Density"
+
+  } else {
+    if (color_by %in% colnames(fsom$data)) {
+      channel <- color_by
+    } else if (color_by %in% FlowSOM::GetMarkers(fsom, colnames(fsom$data))) {
+      channel <- FlowSOM::GetChannels(fsom, color_by)
+    } else {
+      stop("The value given to parameter `color_by` is invalid.")
+    }
+
+    # Get expression data and append column to data frame
+    marker_vec <- fsom$data[umap_df$Indices, channel]
+    umap_df <- data.frame(umap_df, group = group_vec, values = marker_vec)
+    legend_name <- channel
+
+  }
+
+  # Draw plot
+  p <- ggplot2::ggplot(umap_df) +
+    scattermore::geom_scattermore(ggplot2::aes(x = X1, y = X2, color = values),
+                                  pointsize = 2) +
+    ggplot2::facet_wrap(~group) +
+    viridis::scale_color_viridis(option = "H", name = legend_name) +
+    ggplot2::theme_void() +
+    ggplot2::theme(aspect.ratio = 1, strip.text = ggplot2::element_text(size = 12))
+  print(p)
+
+  return(p)
 }
