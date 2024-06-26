@@ -397,50 +397,6 @@ plotUMAP <- function(fsom, num_cells = 5000, seed = NULL) {
   return(p)
 }
 
-#' plotUMAPOld
-#'
-#' Plot a UMAP dimension reduction of FlowSOM data, colored by metacluster.
-#'
-#' @param fsom The FlowSOM object whose data you would like to plot.
-#' @param num_cells The total number of cells you would like to use for the
-#' dimension reduction.
-#' @param point_size Optional parameter to adjust the size of the plotted points.
-#' Default is 1.5.
-#' @param seed Optional parameter to set a seed for reproducibility.
-#'
-#' @return A UMAP plot made with ggplot2.
-#' @export
-#'
-#' @examples
-#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 10,
-#'                          seed = 42,
-#'                          xdim = 6,
-#'                          ydim = 6)
-#'
-#' plotUMAPOld(fsom, num_cells = 2500)
-#'
-#' plotUMAPOld(fsom, num_cells = 2500, point_size = 3, seed = 42)
-plotUMAPOld = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-
-  umap <- FlowSOM::PlotDimRed(fsom = fsom,
-                             colorBy = "metaclusters",
-                             colors = viridisLite::viridis(length(levels(fsom$metaclustering)), option = "turbo"),
-                             cTotal = num_cells,
-                             dimred = umap::umap,
-                             extractLayout = function(dimred) {
-                               dimred$layout
-                             })
-
-  umap$layers[[1]]$geom_params$pointsize <- point_size
-  umap$layers[[2]]$geom_params$max.overlaps <- 50
-
-  return(umap)
-}
-
 #' plotTSNE
 #'
 #' Plot a t-SNE dimension reduction of FlowSOM data, colored by metacluster.
