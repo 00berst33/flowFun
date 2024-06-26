@@ -103,15 +103,15 @@ getTableFromFCS <- function(input) {
       ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
       
       # Add data table to list
-      dt <- tidytable::data.table(flowCore::exprs(ff))
+      dt <- tidytable::data.table(flowCore::exprs(ff)) # consider adding cell ID column here
       prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)
     }
-    
     # Concatenate all data tables into one, with column for sample ID
     data.table::setattr(prepr_tables, 'names', files)
-    prepr_table <- data.table::rbindlist(prepr_tables, use.names = FALSE, fill = TRUE, idcol = TRUE)
+    prepr_table <- tidytable::bind_rows(prepr_tables, .id = TRUE) %>% 
+      tidytable::select(where(~ !any(is.na(.))))
   }
-  
+
   return(prepr_table)
 }
 

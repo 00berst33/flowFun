@@ -51,9 +51,9 @@ filterFCS <- function(ff, clusters = NULL, metaclusters = NULL) {
 #'
 #' @export
 createFilteredAggregate <- function(fsom, num_cells, clusters = NULL,
-                                   metaclusters = NULL,
-                                   agg_name = "filtered_aggregate.fcs",
-                                   dir_save = NULL) {
+                                    metaclusters = NULL,
+                                    agg_name = "filtered_aggregate.fcs",
+                                    dir_save = NULL) {
 
   print(paste0("Creating aggregate with files from directory ", dir_clustr(), "..."))
 
