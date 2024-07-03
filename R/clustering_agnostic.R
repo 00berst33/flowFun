@@ -1,3 +1,5 @@
+.datatable.aware <- TRUE
+
 #' flowSOMWrapper
 #'
 #' @param table ...
@@ -12,6 +14,10 @@
 #' @export
 flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL, 
                            fsom_file = "flowsom_object.rds", ...) {
+  if (is.numeric(markers_to_cluster)) {
+    markers_to_cluster <- colnames(table)[markers_to_cluster] #edit?
+  }
+  
   # Set input data.table to appropriate format
   prepr_mat <- as.matrix(table, rownames = TRUE)
   
@@ -23,7 +29,7 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
   
   # Get metacluster and cluster labels
   meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  clust_labels <- FlowSOM::GetClusters(fsom)
+  clust_labels <- factor(FlowSOM::GetClusters(fsom))
   
   # Append labels as columns to the data.table
   table <- table %>%
@@ -52,8 +58,16 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
 #'
 #' @export
 filterData <- function(data, clusters = NULL, metaclusters = NULL) {
+  Meta_original <- Cluster <- NULL
+  
+  if (is.null(clusters)) {
+    clusters <- levels(data$Cluster)
+  }
+  if (is.null(metaclusters)) {
+    metaclusters <- levels(data$Meta_original)
+  }
+  
   filtered <- data %>%
-    tidytable::select(.id, Cluster, Meta_original) %>%
     tidytable::filter(Meta_original %in% metaclusters & Cluster %in% clusters)
   
   return(filtered)
@@ -91,9 +105,10 @@ filterData <- function(data, clusters = NULL, metaclusters = NULL) {
 #'
 #' @export
 createFilteredAggregateTable <- function(data, num_cells, clusters = NULL,
-                                    metaclusters = NULL,
-                                    agg_name = "filtered_aggregate.fcs",
-                                    dir_save = NULL) {
+                                         metaclusters = NULL,
+                                         agg_name = "filtered_aggregate.fcs",
+                                         dir_save = NULL) {
+  .id <- cell_id <- NULL
   
   # Filter cells not of interest out of data
   cells_of_interest <- filterData(data, clusters = clusters, metaclusters = metaclusters)
@@ -111,31 +126,43 @@ createFilteredAggregateTable <- function(data, num_cells, clusters = NULL,
   for (file in files) {
     # Get all cells belonging to current sample
     sample_cells <- cells_of_interest %>%
-      tidytable::filter(.id == file)
+      tidytable::filter(.id == file) %>%
+      tidytable::pull(cell_id)
     
     # Sample cells and subset table
-    inds <- sample(seq(1, nrow(sample_cells)), per_sample) # sample cell ID rather than index
+    inds <- sample(sample_cells, per_sample)
     all_inds <- c(all_inds, inds)
   }
   
-  agg <- cells_of_interest[all_inds, ] # save as .fcs?
+  # Select sampled rows from data table
+  agg <- cells_of_interest %>%
+    tidytable::filter(cell_id %in% all_inds)
   
-  # write clusters to original .fcs files?
+  # write clusters to original .fcs files? `agg_name` not used
 
   return(agg)
 }
 
 
-saveClustersFCS <- function(data, fsom, dir_save) {
-  files <- data %>%
-    tidytable::pull(.id) %>%
-    unique()
-  
-  FlowSOM::SaveClustersToFCS(fsom, 
-                             originalFiles = files, 
-                             outputDir = dir_save)
-  
-  full_table <- getTableFromFCS(dir_save) # metacluster and cluster labels?
-  
-  return(full_table)
-}
+# saveClustersFCS <- function(data, fsom, dir_save) {
+#   files <- data %>%
+#     tidytable::pull(.id) %>%
+#     unique()
+#   
+#   FlowSOM::SaveClustersToFCS(fsom, 
+#                              originalFiles = files, 
+#                              outputDir = dir_save)
+#   
+#   full_table <- getTableFromFCS(dir_save) # metacluster and cluster labels?
+#   
+#   return(full_table)
+# }
+
+# doAggregatePCA <- function(data, markers_to_cluster) {
+#   expr_data <- data %>%
+#     tidytable::select(markers_to_cluster)
+#   
+#   pca <- stats::prcomp(expr_data)
+#   return(pca)
+# }
+

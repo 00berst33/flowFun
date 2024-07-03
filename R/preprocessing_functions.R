@@ -96,20 +96,30 @@ getTableFromFCS <- function(input) {
     # Initialize final data table
     prepr_tables <- lapply(1:length(files), function(i) {tidytable::data.table()})
     
+    # First cell ID
+    current_id <- 1
+    
+    # Iterate over all files
     for (i in 1:length(files)) {
       file <- files[[i]]
       
       # Read in file
       ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
       
+      # Make cell ID column
+      vec <- seq(current_id, current_id + nrow(flowCore::exprs(ff)) - 1)
+      
       # Add data table to list
-      dt <- tidytable::data.table(flowCore::exprs(ff)) # consider adding cell ID column here
+      dt <- tidytable::data.table(cell_id = vec, flowCore::exprs(ff))
       prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)
+      
+      # Set first cell ID for next file
+      current_id <- nrow(flowCore::exprs(ff)) + 1
     }
     # Concatenate all data tables into one, with column for sample ID
     data.table::setattr(prepr_tables, 'names', files)
     prepr_table <- tidytable::bind_rows(prepr_tables, .id = TRUE) %>% 
-      tidytable::select(where(~ !any(is.na(.))))
+      tidytable::select(dplyr::where(~ !any(is.na(.)))) # remove columns that don't appear in all tables
   }
 
   return(prepr_table)
