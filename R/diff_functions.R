@@ -494,7 +494,7 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
   # done here.
   for (i in 1:ncol(contrasts)) {
     glm_lrt <- edgeR::glmLRT(glm_fit, contrast = contrasts[, i])
-    top <- edgeR::topTags(glm_lrt, adjust.method = "BH", sort.by = "none")
+    top <- edgeR::topTags(glm_lrt, adjust.method = "BH", sort.by = "PValue")
 
     utils::write.csv(top, file = file.path(dir_write,
                                            paste0(colnames(contrasts)[i],
@@ -1088,6 +1088,7 @@ plotGroupUMAPs <- function(fsom, sample_df, grps_of_interest, umap = NULL,
     # Subset data and generate parent UMAP
     fsom <- FlowSOM::FlowSOMSubset(fsom, fsom_inds)
     umap <- plotUMAP(fsom, length(fsom_inds))
+
     umap_df <- umap$data
 
   } else { # if a parent UMAP was given

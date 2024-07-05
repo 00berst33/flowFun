@@ -361,7 +361,7 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
 #' plotUMAP(fsom)
 #'
 #' plotUMAP(fsom)
-plotUMAP <- function(fsom, num_cells = 5000, seed = NULL) {
+plotUMAP <- function(fsom, num_cells = 5000, labels = NULL, colors = NULL, seed = NULL) {
   X1 <- X2 <- Metacluster <- NULL
 
   if (!is.null(seed)) {
@@ -381,8 +381,9 @@ plotUMAP <- function(fsom, num_cells = 5000, seed = NULL) {
   umap <- umap::umap(dat)
 
   meta_vec <- FlowSOM::GetMetaclusters(fsom)[inds]
-
-  # add parameter for choosing order of legend
+  if (!is.null(labels)) {
+    meta_vec <- factor(meta_vec, levels = labels)
+  }
 
   umap_df <- data.frame(umap$layout, Metacluster = meta_vec, Indices = inds)
 
@@ -392,6 +393,14 @@ plotUMAP <- function(fsom, num_cells = 5000, seed = NULL) {
                                                color = Metacluster),
                                   pointsize = 2) +
     ggplot2::theme_void()
+
+  if (!is.null(colors)) {
+    colors <- colors
+    names(colors) <- levels(fsom$metaclustering)
+
+    p <- p + ggplot2::scale_fill_manual(aesthetics = "color", values = colors)
+  }
+
   print(p)
 
   return(p)
