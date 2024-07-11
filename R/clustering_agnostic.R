@@ -45,6 +45,71 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
   return(table)
 }
 
+#' editTableMetaclusters
+#' 
+#' Merge or relabel metaclusters, and reassign clusters.
+#'
+#' @param table A data table that has been clustered by [flowSOMWrapper()].
+#' @param new_labels Optional. A named vector, where names are the original metacluster names,
+#' and values are the new labels.
+#' @param cluster_assignments Optional. A named vector, where names are the cluster numbers,
+#' and values are metacluster names.
+#' @param level_order A character vector giving the desired order of the metacluster labels.
+#'
+#' @return A data.table with an added column \code{Meta_edited}.
+#' 
+#' @export
+editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments = NULL, level_order = NULL) {
+  # Check if a merging has already been done, to determine whether to edit or create column
+  if ("Meta_edited" %in% colnames(table)) {
+    col <- "Meta_edited"
+  } else {
+    col <- "Meta_original"
+  }
+  
+  # If new metaclusters labels are given
+  if (!is.null(new_labels) & !is.null(names(new_labels))) {
+    temp <- levels(table[[col]])
+    new <- temp # values are new labels
+    names(new) <- temp # names are original labels
+    
+    # Assign new labels for each given metacluster
+    for (original_label in names(new_labels)) { 
+      new[temp == original_label] <- new_labels[original_label]
+    }
+    
+    # If any metaclusters were merged, or if this is the first time this function has been called on this table
+    if (any(duplicated(new)) | col == "Meta_original") {
+      # Create or edit column `Meta_edited` to contain new labels
+      table <- table %>%
+        tidytable::mutate(Meta_edited = new[as.character(table[[col]])])
+      table$Meta_edited <- factor(table$Meta_edited, levels = unique(new))
+    } else { # If metaclusters were only renamed, no merging
+      levels(table$Meta_edited) <- new
+    }
+  }
+  # If new metacluster assignments for a set of clusters is given
+  if (!is.null(cluster_assignments) & !is.null(names(cluster_assignments))) {
+    temp <- table[[col]]
+    new <- as.character(temp) # values are metacluster assignments
+    names(new) <- as.character(table$Cluster) # names are cluster assignments
+  
+    # Assign new metacluster for each given cluster
+    for (original_assignment in names(cluster_assignments)) {
+      new[which(names(new) == original_assignment)] <- cluster_assignments[original_assignment]
+    }
+    # Create or edit column `Meta_edited` to contain new labels
+    table <- table %>%
+      tidytable::mutate(Meta_edited = factor(x = new))
+  }
+  # If a level order for new metacluster labels is given
+  if(!is.null(level_order) & "Meta_edited" %in% colnames(table)) {
+    table$Meta_edited <- factor(table$Meta_edited, levels = level_order)
+  }
+  
+  return(table)
+}
+
 #' filterData
 #'
 #' @param data ...
@@ -205,6 +270,7 @@ createFilteredAggregateTable <- function(data, num_cells, clusters = NULL,
 clusterTableWithPCA <- function(aggregate, pca_obj, num_components,
                                 num_clus, xdim = 10, ydim = 10, seed = NULL,
                                 convert_to_channels = TRUE) {
+  .id <- cell_id <- NULL
 
   # Select specified principal components
   selected_pca_cols <- pca_obj$x[, 1:num_components]
@@ -229,7 +295,7 @@ clusterTableWithPCA <- function(aggregate, pca_obj, num_components,
     fsom_subset <- revertPCAFlowSOM(fsom_subset, aggregate, pca_obj, num_components)
   }
 
-  saveRDS(fsom_subset, paste0(dir_rds_unedited(), fsom_name, ".rds")) # make optional
+  saveRDS(fsom_subset, paste0(dir_rds_unedited(), "new_fsom.rds")) # make optional
 
   return(fsom_subset) # return data table instead
 }
