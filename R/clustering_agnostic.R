@@ -3,7 +3,7 @@
 #' flowSOMWrapper
 #'
 #' @param table ...
-#' @param markers_to_cluster ...
+#' @param cols_to_cluster ...
 #' @param num_clus ...
 #' @param seed ...
 #' @param fsom_file ...
@@ -12,10 +12,10 @@
 #' @return A data.table annotated with cluster and metacluster assignments.
 #'
 #' @export
-flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
+flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
                            fsom_file = "flowsom_object.rds", ...) {
-  if (is.numeric(markers_to_cluster)) {
-    markers_to_cluster <- colnames(table)[markers_to_cluster] #edit?
+  if (is.numeric(cols_to_cluster)) {
+    cols_to_cluster <- colnames(table)[cols_to_cluster] #edit?
   }
 
   # Set input data.table to appropriate format
@@ -23,7 +23,7 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
 
   # Run clustering algorithm
   fsom <- FlowSOM::FlowSOM(prepr_mat,
-                           colsToUse = markers_to_cluster,
+                           colsToUse = cols_to_cluster,
                            nClus = num_clus,
                            seed = seed)
 
@@ -37,6 +37,8 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
                       Meta_original = meta_labels,
                       .keep = "all")
 
+  attr(table, "clustered") <- cols_to_cluster
+
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
     saveRDS(fsom, file.path("RDS", "Unedited", fsom_file))
@@ -46,7 +48,7 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
 }
 
 #' editTableMetaclusters
-#' 
+#'
 #' Merge or relabel metaclusters, and reassign clusters.
 #'
 #' @param table A data table that has been clustered by [flowSOMWrapper()].
@@ -57,7 +59,7 @@ flowSOMWrapper <- function(table, markers_to_cluster, num_clus, seed = NULL,
 #' @param level_order A character vector giving the desired order of the metacluster labels.
 #'
 #' @return A data.table with an added column \code{Meta_edited}.
-#' 
+#'
 #' @export
 editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments = NULL, level_order = NULL) {
   # Check if a merging has already been done, to determine whether to edit or create column
@@ -66,18 +68,18 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
   } else {
     col <- "Meta_original"
   }
-  
+
   # If new metaclusters labels are given
   if (!is.null(new_labels) & !is.null(names(new_labels))) {
     temp <- levels(table[[col]])
     new <- temp # values are new labels
     names(new) <- temp # names are original labels
-    
+
     # Assign new labels for each given metacluster
-    for (original_label in names(new_labels)) { 
+    for (original_label in names(new_labels)) {
       new[temp == original_label] <- new_labels[original_label]
     }
-    
+
     # If any metaclusters were merged, or if this is the first time this function has been called on this table
     if (any(duplicated(new)) | col == "Meta_original") {
       # Create or edit column `Meta_edited` to contain new labels
@@ -93,7 +95,7 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
     temp <- table[[col]]
     new <- as.character(temp) # values are metacluster assignments
     names(new) <- as.character(table$Cluster) # names are cluster assignments
-  
+
     # Assign new metacluster for each given cluster
     for (original_assignment in names(cluster_assignments)) {
       new[which(names(new) == original_assignment)] <- cluster_assignments[original_assignment]
@@ -106,7 +108,7 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
   if(!is.null(level_order) & "Meta_edited" %in% colnames(table)) {
     table$Meta_edited <- factor(table$Meta_edited, levels = level_order)
   }
-  
+
   return(table)
 }
 
@@ -223,13 +225,21 @@ createFilteredAggregateTable <- function(data, num_cells, clusters = NULL,
 #   return(full_table)
 # }
 
-# doAggregatePCA <- function(data, markers_to_cluster) {
-#   expr_data <- data %>%
-#     tidytable::select(markers_to_cluster)
-#
-#   pca <- stats::prcomp(expr_data)
-#   return(pca)
-# }
+#' doPCA
+#'
+#' @param input A data frame.
+#' @param cols_to_use Columns of the input to use for PCA.
+#'
+#' @return A prcomp object.
+#'
+#' @export
+doPCA <- function(input, cols_to_use) {
+  expr_data <- input %>%
+    tidytable::select(cols_to_use)
+
+  pca <- stats::prcomp(expr_data)
+  return(pca)
+}
 
 #' clusterTableWithPCA
 #'
@@ -298,4 +308,112 @@ clusterTableWithPCA <- function(aggregate, pca_obj, num_components,
   saveRDS(fsom_subset, paste0(dir_rds_unedited(), "new_fsom.rds")) # make optional
 
   return(fsom_subset) # return data table instead
+}
+
+###
+#' Title
+#'
+#' *parameter tweaking
+#'
+#' @param input ...
+#' @param num_cells ...
+#' @param seed ...
+#'
+#' @return ...
+#'
+#' @export
+plotUMAPNew <- function(input, num_cells = 5000, seed = NULL) {
+  X1 <- X2 <- Metacluster <- NULL
+
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+
+  if (methods::is(input, "FlowSOM")) {
+    cols_used <- input$map$colsUsed
+    meta_vec <- FlowSOM::GetMetaclusters(input)
+
+    input <- input$data[, cols_used]
+  } else if (methods::is(input, "data.table")) {
+    cols_used <- attributes(input)$clustered
+
+    if ("Meta_edited" %in% colnames(input)) {
+      meta_vec <- input$Meta_edited
+    } else {
+      meta_vec <- input$Meta_original
+    }
+
+    input <- input %>%
+      tidytable::select(cols_used)
+  }
+
+  nrows <- nrow(input)
+
+  if (num_cells < nrows) {
+    inds <- sample(nrows, num_cells)
+  } else {
+    inds <- 1:nrows
+  }
+
+  data <- input[inds, ]
+  umap <- umap::umap(data)
+  meta_vec <- meta_vec[inds]
+
+  # add parameter for choosing order of legend
+
+  umap_df <- data.frame(umap$layout, Metacluster = meta_vec, Indices = inds)
+
+  # Draw plot
+  p <- ggplot2::ggplot(umap_df) +
+    scattermore::geom_scattermore(ggplot2::aes(x = X1, y = X2,
+                                               color = Metacluster),
+                                  pointsize = 2) +
+    ggplot2::theme_void() +
+    ggplot2::theme(aspect.ratio = 1)
+  print(p)
+
+  return(p)
+}
+
+###
+#' Title
+#'
+#' @param input
+#' @param cols_to_use
+#' @param ...
+#'
+#' @return
+#' @export
+plotMetaclusterMFIsNew = function(input, cols_to_use = NULL, ...) {
+  # if (methods::is(input, "FlowSOM")) {
+  #   cols_to_use <- input$map$colsUsed
+  # } else
+  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+    cols_to_use <- attributes(input)$clustered
+  }
+
+  # Get metacluster MFIs for each marker/channel of interest
+  mfi_mat <- input %>%
+    tidytable::summarise(tidytable::across(.cols = cols_to_use, # column
+                                           .fns = stats::median,
+                                           .drop = "keep"),
+                         .by = Meta_original)
+  mfi_mat <- as.matrix(mfi_mat, rownames = "Meta_original")
+
+  # Set default heatmap options
+  default_options <- list(border = TRUE,
+                          show_row_names = TRUE,
+                          heatmap_legend_param = list(
+                            title = "Expression",
+                            title_gp = grid::gpar(fontsize = 9),
+                            labels_gp = grid::gpar(fontsize = 8)))
+
+  # Add any additional options chosen by user, and overwrite defaults if needed
+  additional_options <- list(...)
+  heatmap_options <- utils::modifyList(default_options, additional_options)
+
+  # Generate heatmap
+  mfi_heatmap <- do.call(ComplexHeatmap::Heatmap, c(list(matrix = mfi_mat), heatmap_options))
+
+  return(mfi_heatmap)
 }
