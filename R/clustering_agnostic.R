@@ -34,7 +34,7 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
   # Append labels as columns to the data.table
   table <- table %>%
     tidytable::mutate(Cluster = clust_labels,
-                      Meta_original = meta_labels,
+                      Metacluster = meta_labels,
                       .keep = "all")
 
   attr(table, "clustered") <- cols_to_cluster
@@ -63,15 +63,16 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 #' @export
 editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments = NULL, level_order = NULL) {
   # Check if a merging has already been done, to determine whether to edit or create column
-  if ("Meta_edited" %in% colnames(table)) {
-    col <- "Meta_edited"
-  } else {
-    col <- "Meta_original"
+  Metacluster <- NULL
+
+  if (!("Meta_original" %in% colnames(table))) {
+    table <- table %>%
+      tidytable::mutate(Meta_original = Metacluster)
   }
 
   # If new metaclusters labels are given
   if (!is.null(new_labels) & !is.null(names(new_labels))) {
-    temp <- levels(table[[col]])
+    temp <- levels(table$Metacluster)
     new <- temp # values are new labels
     names(new) <- temp # names are original labels
 
@@ -80,19 +81,19 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
       new[temp == original_label] <- new_labels[original_label]
     }
 
-    # If any metaclusters were merged, or if this is the first time this function has been called on this table
-    if (any(duplicated(new)) | col == "Meta_original") {
-      # Create or edit column `Meta_edited` to contain new labels
+    # If any metaclusters were merged
+    if (any(duplicated(new))) {
+      # Edit column `Metacluster` to contain new labels
       table <- table %>%
-        tidytable::mutate(Meta_edited = new[as.character(table[[col]])])
-      table$Meta_edited <- factor(table$Meta_edited, levels = unique(new))
+        tidytable::mutate(Metacluster = new[as.character(table$Metacluster)])
+      table$Metacluster <- factor(table$Metacluster, levels = unique(new))
     } else { # If metaclusters were only renamed, no merging
-      levels(table$Meta_edited) <- new
+      levels(table$Metacluster) <- new
     }
   }
   # If new metacluster assignments for a set of clusters is given
   if (!is.null(cluster_assignments) & !is.null(names(cluster_assignments))) {
-    temp <- table[[col]]
+    temp <- table$Metacluster
     new <- as.character(temp) # values are metacluster assignments
     names(new) <- as.character(table$Cluster) # names are cluster assignments
 
@@ -100,13 +101,13 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
     for (original_assignment in names(cluster_assignments)) {
       new[which(names(new) == original_assignment)] <- cluster_assignments[original_assignment]
     }
-    # Create or edit column `Meta_edited` to contain new labels
+    # Edit column `Metacluster` to contain new labels
     table <- table %>%
-      tidytable::mutate(Meta_edited = factor(x = new))
+      tidytable::mutate(Metacluster = factor(x = new))
   }
-  # If a level order for new metacluster labels is given
-  if(!is.null(level_order) & "Meta_edited" %in% colnames(table)) {
-    table$Meta_edited <- factor(table$Meta_edited, levels = level_order)
+  # If a level order for new metacluster labels is given, and all given labels exist
+  if(!is.null(level_order) & all(level_order %in% levels(table$Metacluster))) {
+    table$Metacluster <- factor(table$Metacluster, levels = level_order)
   }
 
   return(table)
@@ -125,17 +126,17 @@ editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments 
 #'
 #' @export
 filterData <- function(data, clusters = NULL, metaclusters = NULL) {
-  Meta_original <- Cluster <- NULL
+  Metacluster <- Cluster <- NULL
 
   if (is.null(clusters)) {
     clusters <- levels(data$Cluster)
   }
   if (is.null(metaclusters)) {
-    metaclusters <- levels(data$Meta_original)
+    metaclusters <- levels(data$Metacluster)
   }
 
   filtered <- data %>%
-    tidytable::filter(Meta_original %in% metaclusters & Cluster %in% clusters)
+    tidytable::filter(Metacluster %in% metaclusters & Cluster %in% clusters)
 
   return(filtered)
 }
@@ -336,12 +337,7 @@ plotUMAPNew <- function(input, num_cells = 5000, seed = NULL) {
     input <- input$data[, cols_used]
   } else if (methods::is(input, "data.table")) {
     cols_used <- attributes(input)$clustered
-
-    if ("Meta_edited" %in% colnames(input)) {
-      meta_vec <- input$Meta_edited
-    } else {
-      meta_vec <- input$Meta_original
-    }
+    meta_vec <- input$Metacluster
 
     input <- input %>%
       tidytable::select(cols_used)
@@ -378,16 +374,16 @@ plotUMAPNew <- function(input, num_cells = 5000, seed = NULL) {
 ###
 #' Title
 #'
-#' @param input
-#' @param cols_to_use
-#' @param ...
+#' @param input ...
+#' @param cols_to_use ...
+#' @param ... Other
 #'
-#' @return
+#' @return ...
+#'
 #' @export
 plotMetaclusterMFIsNew = function(input, cols_to_use = NULL, ...) {
-  # if (methods::is(input, "FlowSOM")) {
-  #   cols_to_use <- input$map$colsUsed
-  # } else
+  Metacluster <- NULL
+
   if (methods::is(input, "data.table") & is.null(cols_to_use)) {
     cols_to_use <- attributes(input)$clustered
   }
@@ -397,8 +393,8 @@ plotMetaclusterMFIsNew = function(input, cols_to_use = NULL, ...) {
     tidytable::summarise(tidytable::across(.cols = cols_to_use, # column
                                            .fns = stats::median,
                                            .drop = "keep"),
-                         .by = Meta_original)
-  mfi_mat <- as.matrix(mfi_mat, rownames = "Meta_original")
+                         .by = Metacluster)
+  mfi_mat <- as.matrix(mfi_mat, rownames = "Metacluster")
 
   # Set default heatmap options
   default_options <- list(border = TRUE,
