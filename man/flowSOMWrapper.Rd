@@ -6,7 +6,7 @@
 \usage{
 flowSOMWrapper(
   table,
-  markers_to_cluster,
+  cols_to_cluster,
   num_clus,
   seed = NULL,
   fsom_file = "flowsom_object.rds",
@@ -16,7 +16,7 @@ flowSOMWrapper(
 \arguments{
 \item{table}{...}
 
-\item{markers_to_cluster}{...}
+\item{cols_to_cluster}{...}
 
 \item{num_clus}{...}
 

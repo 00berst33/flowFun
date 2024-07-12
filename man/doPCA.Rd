@@ -4,9 +4,11 @@
 \alias{doPCA}
 \title{doPCA}
 \usage{
-doPCA(data, cols_to_use)
+doPCA(input, cols_to_use)
 }
 \arguments{
+\item{input}{A data frame.}
+
 \item{cols_to_use}{Columns of the input to use for PCA.}
 }
 \value{
