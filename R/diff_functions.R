@@ -588,9 +588,83 @@ clusterControls <- function(sample_df, ctrl_col, dir_prepr_ctrl, marker, fsom,
   return(ctrl_fsom)
 }
 
+clusterControls <- function(sample_df, ctrl_col, dir_prepr_ctrl, marker, fsom,
+                            subsetted_meta = NULL, dir_clustr_ctrl = NULL,
+                            parent_ctrl_fsom = NULL
+) {
+  # input is preprocessed control files as a data.table
+
+  ctrl_ff <- flowCore::flowFrame(input)
+
+  # Map input to FlowSOM object of interest.
+  ctrl_fsom <- FlowSOM::NewData(fsom, ctrl_ff)
+
+  # Get metacluster and cluster labels
+  meta_labels <- FlowSOM::GetMetaclusters(ctrl_fsom)
+  clust_labels <- factor(FlowSOM::GetClusters(ctrl_fsom))
+
+  # Append labels as columns to the data.table
+  input <- input %>%
+    tidytable::mutate(Cluster = clust_labels,
+                      Metacluster = meta_labels,
+                      .keep = "all")
+
+
+  if (!is.null(subsetted_meta)) {
+    # Get only cells belonging to subsetted metacluster
+    input_sub <- input %>%
+      tidytable::filter(Metacluster == subsetted_meta) %>%
+      tidytable::select(-c(Cluster, Metacluster))
+
+    # Sample cells and subset input
+    inds <- sample(input_sub, nrow(fsom$data))
+    input_sub <- input[inds, ]
+
+    # Create flowSet of cells only belonging to given metaclusters
+    ff <- flowCore::flowFrame(input_sub)
+
+    # Map aggregate data to FlowSOM object of interest
+    ctrl_fsom <- FlowSOM::NewData(fsom, agg_ctrl)
+    # (ctrl_fsom, paste0(dir_rds_edited(), "fsom_", ctrl_col, ".rds"))
+
+    # Not a reclustering, and no pre-existing clustering given
+  } else {
+    # Create aggregate files from cells in control files.
+    # ctrl_files <- file.path(dir_prepr_ctrl, sample_df[[ctrl_col]])
+    ctrl_files <- input %>%
+      tidytable::pull(.id) %>%
+      unique()
+    agg_ctrl <- FlowSOM::AggregateFlowFrames(ctrl_files,
+                                             cTotal = nrow(fsom$data),
+                                             writeOutput = TRUE,
+                                             keepOrder = TRUE,
+                                             outputFile = file.path(dir_agg(),
+                                                                    paste0("aggregate_", ctrl_col, ".fcs"))
+    )
+
+    # Map above aggregate file to FlowSOM object of interest.
+    ctrl_fsom <- FlowSOM::NewData(fsom, agg_ctrl)
+
+    # # Save control FlowSOM object
+    # saveRDS(ctrl_fsom, paste0(dir_rds_edited(), ctrl_col, "_fsom2.rds"))
+    #
+    # # Save clustered control files
+    # dir_save <- file.path("Data", paste0("Clustered ", ctrl_col, " Files2"))
+    # if (!dir.exists(dir_save)) {
+    #   dir.create(dir_save, recursive = TRUE)
+    # }
+    # FlowSOM::SaveClustersToFCS(fsom = ctrl_fsom,
+    #                            originalFiles = list.files(dir_clustr_ctrl, full.names = TRUE),
+    #                            outputDir = dir_save)
+  }
+
+  return(ctrl_fsom)
+}
+
 #' getSampleMFIs
 #'
 #' A helper function to get sample MFIs.
+#' add functionality for tidytable
 #'
 #' @param input A FlowSOM object, flowFrame, or matrix of expression values.
 #' Must have a \code{"File"} column in the data matrix.
@@ -766,6 +840,217 @@ doDEAnalysis <- function(fsom, sample_df, design, contrasts, counts,
       trans_sample_medians <- methods::new("flowFrame", exprs = as.matrix(sample_medians[, cols]),
                                            parameters = agg@parameters,
                                            description = agg@description)
+
+      trans_sample_medians <- transform(trans_sample_medians, inv)
+      trans_sample_medians <- flowCore::exprs(trans_sample_medians)
+
+      # Subtract FMO or ISO if necessary
+      if (m %in% names(controls_df)) {
+        sub_inds <- which(FlowSOM::GetMetaclusters(ctrl_fsom) == meta_names[k]) # ensure that excluded samples
+        ctrl_fsom_sub <- FlowSOM::FlowSOMSubset(ctrl_fsom, sub_inds)            # aren't analyzed
+
+        agg_ctrl_sub <- agg_ctrl[sub_inds, ] # same as ctrl_fsom$data?
+        agg_ctrl_sub_trans <- transform(agg_ctrl_sub, inv)
+
+        fmo_sample_medians <- getSampleMFIs(agg_ctrl_sub_trans)
+
+        chan <- FlowSOM::GetChannels(fsom, rownames(controls_df)[row])
+        # all_diff <- c()
+        for (i in 1:nrow(sample_df)) { # nrow(sample_df) was length(fmo_num)
+          diff <- fmo_sample_medians[rownames(sample_df)[i], chan]
+          # all_diff <- c(all_diff, diff)
+          trans_sample_medians[i, chan] <- trans_sample_medians[i, chan] - diff
+        }
+      }
+
+      # Checks for samples with too few cells
+      # Note: samples not of interest were removed from local variables earlier,
+      # before finding `sample_medians`
+      missing_samples <- which(!(rownames(sample_df) %in% sample_medians$File))
+
+      # Get vector of medians for current marker
+      expr_matrix <- t(rbind(sample_medians[, FlowSOM::GetChannels(fsom, m)]))
+      expr_matrix <- as.matrix(t(expr_matrix))
+      rownames(expr_matrix) <- m
+
+      # Get vector of transformed medians for current marker
+      trans_matrix <- t(rbind(trans_sample_medians[, FlowSOM::GetChannels(fsom, m)]))
+      trans_matrix <- as.matrix(t(trans_matrix))
+      rownames(trans_matrix) <- "Transformed Exp."
+
+      # Remove samples with too few cells from count matrix, if necessary
+      # Note: `counts` is found via `sample_df`, so samples not of interest are already removed
+      # if (length(missing_samples) > 0) {
+      #   count_row <- counts[k, -missing_samples] # does the same need to be done for design?
+      # } else {                                      # what if a sample has enough cells in one meta/sample
+      #   count_row <- counts[k, ]                 # pair for one marker but not the other?
+      # }
+
+      # Make data frame to store info about this metacluster.
+      df <- data.frame(t(expr_matrix),
+                       t(trans_matrix),
+                       # counts = count_row,
+                       sample = sample_df[rownames(sample_medians), 1],
+                       cell_type = meta_names[k],
+                       # Group = sample_df$group,
+                       check.names = FALSE)
+
+      # Append to greater data frame.
+      df_ind <- which(markers_of_interest == m)
+      df_full[[df_ind]] <- rbind(df_full[[df_ind]], df)
+
+    }
+    colnames(df_full[[df_ind]])[1] <- markers_of_interest[df_ind]
+  }
+
+  # Create expression matrix for testing.
+  expr_matrix <- data.frame()
+  for (i in 1:length(df_full)) {
+    new_df <- as.matrix(t(getSampleMetaMatrix(df_full[[i]], 1)))
+    expr_matrix <- as.matrix(rbind(expr_matrix, new_df))
+  }
+
+  # Create linear models.
+  # NOTE: weights questionable
+  lm_model <- limma::lmFit(object = expr_matrix,
+                           design = design)
+
+  # Perform statistical tests.
+  contrasts_fit <- limma::contrasts.fit(lm_model, contrasts)
+  limma_ebayes <- limma::eBayes(contrasts_fit, trend = TRUE)
+
+  # Create tables containing results of our statistical tests, and add them
+  # to the data frame corresponding to the relevant comparison.
+  for (i in 1:ncol(contrasts)) {
+    table <- limma::topTable(limma_ebayes,
+                             coef = colnames(contrasts)[i],
+                             sort.by = "p",
+                             p.value = 0.20)
+
+    # Add column for marker ID
+    if (nrow(table) != 0) {
+      table$marker <- rep(markers_of_interest[1], nrow(table))
+
+      if (length(markers_of_interest) > 1) { # if more than one marker is being tested
+        for (j in 1:nrow(table)) {
+          curr <- rownames(table)[j]
+          ix <- ceiling(as.integer(curr)/length(meta_names))
+          table$marker[j] <- markers_of_interest[ix]
+        }
+        rownames(table) <- NULL
+      }
+
+      # Append table of results to returned list
+      temp_ind <- nrow(pval_dfs[[i]]) + 1
+      pval_dfs[[i]] <- rbind(pval_dfs[[i]], table)
+    }
+  }
+
+  de_res$tests <- pval_dfs
+  de_res$data <- df_full
+
+  return(de_res)
+}
+
+doDEAnalysis <- function(input, sample_df, design, contrasts, counts,
+                         markers_of_interest, meta_names = NULL,
+                         prepr_transform = NULL, controls_df = NULL,
+                         ctrl_fsom_names = NULL, subsetted_meta = NULL) {
+  # Set a seed for reproducibility
+  set.seed(42)
+
+  # Get metacluster names if none were given
+  # if (is.null(meta_names)) {
+  #   meta_names <- levels(fsom$metaclustering)
+  # }
+  if (is.null(meta_names)) {
+    meta_names <- input %>%
+      tidytable::pull(Metacluster) %>%
+      unique()
+  }
+
+  filenames <- input %>%
+    tidytable::pull(.id) %>%
+    unique() %>%
+    basename()
+
+  # Determine samples excluded from analysis, if any
+  removed_samples <- which(!(filenames %in% sample_df[, 2]))
+  # removed_samples <- which(!(levels(factor(fsom$data[, "File"])) %in% rownames(sample_df)))
+
+  # Create empty data frames for each comparison that will be made. These will
+  # store the results of the analysis and be used to create the .csv files.
+  pval_dfs <- lapply(1:ncol(contrasts), function(i) {data.frame()})
+
+  # Master data frame that will contain data about all metaclusters.
+  df_full <- lapply(1:length(markers_of_interest), function(i) {data.frame()})
+
+  # Initialize object that will be returned
+  de_res <- list("tests" = list(), # `pval_dfs`
+                 "data" = list()) # `df_full`
+
+  # Prepare data for each marker for testing
+  for (m in markers_of_interest) {
+    print(paste0("Analyzing ", m, " ..."))
+    if (!is.null(controls_df) && m %in% rownames(controls_df)) {
+      print("Preparing controls...")
+
+      row <- which(rownames(controls_df) == m)
+
+      # Pre-existing clustering given
+      if (!is.null(ctrl_fsom_names)) {
+        print("Using the FlowSOM objects defined in `ctrl_fsom_names` object...")
+
+        ctrl_fsom <- readRDS(paste0(dir_rds_edited(), ctrl_fsom_names[row]))
+      } else {
+        ctrl_fsom <- clusterControls(sample_df,
+                                     ctrl_col = controls_df[row, 1],
+                                     dir_prepr_ctrl = controls_df[row, 2],
+                                     marker = m,
+                                     fsom = fsom, ###
+                                     subsetted_meta = subsetted_meta,
+                                     dir_clustr_ctrl = controls_df[row, 3],
+                                     parent_ctrl_fsom = controls_df[row, 4]) ###
+      }
+      agg_ctrl <- flowCore::read.FCS(file.path(dir_agg(), names(ctrl_fsom$metaData)[[1]])) # !!! check NewData adds metaData
+    }
+    for (k in 1:length(meta_names)) {
+      print(paste0("Preparing ", meta_names[k], " ..."))
+
+      # Get cells belonging to each sample in current metacluster
+      # if (length(removed_samples) > 0) { ###
+      #   idx1 <- FlowSOM::GetMetaclusters(fsom) == meta_names[k]
+      #   idx2 <- !(fsom$data[, "File"] %in% removed_samples)
+      #   inds <- which(idx1 & idx2)
+      #   fsom_sub <- FlowSOM::FlowSOMSubset(fsom, inds)
+      # } else { ###
+      #   inds <- which(FlowSOM::GetMetaclusters(fsom) == meta_names[k])
+      #   fsom_sub <- FlowSOM::FlowSOMSubset(fsom, inds)
+      # }
+      input_sub <- input %>%
+        tidytable::filter(Metacluster == meta_names[k])
+
+      # Get cluster-sample medians.
+      sample_medians <- getSampleMFIs(input_sub) ###
+
+      # Get transformation used for preprocessing and its inverse
+      if (is.null(prepr_transform)) {
+        prepr_transform <- file.path("RDS", "logicle_transformation.rds")
+      }
+
+      trans <- readRDS(prepr_transform)
+      inv <- flowCore::inverseLogicleTransform(trans)
+
+      # Get aggregate file for currect FlowSOM object
+      # agg <- flowCore::read.FCS(file.path(dir_agg(), names(fsom$metaData)[[1]])) ###
+      # Only columns used for clustering
+      # cols <- which(colnames(sample_medians) %in% colnames(agg))
+
+      # Transform medians to linear scale
+      trans_sample_medians <- flowCore::flowFrame(as.matrix(input_sub, rownames = TRUE))
+      # trans_sample_medians <- methods::new("flowFrame", exprs = as.matrix(sample_medians[, cols]),
+      #                                      parameters = agg@parameters,
+      #                                      description = agg@description)
 
       trans_sample_medians <- transform(trans_sample_medians, inv)
       trans_sample_medians <- flowCore::exprs(trans_sample_medians)
