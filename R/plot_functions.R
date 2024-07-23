@@ -33,8 +33,8 @@ plotMetaclusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed, ..
 
   # Set default heatmap options
   default_options <- list(border = TRUE,
-                         show_row_names = TRUE,
-                         heatmap_legend_param = list(
+                          show_row_names = TRUE,
+                          heatmap_legend_param = list(
                            title = "Expression",
                            title_gp = grid::gpar(fontsize = 9),
                            labels_gp = grid::gpar(fontsize = 8)))

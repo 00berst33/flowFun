@@ -15,4 +15,5 @@ A data frame, where each row is a sample, and each column is a channel/marker.
 }
 \description{
 A helper function to get sample MFIs.
+add functionality for tidytable
 }

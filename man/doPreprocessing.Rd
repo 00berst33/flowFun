@@ -15,6 +15,7 @@ doPreprocessing(
   pctg_live = 0.6,
   pctg_qc = 0.8,
   pdf_name = "preprocessing_results.pdf",
+  flowcut_dir = "flowCut",
   save_fcs = FALSE
 )
 }
@@ -31,7 +32,7 @@ cells. This should appear the same as it does in the .fcs files.}
 
 \item{debris_gate}{A gate to gate out debris, defined as a
 \code{\link[flowCore:filter]{filter()}}. If \code{NULL} (default), a
-gate is automatically selected with \code{\link[flowDensity:flowDensity]{flowDensity()}}.}
+gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.}
 
 \item{live_gate}{A gate to gate out dead cells. If \code{NULL} (default), a
 gate is automatically selected.}
@@ -46,6 +47,9 @@ low-quality events during quality control.}
 
 \item{pdf_name}{Name of the PDF containing diagnostic plots for preprocessing
 results. Default is \code{"preprocessing_results.pdf"}.}
+
+\item{flowcut_dir}{The name of the directory containing QC results. The plots
+for any flagged files will be saved here. Default is \code{"flowCut"}.}
 
 \item{save_fcs}{Boolean, should the preprocessed data be saved as .fcs files.
 Default is \code{FALSE}.}

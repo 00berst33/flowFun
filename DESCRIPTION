@@ -19,6 +19,7 @@ Imports:
     edgeR,
     flowCore,
     flowCut,
+    flowDensity,
     FlowSOM,
     ggplot2,
     ggpubr,
