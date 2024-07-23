@@ -608,7 +608,7 @@ clusterControls <- function(sample_df, ctrl_col, dir_prepr_ctrl, marker, fsom,
 #' @export
 clusterControlsTable <- function(input, fsom, subsetted_fsom = NULL, subsetted_meta = NULL, 
                                  num_cells = nrow(fsom$data), save_fsom = NULL) {
-  Metacluster <- Cluster <- NULL
+  Metacluster <- Cluster <- cel_id <- NULL
   
   # Convert input to flowFrame for use with FlowSOM
   mat <- as.matrix(input, rownames = TRUE)
@@ -704,6 +704,8 @@ getSampleMFIs <- function(input) {
 
 # method for tidytable
 getSampleMFIs <- function(input) {
+  .id <- NULL
+  
   fcs_cols <- attr(input, "cols_from_fcs")
   
   medians <- input %>%

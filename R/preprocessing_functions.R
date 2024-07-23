@@ -140,14 +140,6 @@ getTableFromFCS <- function(input) {
 
   return(prepr_table)
 }
-# fcs_cols <- attr(agg_dt, "cols_from_fcs") # which have marker attribute that isn't NA
-# all_channels <- c()
-# for (i in seq_along(fcs_cols)) {
-#   col <- fcs_cols[i]
-#   if(!is.na(attr(agg_dt[[col]], "marker"))) {
-#     all_channels <- c(all_channels, col)
-#   }
-# }
 
 #' doPreprocessing
 #'
