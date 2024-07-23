@@ -2,19 +2,19 @@
 % Please edit documentation in R/clustering_agnostic.R
 \name{plotUMAPNew}
 \alias{plotUMAPNew}
-\title{Title}
+\title{plotUMAPNew}
 \usage{
 plotUMAPNew(input, num_cells = 5000, seed = NULL)
 }
 \arguments{
-\item{input}{...}
+\item{input}{A data table or FlowSOM object.}
 
-\item{num_cells}{...}
+\item{num_cells}{The number of cells to use to generate the UMAP. Default is 5000.}
 
-\item{seed}{...}
+\item{seed}{Optional, a seed for reproducibility.}
 }
 \value{
-...
+A UMAP plot drawn with ggplot2.
 }
 \description{
 *parameter tweaking

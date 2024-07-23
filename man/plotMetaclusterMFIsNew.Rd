@@ -2,20 +2,21 @@
 % Please edit documentation in R/clustering_agnostic.R
 \name{plotMetaclusterMFIsNew}
 \alias{plotMetaclusterMFIsNew}
-\title{Title}
+\title{plotMetaclusterMFIsNew}
 \usage{
 plotMetaclusterMFIsNew(input, cols_to_use = NULL, ...)
 }
 \arguments{
-\item{input}{...}
+\item{input}{A data table or FlowSOM object.}
 
-\item{cols_to_use}{...}
+\item{cols_to_use}{A vector specifying the channels/markers to plot by column name
+or number.}
 
-\item{...}{}
+\item{...}{Additional parameters to pass to \code{\link[ComplexHeatmap:Heatmap]{ComplexHeatmap::Heatmap()}}.}
 }
 \value{
-...
+A heatmap.
 }
 \description{
-Title
+plotMetaclusterMFIsNew
 }

@@ -5,10 +5,10 @@
 \title{doPreprocessing}
 \usage{
 doPreprocessing(
-  dir_raw,
+  input,
   ld_channel,
-  compensation,
-  transformation,
+  compensation = NULL,
+  transformation = NULL,
   debris_gate = NULL,
   live_gate = NULL,
   nmad = 4,
@@ -19,17 +19,19 @@ doPreprocessing(
 )
 }
 \arguments{
-\item{dir_raw}{The directory containing raw data files to be processed together.}
+\item{input}{A directory, list of filenames, or data.table.}
 
 \item{ld_channel}{Name of the channel corresponding to the marker for live/dead
 cells. This should appear the same as it does in the .fcs files.}
 
-\item{compensation}{A compensation matrix, or a file path to one.}
+\item{compensation}{Optional. A compensation matrix, or a file path to one.}
 
-\item{transformation}{The transformation to apply to the data.}
+\item{transformation}{The transformation to apply to the data. If \code{NULL}
+(default), a log-icle transformation is applied to the data.}
 
-\item{debris_gate}{A gate to gate out debris. If \code{NULL} (default), a
-gate is automatically selected.}
+\item{debris_gate}{A gate to gate out debris, defined as a
+\code{\link[flowCore:filter]{filter()}}. If \code{NULL} (default), a
+gate is automatically selected with \code{\link[flowDensity:flowDensity]{flowDensity()}}.}
 
 \item{live_gate}{A gate to gate out dead cells. If \code{NULL} (default), a
 gate is automatically selected.}

@@ -377,7 +377,7 @@ plotUMAPNew <- function(input, num_cells = 5000, seed = NULL) {
 ###
 #' plotMetaclusterMFIsNew
 #'
-#' ***
+#'
 #'
 #' @param input A data table or FlowSOM object.
 #' @param cols_to_use A vector specifying the channels/markers to plot by column name
