@@ -144,7 +144,7 @@ getTableFromFCS <- function(input) {
 #' doPreprocessing
 #'
 #' Preprocess all files in the given directory.
-#' !!! WIP edit gates and handling of low-quality samples, rename markers if necessary
+#' !rename markers if necessary
 #'
 #' @param input A directory, list of filenames, or data.table.
 #' @param ld_channel Name of the channel corresponding to the marker for live/dead
@@ -152,16 +152,21 @@ getTableFromFCS <- function(input) {
 #' @param compensation Optional. A compensation matrix, or a file path to one.
 #' @param transformation The transformation to apply to the data. If \code{NULL}
 #' (default), a log-icle transformation is applied to the data.
+#' @param transformation_type The type of transformation to be applied to the data.
+#' If \code{transformation} is \code{NULL}, the transformation parameters will be
+#' selected automatically. See details for more.
 #' @param debris_gate A gate to gate out debris, defined as a
-#' \code{\link[flowCore:filter]{filter()}}. If \code{NULL} (default), a
+#' \code{\link[flowCore:filter-class]{filter}}. If \code{NULL} (default), a
 #' gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.
 #' @param live_gate A gate to gate out dead cells. If \code{NULL} (default), a
 #' gate is automatically selected.
 #' @param nmad Parameter to determine strictness of doublet removal. See
 #' [PeacoQC::RemoveDoublets()] for details.
-#' @param pctg_live Minimum percentage of live cells a sample should have.
-#' @param pctg_qc Minimum percentage of cells a sample should have after removing
-#' low-quality events during quality control.
+#' @param pctg_live Minimum proportion of live cells a sample should have remaining
+#' after gating out dead cells. The sample will be excluded if this number isn't met.
+#' @param pctg_qc Minimum proportion of cells a sample should have remaining
+#' after low-quality events are removed during quality control. The sample will be
+#' excluded if this number isn't met.
 #' @param pdf_name Name of the PDF containing diagnostic plots for preprocessing
 #' results. Default is \code{"preprocessing_results.pdf"}.
 #' @param flowcut_dir The name of the directory containing QC results. The plots
@@ -183,14 +188,65 @@ getTableFromFCS <- function(input) {
 #'      in the analysis.
 #'
 #' The script will output a few files to check for any mistakes. The first is
-#' a PDF highlighting the cells that were removed in each .fcs file. The others
-#' are plots for any files that were flagged during quality control, where each
-#' channel is plotted against time and removed events are marked.
+#' a PDF highlighting the cells that were removed in each .fcs file, whose name is
+#' specified by \code{pdf_name}. The others are plots for any files that were
+#' flagged during quality control, written in the directory specified by
+#' \code{flowCut}. Each channel is plotted against time and removed events are marked.
+#'
+#' The user may define their own transformation to apply to the data, if
+#' desired. This may be done by creating an object of type
+#' \code{\link[flowCore:transformList-class]{transformList}}, containing a transformation
+#' for each channel of interest, and passing it to the function parameter
+#' \code{transformation}. The parameter \code{transformation_type} should then
+#' be selected accordingly.
+#'
+#' \code{transformation_type} specifies the type of transformation to apply to the data:
+#' \code{"logicle"}, \code{"arcsinh"}, \code{"other"}, or \code{"none"}. Regardless of
+#' whether or not \code{transformation} is \code{NULL}, it is necessary to specify
+#' this parameter so that the original values may be retrieved later. So, if
+#' a custom hyperbolic sine transformation was given, this parameter should be set
+#' to \code{"arcsinh"}, and if a custom log transformation was given, it
+#' should be set to \code{"other"}, etc.
+#'
+#' If NO custom transformation was given, and \code{"logicle"} was chosen, then
+#' the function will automatically determine appropriate parameters for the
+#' transformation and apply it. If \code{"arcsinh"} was chosen, a hyperbolic sine
+#' transformation with cofactor 5 will be selected and applied. Finally, if
+#' \code{"none"} is chosen, the data will have no transformation applied. This is
+#' generally not advised, as it will make most data visualizations used
+#' by this workflow difficult or impossible to interpret.
+#'
+#' For flow data, a log-icle transformation is highly recommended, as it represents
+#' low signals and compensated data better than a typical logarithmic scaling,
+#' and results in more interpretable data visualizations. For CyTOF data, a
+#' hyperbolic sine transformation with a cofactor of 5 is standard, and also recommended.
+#'
+#' The user may also define their own debris and live/dead gates to apply to their samples
+#' via the parameters \code{debris_gate} and \code{live_gate}. The objects passed to
+#' these parameters should be of class \code{\link[flowCore:filter-class]{filter}}.
+#' If these gates are not specified by the user, gates will be automatically drawn using
+#' \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.
+#'
+#' Note that appropriate compensation and transformation of the data is crucial
+#' for an accurate live/dead gate. The step of drawing said gate may be
+#' skipped by leaving the parameter \code{ld_channel} unspecified.
+#'
+#' Samples will be removed from the returned table if they do not meet the proportion of
+#' live and quality cells specified by \code{pctg_live} and \code{pctg_qc}, as a sample
+#' with too few viable events is likely not worth including in the analysis. However,
+#' if it is preferred for no samples to be removed, setting both parameters to \code{0}
+#' will result in all samples being included in the returned table, regardless of quality.
 #'
 #' @return A data.table containing preprocessed data.
 #'
+#' @seealso [PeacoQC::RemoveMargins()], [PeacoQC::RemoveDoublets()], [flowCore::compensate()],
+#' [flowCore::transform()], [flowCore::estimateLogicle()], [flowCore::logicleTransform()],
+#' [flowCore::arcsinhTransform()], [flowCore::biexponentialTransform()],
+#' [flowDensity::deGate()], [flowCut::flowCut()]
+#'
 #' @export
-doPreprocessing <- function(input, ld_channel, compensation = NULL, transformation = NULL,
+doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, transformation = NULL,
+                            transformation_type = c("logicle", "arcsinh", "other", "none"),
                             debris_gate = NULL, live_gate = NULL, nmad = 4,
                             pctg_live = 0.6, pctg_qc = 0.8,
                             pdf_name = "preprocessing_results.pdf", flowcut_dir = "flowCut",
@@ -260,24 +316,41 @@ doPreprocessing <- function(input, ld_channel, compensation = NULL, transformati
     # Apply compensation matrix if given
     if (!is.null(compensation)) {
       ff_c <- flowCore::compensate(ff_g, spillover = compensation)
+    } else {
+      ff_c <- ff_g
     }
 
     # Apply transformation
     if (!is.null(transformation)) {
       ff_t <- flowCore::transform(ff_c, transformation)
     } else {
-      trans <- flowCore::estimateLogicle(ff_c, all_channels) # add info to table, change default to arcsinh?
-      ff_t <- flowCore::transform(ff_c, trans)
+      transformation <- switch(transformation_type,
+                               "logicle" = flowCore::estimateLogicle(ff_c, channels = all_channels),
+                               "arcsinh" = {
+                                 res <- flowCore::arcsinhTransform(b = 5)
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res},
+                               "none" = {
+                                 res <- flowCore::linearTransform()
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res
+                               },
+                               "other" = stop("Must provide a value for `transformation` when `transformation_type` is 'other'."))
+
+      ff_t <- flowCore::transform(ff_c, transformation)
     }
 
-    # Apply live/dead gate if given, otherwise draw automatically
-    if (!is.null(live_gate)) {
-      ff_l <- ff_t[flowCore::filter(ff_t, live_gate)@subSet, ]
-    } else {
-      ff_l <- flowDensity::flowDensity(obj = ff_t,
-                                       channels = c(ld_channel, "FSC-A"),
-                                       position = c(FALSE, NA))
-      ff_l <- flowDensity::getflowFrame(ff_l)
+    # If there is a live/dead channel
+    if (!is.null(ld_channel)) {
+      # Apply live/dead gate if given, otherwise draw automatically
+      if (!is.null(live_gate)) {
+        ff_l <- ff_t[flowCore::filter(ff_t, live_gate)@subSet, ] # consider using Subset() instead of @
+      } else {
+        ff_l <- flowDensity::flowDensity(obj = ff_t,
+                                         channels = c(ld_channel, "FSC-A"),
+                                         position = c(FALSE, NA))
+        ff_l <- flowDensity::getflowFrame(ff_l)
+      }
     }
 
     # Create plot for results of live/dead cell removal
@@ -295,25 +368,33 @@ doPreprocessing <- function(input, ld_channel, compensation = NULL, transformati
                                             Verbose = TRUE))
     ff_fc <- fc$frame
 
-    # Print a warning for any files with less than 60% live cells.
+    remove <- FALSE
+
+    # Print a warning for any files with less than the given proportion of live cells.
     if (nrow(ff_l)/nrow(ff_g) < pctg_live) {
       warning(paste0(file, " has only ", round(nrow(ff_l)/nrow(ff_g)*100, 2),
                      "% live cells."))
+      remove <- TRUE
     }
-    # Print a warning for any files that had more than 20% of its events removed by QC.
+    # Print a warning for any files that had more than the given proportion of events removed by QC.
     if (nrow(ff_fc)/nrow(ff_l) < pctg_qc) {
-      warning(paste0(file, " had ", round(nrow(ff_fc)/nrow(ff_l), 2),
-                     " of its events removed by flowCut."))
+      warning(paste0(file, " had ", 1 - round(nrow(ff_fc)/nrow(ff_l)*100, 2),
+                     "% of its events removed by flowCut."))
+      remove <- TRUE
     }
 
-    # Bind to greater data table
-    dt <- tidytable::data.table(flowCore::exprs(ff_fc))
-    prepr_tables[[file]] <- rbind(prepr_tables[[file]], dt)
+    # If it is high enough quality, bind sample to greater data table and save
+    if (!remove) {
+      dt <- tidytable::data.table(flowCore::exprs(ff_fc))
+      prepr_tables[[file]] <- rbind(prepr_tables[[file]], dt)
 
-    if (save_fcs) {
-      flowCore::write.FCS(ff_fc, file = paste0("Preprocessed ", file))
+      if (save_fcs) {
+        flowCore::write.FCS(ff_fc, file = paste0("Preprocessed ", file))
+      }
+    } else {
+      warning(paste0(file, " was removed due to poor quality. If desired, parameters `pctg_live`",
+      " and `pctg_qc` may be edited to change the strictness of sample removal."))
     }
-
   }
   grDevices::dev.off()
 
@@ -322,6 +403,10 @@ doPreprocessing <- function(input, ld_channel, compensation = NULL, transformati
   prepr_table <- prepr_table %>%
     tidytable::mutate(cell_id = seq(1, nrow(prepr_table)),
                       .before = 2)
+
+  # Add attribute for transformation
+  data.table::setattr(prepr_table, "transformation", transformation)
+  methods::slot(attr(prepr_table, "transformation"), "transformationId") <- transformation_type
 
   # Get all channel names from .fcs files
   fcs_channels <- as.vector(Biobase::pData(flowCore::parameters(ff))$name)

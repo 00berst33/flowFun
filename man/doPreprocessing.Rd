@@ -6,9 +6,10 @@
 \usage{
 doPreprocessing(
   input,
-  ld_channel,
+  ld_channel = NULL,
   compensation = NULL,
   transformation = NULL,
+  transformation_type = c("logicle", "arcsinh", "other", "none"),
   debris_gate = NULL,
   live_gate = NULL,
   nmad = 4,
@@ -30,8 +31,12 @@ cells. This should appear the same as it does in the .fcs files.}
 \item{transformation}{The transformation to apply to the data. If \code{NULL}
 (default), a log-icle transformation is applied to the data.}
 
+\item{transformation_type}{The type of transformation to be applied to the data.
+If \code{transformation} is \code{NULL}, the transformation parameters will be
+selected automatically. See details for more.}
+
 \item{debris_gate}{A gate to gate out debris, defined as a
-\code{\link[flowCore:filter]{filter()}}. If \code{NULL} (default), a
+\code{\link[flowCore:filter-class]{filter}}. If \code{NULL} (default), a
 gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.}
 
 \item{live_gate}{A gate to gate out dead cells. If \code{NULL} (default), a
@@ -40,10 +45,12 @@ gate is automatically selected.}
 \item{nmad}{Parameter to determine strictness of doublet removal. See
 \code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}} for details.}
 
-\item{pctg_live}{Minimum percentage of live cells a sample should have.}
+\item{pctg_live}{Minimum proportion of live cells a sample should have remaining
+after gating out dead cells. The sample will be excluded if this number isn't met.}
 
-\item{pctg_qc}{Minimum percentage of cells a sample should have after removing
-low-quality events during quality control.}
+\item{pctg_qc}{Minimum proportion of cells a sample should have remaining
+after low-quality events are removed during quality control. The sample will be
+excluded if this number isn't met.}
 
 \item{pdf_name}{Name of the PDF containing diagnostic plots for preprocessing
 results. Default is \code{"preprocessing_results.pdf"}.}
@@ -59,7 +66,7 @@ A data.table containing preprocessed data.
 }
 \description{
 Preprocess all files in the given directory.
-!!! WIP edit gates and handling of low-quality samples, rename markers if necessary
+!rename markers if necessary
 }
 \details{
 The steps taken by this function, in order, are:
@@ -77,7 +84,58 @@ in the analysis.
 }
 
 The script will output a few files to check for any mistakes. The first is
-a PDF highlighting the cells that were removed in each .fcs file. The others
-are plots for any files that were flagged during quality control, where each
-channel is plotted against time and removed events are marked.
+a PDF highlighting the cells that were removed in each .fcs file, whose name is
+specified by \code{pdf_name}. The others are plots for any files that were
+flagged during quality control, written in the directory specified by
+\code{flowCut}. Each channel is plotted against time and removed events are marked.
+
+The user may define their own transformation to apply to the data, if
+desired. This may be done by creating an object of type
+\code{\link[flowCore:transformList-class]{transformList}}, containing a transformation
+for each channel of interest, and passing it to the function parameter
+\code{transformation}. The parameter \code{transformation_type} should then
+be selected accordingly.
+
+\code{transformation_type} specifies the type of transformation to apply to the data:
+\code{"logicle"}, \code{"arcsinh"}, \code{"other"}, or \code{"none"}. Regardless of
+whether or not \code{transformation} is \code{NULL}, it is necessary to specify
+this parameter so that the original values may be retrieved later. So, if
+a custom hyperbolic sine transformation was given, this parameter should be set
+to \code{"arcsinh"}, and if a custom log transformation was given, it
+should be set to \code{"other"}, etc.
+
+If NO custom transformation was given, and \code{"logicle"} was chosen, then
+the function will automatically determine appropriate parameters for the
+transformation and apply it. If \code{"arcsinh"} was chosen, a hyperbolic sine
+transformation with cofactor 5 will be selected and applied. Finally, if
+\code{"none"} is chosen, the data will have no transformation applied. This is
+generally not advised, as it will make most data visualizations used
+by this workflow difficult or impossible to interpret.
+
+For flow data, a log-icle transformation is highly recommended, as it represents
+low signals and compensated data better than a typical logarithmic scaling,
+and results in more interpretable data visualizations. For CyTOF data, a
+hyperbolic sine transformation with a cofactor of 5 is standard, and also recommended.
+
+The user may also define their own debris and live/dead gates to apply to their samples
+via the parameters \code{debris_gate} and \code{live_gate}. The objects passed to
+these parameters should be of class \code{\link[flowCore:filter-class]{filter}}.
+If these gates are not specified by the user, gates will be automatically drawn using
+\code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.
+
+Note that appropriate compensation and transformation of the data is crucial
+for an accurate live/dead gate. The step of drawing said gate may be
+skipped by leaving the parameter \code{ld_channel} unspecified.
+
+Samples will be removed from the returned table if they do not meet the proportion of
+live and quality cells specified by \code{pctg_live} and \code{pctg_qc}, as a sample
+with too few viable events is likely not worth including in the analysis. However,
+if it is preferred for no samples to be removed, setting both parameters to \code{0}
+will result in all samples being included in the returned table, regardless of quality.
+}
+\seealso{
+\code{\link[PeacoQC:RemoveMargins]{PeacoQC::RemoveMargins()}}, \code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}}, \code{\link[flowCore:compensation-class]{flowCore::compensate()}},
+\code{\link[flowCore:transform]{flowCore::transform()}}, \code{\link[flowCore:logicleTransform]{flowCore::estimateLogicle()}}, \code{\link[flowCore:logicleTransform]{flowCore::logicleTransform()}},
+\code{\link[flowCore:arcsinhTransform]{flowCore::arcsinhTransform()}}, \code{\link[flowCore:biexponentialTransform]{flowCore::biexponentialTransform()}},
+\code{\link[flowDensity:deGate]{flowDensity::deGate()}}, \code{\link[flowCut:flowCut]{flowCut::flowCut()}}
 }
