@@ -67,6 +67,7 @@ A data.table containing preprocessed data.
 \description{
 Preprocess all files in the given directory.
 !rename markers if necessary
+!save setting used somehow, .json, .csv, etc.
 }
 \details{
 The steps taken by this function, in order, are:

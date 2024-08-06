@@ -145,6 +145,7 @@ getTableFromFCS <- function(input) {
 #'
 #' Preprocess all files in the given directory.
 #' !rename markers if necessary
+#' !save setting used somehow, .json, .csv, etc.
 #'
 #' @param input A directory, list of filenames, or data.table.
 #' @param ld_channel Name of the channel corresponding to the marker for live/dead
