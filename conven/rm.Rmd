@@ -1,0 +1,198 @@
+---
+title: "flowFun"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{flowFun}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+
+# Installation
+```{r, eval = FALSE}
+install.packages("devtools")
+devtools::install_github("00berst33/flowFun")
+```
+
+# Reading in Data
+
+Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package encourages the use of the `data.table` data structure.
+
+Other advantages of using this data structure is that it is futureproof, as it can easily be converted to a `data.frame`, a structure found in base R. This also makes the package more flexible, as although it focuses on the use of the FlowSOM package for clustering, the package could easily be expanded to work with any other clustering algorithm the user may prefer.
+
+`getTableFromFCS()` allows the user to read .fcs files directly into a data table, either by specifying a list of directories containing relevant files, or by providing a list with the relative or absolute filepaths of each file of interest. The expression data for each sample are joined by row, and two columns are joined to the left of the table: `.id` and `cell_id`.
+
+By default, all cells are sampled from each .fcs file of interest, but the parameter `num_cells` may be specified to select 
+
+```{r load-data}
+library(flowCore)
+library(tidytable)
+library(flowFun)
+
+# Specify path to .fcs file
+file <- system.file("extdata", "aggregate.fcs", package = "flowFun") # filename
+# Read in as tidytable
+table <- getTableFromFCS(file, num_cells = 1000)
+# Check result
+print(table)
+```
+
+# Preprocessing
+
+Once setup files have been cleaned and a compensation matrix has been generated, the next step is to preprocess the raw data. In order, the steps this pipeline implements are as follows:
+   1. Removing margin events (i.e. values that fall outside the range the
+      cytometer should be able to pick up).
+   2. Removing doublets.
+   3. Removing debris.
+   4. Compensating the data.
+   5. Transforming the data.
+   6. Removing dead cells.
+   7. Quality control via flowCut, to check and correct for occurrences like clogs, speed
+      changes, etc. and flag any files that may be too low-quality to include
+      in the analysis.
+      
+Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, by either simply using the same one for each sample, or ##retroactively selecting samples which the automated gating performed poorly for and re-drawing gates as necessary. Although it is implemented, it is highly recommended to avoid as much manual gating as possible. Doing so greatly improves the objectivity and reproducibility of the analysis.
+
+Note that this workflow is currently restricted to the outlined gating scheme, but will later support user-defined gating schemes. ###
+
+The easiest way to perform preprocessing is via the function `doPreprocessing()`. In the example below, each possible parameter is listed. As input, the function accepts either a directory name, an array specifying paths to files of interest, or a `data.table` resulting from `getTableFromFCS()`. The user may then provide their compensation matrix, if they have one. A transformation may be specified by simply choosing one of the enumerated options under `transformation_type`, but the user may also give a custom transformation if preferred. 
+
+If your panel includes a viability stain, it is necessary for the channel corresponding to it to be specified by `ld_channel`, and a compensation matrix and appropriate transformation to be provided, so that dead cells may be gated out accurately. If any of these are not present, the function will not apply a live/dead gate.
+
+The strictness of the doublet removal may be controlled with the `nmad` parameter. Decreasing it results in a more strict gate, and vice versa.
+
+If `debris_gate` and `live_gate` are left unspecified, then automated gates will be found for each sample. Alternatively, the user may specify their own gate for each of these parameters, and the same gate will be applied across all samples. These gates should be defined via either the flowCore or flowDensity packages, as demonstrated below.
+
+```{r manual-gates, fig.height=5, fig.width=7, fig.align='default'}
+library(flowDensity)
+
+# Get sample data
+table <- system.file("extdata", "raw_samples.rds", package = "flowFun")
+table <- readRDS(table)
+
+# Read in compensation matrix
+comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFun")
+comp_mat <- read.csv(comp_mat, check.names = FALSE)
+
+# Get filenames
+files <- unique(table$.id)
+
+# Preview parameters
+previewPreprocessing(files[2],
+                     ld_channel = "BUV496-A",
+                     compensation = comp_mat,
+                     transformation_type = "logicle")
+```
+
+Here we see that the gates for dead cells and doublets are a bit loose for this sample. As an easy fix, we may adjust `nmad`, and draw a simple manual gate. A rectangle gate is used for this example, but ellipsoid and polygon gates via the flowCore package are also supported.
+
+```{r manual-fix, fig.height=5, fig.width=7, fig.align='default'} 
+# Define manual gate for removal of dead cells
+manual_live <- rectangleGate(.gate = list("BUV496-A"= c(-1, 1.7),
+                                          "FSC-A" = c(0, 270000)))
+
+# Check new plots
+previewPreprocessing(files[2],
+                     ld_channel = "BUV496-A",
+                     compensation = comp_mat,
+                     transformation_type = "logicle",
+                     nmad = 3,
+                     live_gate = manual_live)
+```
+
+Once the desired parameters have been selected, all samples may be processed. During this step, the user can set minimum thresholds a sample must meet to avoid being removed from analysis. `pctg_live` sets the minimum proportion of live cells a sample must have, and `pctg_qc` sets the minium proportion of quality events a sample must have. To avoid any samples being removed, these parameters may be set to 0.
+
+```{r preprocess-samples}
+# Preprocess all samples
+prepr_table <- doPreprocessing(table,
+                               ld_channel = "BUV496-A", 
+                               compensation = comp_mat,
+                               transformation_type = "logicle",
+                               live_gate = manual_live,
+                               nmad = 3.5, 
+                               pctg_live = 0.7,
+                               pctg_qc = 0.8,
+                               save_plots = FALSE,
+                               save_fcs = FALSE)
+```
+
+Once the processing is finished, the script will output files to check for any mistakes or concerns. The first is a pdf highlighting the cells that were removed in each .fcs file. The others are plots for any files that were flagged during quality control, where each
+channel is plotted against time, and removed events are marked. If desired, the names of the resulting directories and files may be changed, and the preprocessed .fcs files can be written to disk.
+
+# Clustering
+
+This package is compatible with various clustering algorithms, but was designed specifically with FlowSOM in mind due to its fast runtime and tools for data visualization. Therefore, much focus will be given to FlowSOM in the following section.
+
+The strategy for identifying cell type populations outlined by this workflow is not entirely automated, and instead uses a human-in-the-loop approach. Such an approach aims to reduce the burden of analyzing such a large volume of data, while still incorporating expert knowledge to ensure that results are biologically meaningful. To accomplish this, the data is initially overclustered. The expert then examines the result of the clustering through various relevant plots, taking into account not only marker expression but also cluster sizes and mathematical similarity, and uses their best judgement to merge clusters until an appropriate final number has been reached and labelled. 
+
+This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user.
+
+``` {r flowsom-clustering, fig.height=5, fig.width=5}
+# Get filename
+# file <- system.file("extdata", "aggregate.fcs", package = "flowFun")
+# file <- getTableFromFCS(file, num_cells = 1000)
+
+# Define markers/columns to use for clustering
+cols_to_cluster <- c(10, 12:14, 15, 17:22, 25:34)+2
+
+# Perform clustering
+fsom_dt <- flowSOMWrapper(prepr_table,
+                          cols_to_cluster = cols_to_cluster,
+                          num_clus = 25,
+                          xdim = 12,
+                          ydim = 12,
+                          seed = 42)
+
+# Generate heatmap
+plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
+
+
+```
+
+## Plots
+
+Various plotting functions that are not essential to the workflow, but potentially still of interest, have been included in this package. 
+
+annotateMFIHeatmap()
+searchByExpression()
+plotLabeled2DScatter()
+plotSampleProportions()
+plotClusterGroupProportions()
+plotClusterFileProportions()
+
+
+# Differential Analysis
+
+Perform differential marker expression analysis of flow cytometry data using limma, and differential count analysis using edgeR.
+
+
+Define the comparisons you are interested in testing during the analysis, as
+# a list of lists. Each nested list should include at least two levels of a 
+# factor to be used for the comparison. If you would like to compare two groups
+# within another group, you should specify the level(s) of interest for both of 
+# these factors. For example, if you were interested in control vs MIBC in 
+# females only, and male vs female for all samples, you would define the 
+# variable as follows: 
+# 
+# comparisons = list(
+#   female_mibc_vs_ctrl = list(Sex = "female", Disease = list("Ctrl", "MIBC")),
+#   male_vs_female = list(Sex = list("male", "female"))
+# )
+# 
+# You may name each comparison as you see fit, just ensure that it is R-friendly. 
+# The factor names, however (which would be "Sex" and "Disease" in the above 
+# example), should be identical to their column names in our "sample_df" data 
+# frame. Furthermore, the factor levels (which would be "female", "male", "Ctrl",
+# and "MIBC" in the above example), should be listed identical to how they 
+# appear in the data frame (AFTER correcting for any non-R-friendly values). 
