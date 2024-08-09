@@ -189,12 +189,14 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #' @param pctg_qc Minimum proportion of cells a sample should have remaining
 #' after low-quality events are removed during quality control. The sample will be
 #' excluded if this number isn't met.
+#' @param save_plots Boolean, should plots for gating and quality control
+#' results be saved. Default is \code{TRUE}.
+#' @param save_fcs Boolean, should the preprocessed data be saved as .fcs files.
+#' Default is \code{FALSE}.
 #' @param pdf_name Name of the PDF containing diagnostic plots for preprocessing
 #' results. Default is \code{"preprocessing_results.pdf"}.
 #' @param flowcut_dir The name of the directory containing QC results. The plots
 #' for any flagged files will be saved here. Default is \code{"flowCut"}.
-#' @param save_fcs Boolean, should the preprocessed data be saved as .fcs files.
-#' Default is \code{FALSE}.
 #'
 #' @details
 #' The steps taken by this function, in order, are:
@@ -271,8 +273,8 @@ doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
                             transformation_type = c("logicle", "arcsinh", "other", "none"),
                             debris_gate = NULL, ld_channel = NULL, live_gate = NULL, nmad = 4,
                             pctg_live = 0.6, pctg_qc = 0.8,
-                            pdf_name = "preprocessing_results.pdf", flowcut_dir = "flowCut",
-                            save_fcs = FALSE) {
+                            save_plots = TRUE, save_fcs = FALSE,
+                            pdf_name = "preprocessing_results.pdf", flowcut_dir = "flowCut") {
   Plot <- df <- .id <- NULL
 
   # Prepare data
@@ -414,7 +416,7 @@ doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
     # Perform quality control via flowCut package
     fc <- suppressWarnings(flowCut::flowCut(f = ff_l,
                                             FileID = make.names(file),
-                                            Plot = "Flagged Only",
+                                            Plot = ifelse(save_plots, "Flagged Only", "None"),
                                             Directory = file.path("Preprocessing Results",
                                                                   "flowCut"),
                                             Verbose = TRUE))
@@ -449,17 +451,19 @@ doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
     }
   }
 
-  # Save PDF of gating plots for each sample
-  names(grobs) <- basename(raw_files)
-  ml <- gridExtra::marrangeGrob(grobs,
-                                nrow = 2,
-                                ncol = 1,
-                                layout_matrix = rbind(c(1,1,2,2),
-                                                      c(1,1,2,2),
-                                                      c(NA,3,3,NA),
-                                                      c(NA,3,3,NA)),
-                                top = quote(names(grobs)[g]))
-  ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, width = 11, height = 8, device = "pdf")
+  # Save PDF of gating plots for each sample if desired
+  if (save_plots) {
+    names(grobs) <- basename(raw_files)
+    ml <- gridExtra::marrangeGrob(grobs,
+                                  nrow = 2,
+                                  ncol = 1,
+                                  layout_matrix = rbind(c(1,1,2,2),
+                                                        c(1,1,2,2),
+                                                        c(NA,3,3,NA),
+                                                        c(NA,3,3,NA)),
+                                  top = quote(names(grobs)[g]))
+    ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, width = 11, height = 8, device = "pdf")
+  }
 
   # Concatenate all data tables into one, with column for sample ID
   prepr_table <- tidytable::bind_rows(prepr_tables, .id = TRUE)

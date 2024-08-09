@@ -16,7 +16,7 @@ previewPreprocessing(
 )
 }
 \arguments{
-\item{input}{A directory, list of filenames, or data.table.}
+\item{input}{A filepath or flowFrame.}
 
 \item{ld_channel}{Name of the channel corresponding to the marker for live/dead
 cells. This should appear the same as it does in the .fcs files.}
@@ -39,8 +39,6 @@ gate is automatically selected.}
 
 \item{nmad}{Parameter to determine strictness of doublet removal. See
 \code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}} for details.}
-
-\item{file}{A filepath or flowFrame.}
 }
 \description{
 Preview preprocessing settings for a single file before applying it to all data.

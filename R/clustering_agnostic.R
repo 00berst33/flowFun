@@ -68,7 +68,7 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 #'
 #' Merge or relabel metaclusters, and reassign clusters.
 #'
-#' @param table A data table that has been clustered by [flowSOMWrapper()].
+#' @param table A data table with columns for "Metacluster" and "Cluster".
 #' @param new_labels Optional. A named vector, where names are the original metacluster names,
 #' and values are the new labels.
 #' @param cluster_assignments Optional. A named vector, where names are the cluster numbers,

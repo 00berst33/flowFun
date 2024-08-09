@@ -15,9 +15,10 @@ doPreprocessing(
   nmad = 4,
   pctg_live = 0.6,
   pctg_qc = 0.8,
+  save_plots = TRUE,
+  save_fcs = FALSE,
   pdf_name = "preprocessing_results.pdf",
-  flowcut_dir = "flowCut",
-  save_fcs = FALSE
+  flowcut_dir = "flowCut"
 )
 }
 \arguments{
@@ -52,14 +53,17 @@ after gating out dead cells. The sample will be excluded if this number isn't me
 after low-quality events are removed during quality control. The sample will be
 excluded if this number isn't met.}
 
+\item{save_plots}{Boolean, should plots for gating and quality control
+results be saved. Default is \code{TRUE}.}
+
+\item{save_fcs}{Boolean, should the preprocessed data be saved as .fcs files.
+Default is \code{FALSE}.}
+
 \item{pdf_name}{Name of the PDF containing diagnostic plots for preprocessing
 results. Default is \code{"preprocessing_results.pdf"}.}
 
 \item{flowcut_dir}{The name of the directory containing QC results. The plots
 for any flagged files will be saved here. Default is \code{"flowCut"}.}
-
-\item{save_fcs}{Boolean, should the preprocessed data be saved as .fcs files.
-Default is \code{FALSE}.}
 }
 \value{
 A data.table containing preprocessed data.
