@@ -23,18 +23,30 @@
 #'                          ydim = 6)
 #'
 #' plotMetaclusterMFIs(fsom)
-plotMetaclusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed, ...) {
+plotMetaclusterMFIs <- function(input, cols_to_use = NULL, ...) {
+  result <- UseMethod("plotMetaclusterMFIs")
+  return(result)
+}
+
+#' plotMetaclusterMFIs.FlowSOM
+#'
+#' @keywords internal
+#' @export
+plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
+  if (is.null(cols_to_use)) {
+    cols_to_use <- input$map$colsUsed
+  }
 
   # Get metacluster MFIs for each marker/channel of interest
-  mfi_mat <- FlowSOM::GetMetaclusterMFIs(fsom = fsom, colsUsed = FALSE, prettyColnames = FALSE)
-  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
-  colnames(mfi_mat) <- fsom$prettyColnames[colnames(mfi_mat)]
-  rownames(mfi_mat) <- levels(FlowSOM::GetMetaclusters(fsom))
+  mfi_mat <- FlowSOM::GetMetaclusterMFIs(fsom = input, colsUsed = FALSE, prettyColnames = FALSE)
+  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(input, markers_of_interest))]
+  colnames(mfi_mat) <- input$prettyColnames[colnames(mfi_mat)]
+  rownames(mfi_mat) <- levels(FlowSOM::GetMetaclusters(input))
 
   # Set default heatmap options
   default_options <- list(border = TRUE,
-                         show_row_names = TRUE,
-                         heatmap_legend_param = list(
+                          show_row_names = TRUE,
+                          heatmap_legend_param = list(
                            title = "Expression",
                            title_gp = grid::gpar(fontsize = 9),
                            labels_gp = grid::gpar(fontsize = 8)))
@@ -48,6 +60,44 @@ plotMetaclusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed, ..
 
   return(mfi_heatmap)
 }
+
+#' plotMetaclusterMFIs.data.frame
+#'
+#' @keywords internal
+#' @export
+plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
+  Metacluster <- NULL
+
+  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+    cols_to_use <- attributes(input)$clustered
+  }
+
+  # Get metacluster MFIs for each marker/channel of interest
+  mfi_mat <- input %>%
+    tidytable::summarise(tidytable::across(.cols = cols_to_use, # column
+                                           .fns = stats::median,
+                                           .drop = "keep"),
+                         .by = Metacluster)
+  mfi_mat <- as.matrix(mfi_mat, rownames = "Metacluster")
+
+  # Set default heatmap options
+  default_options <- list(border = TRUE,
+                          show_row_names = TRUE,
+                          heatmap_legend_param = list(
+                            title = "Expression",
+                            title_gp = grid::gpar(fontsize = 9),
+                            labels_gp = grid::gpar(fontsize = 8)))
+
+  # Add any additional options chosen by user, and overwrite defaults if needed
+  additional_options <- list(...)
+  heatmap_options <- utils::modifyList(default_options, additional_options)
+
+  # Generate heatmap
+  mfi_heatmap <- do.call(ComplexHeatmap::Heatmap, c(list(matrix = mfi_mat), heatmap_options))
+
+  return(mfi_heatmap)
+}
+
 
 #' plotClusterMFIs
 #'
