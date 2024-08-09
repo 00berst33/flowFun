@@ -6,11 +6,11 @@
 \usage{
 doPreprocessing(
   input,
-  ld_channel = NULL,
   compensation = NULL,
   transformation = NULL,
   transformation_type = c("logicle", "arcsinh", "other", "none"),
   debris_gate = NULL,
+  ld_channel = NULL,
   live_gate = NULL,
   nmad = 4,
   pctg_live = 0.6,
@@ -22,9 +22,6 @@ doPreprocessing(
 }
 \arguments{
 \item{input}{A directory, list of filenames, or data.table.}
-
-\item{ld_channel}{Name of the channel corresponding to the marker for live/dead
-cells. This should appear the same as it does in the .fcs files.}
 
 \item{compensation}{Optional. A compensation matrix, or a file path to one.}
 
@@ -38,6 +35,9 @@ selected automatically. See details for more.}
 \item{debris_gate}{A gate to gate out debris, defined as a
 \code{\link[flowCore:filter-class]{filter}}. If \code{NULL} (default), a
 gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.}
+
+\item{ld_channel}{Name of the channel corresponding to the marker for live/dead
+cells. This should appear the same as it does in the .fcs files.}
 
 \item{live_gate}{A gate to gate out dead cells. If \code{NULL} (default), a
 gate is automatically selected.}

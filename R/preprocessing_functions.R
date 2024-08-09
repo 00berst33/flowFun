@@ -52,7 +52,7 @@ plotBeforeAfter <- function(ff1, ff2, channel1, channel2, ncells) {
 
   df <- data.frame(x = flowCore::exprs(ff1)[, channel1],
                    y = flowCore::exprs(ff1)[, channel2])
-  i <- sample(nrow(df), ncells)
+  i <- sample(nrow(df), min(nrow(df), ncells))
   if (!"Original_ID" %in% colnames(flowCore::exprs(ff1))) {
     ff1@exprs <- cbind(ff1@exprs,
                        Original_ID = seq_len(nrow(ff1@exprs)))
@@ -66,7 +66,8 @@ plotBeforeAfter <- function(ff1, ff2, channel1, channel2, ncells) {
     ggplot2::theme_minimal() +
     ggplot2::theme(legend.position = "none")
 
-  ggpubr::ggarrange(plot)
+  #ggpubr::ggarrange(plot)
+  return(plot)
 }
 
 #' getTableFromFCS
@@ -74,16 +75,25 @@ plotBeforeAfter <- function(ff1, ff2, channel1, channel2, ncells) {
 #' Generate a data.table to use for analysis from existing .fcs files.
 #'
 #' @param input List of filenames with relative file paths, or a directory name.
+#' @param num_cells Optional parameter for stratified sampling, the number of
+#' cells to randomly sample from each file.
 #'
 #' @return A data.table containing .fcs file data.
 #'
 #' @export
-getTableFromFCS <- function(input) {
+getTableFromFCS <- function(input, num_cells = NULL) {
   # Prepare input
-  if (!is.list(input) && dir.exists(input)) {
-    files <- list.files(input, full.names = TRUE)
-  } else {
+  if (all(dir.exists(input))) {
+    # files <- lapply(input, list.files, full.names = TRUE)
+    files <- unlist(lapply(input, list.files, full.names = TRUE), use.names = FALSE)
+  } else if (all(file.exists(input))) {
     files <- input
+  } else {
+    stop("Invalid input.")
+  }
+
+  if (is.null(num_cells)) {
+    num_cells <- Inf
   }
 
   if (length(files) == 1) {
@@ -110,15 +120,20 @@ getTableFromFCS <- function(input) {
       # Read in file
       ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
 
-      # Make cell ID column
+      # Make cell ID column and add to table
       vec <- seq(current_id, current_id + nrow(flowCore::exprs(ff)) - 1)
-
-      # Add data table to list
       dt <- tidytable::data.table(cell_id = vec, flowCore::exprs(ff))
-      prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)
 
       # Set first cell ID for next file
       current_id <- nrow(flowCore::exprs(ff)) + 1
+
+      # Sample `num_cells`
+      ids <- sample.int(length(vec), size = min(num_cells, length(vec)))
+      ids <- sort(ids)
+      dt <- dt[ids, ]
+
+      # Add data table to list
+      prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)
     }
     # Concatenate all data tables into one, with column for sample ID
     data.table::setattr(prepr_tables, 'names', files)
@@ -144,7 +159,7 @@ getTableFromFCS <- function(input) {
 # implementation of postgres
 # give user option to re-select gate manually
 # break down into smaller functions
-# let user preview results of gates
+# avoid opening several pdfs when the function keeps failing
 
 
 #' doPreprocessing
@@ -154,8 +169,6 @@ getTableFromFCS <- function(input) {
 #' !save setting used somehow, .json, .csv, etc.
 #'
 #' @param input A directory, list of filenames, or data.table.
-#' @param ld_channel Name of the channel corresponding to the marker for live/dead
-#' cells. This should appear the same as it does in the .fcs files.
 #' @param compensation Optional. A compensation matrix, or a file path to one.
 #' @param transformation The transformation to apply to the data. If \code{NULL}
 #' (default), a log-icle transformation is applied to the data.
@@ -167,6 +180,8 @@ getTableFromFCS <- function(input) {
 #' gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]{flowDensity()}}.
 #' @param live_gate A gate to gate out dead cells. If \code{NULL} (default), a
 #' gate is automatically selected.
+#' @param ld_channel Name of the channel corresponding to the marker for live/dead
+#' cells. This should appear the same as it does in the .fcs files.
 #' @param nmad Parameter to determine strictness of doublet removal. See
 #' [PeacoQC::RemoveDoublets()] for details.
 #' @param pctg_live Minimum proportion of live cells a sample should have remaining
@@ -252,9 +267,9 @@ getTableFromFCS <- function(input) {
 #' [flowDensity::deGate()], [flowCut::flowCut()]
 #'
 #' @export
-doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, transformation = NULL,
+doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
                             transformation_type = c("logicle", "arcsinh", "other", "none"),
-                            debris_gate = NULL, live_gate = NULL, nmad = 4,
+                            debris_gate = NULL, ld_channel = NULL, live_gate = NULL, nmad = 4,
                             pctg_live = 0.6, pctg_qc = 0.8,
                             pdf_name = "preprocessing_results.pdf", flowcut_dir = "flowCut",
                             save_fcs = FALSE) {
@@ -262,8 +277,8 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
 
   # Prepare data
   if (!methods::is(input, "data.table")) {
-    if (file.exists(input) | dir.exists(input) | is.list(input)) {
-      input <- getTableFromFCS(input)
+    if (is.vector(input) | all(file.exists(input)) | all(dir.exists(input))) {
+      input <- getTableFromFCS(input, num_cells = Inf)
     } else {
       print("`input` should be either an existing directory, a list of filenames, or a table generated by `getTableFromFCS()`.")
     }
@@ -287,6 +302,9 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
   # Initialize list of data.tables to store results
   prepr_tables <- lapply(1:length(raw_files), function(i) {tidytable::data.table()})
 
+  # Initialize list to store plots
+  grobs <- list()
+
   # Create directory if needed
   dir <- "Preprocessing Results"
   if (!dir.exists(dir)) {
@@ -294,27 +312,44 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
   }
 
   # Initialize gating scheme
-  gating_scheme <- list("debris_gate" = list("channels" = c("FSC-A", "SSC-A"),
-                                             "filter" = "flowDensity"),
-                        "live_gate" = list("channels" = c(ld_channel, "FSC-A"),
-                                           "filter" = "flowDensity")) # allow for user specified gates, later
+  gating_scheme <- list()
 
-  debris_percent <- 0.85
-  live_percent <- pctg_live
+  # Set default parameters for debris gate
+  debris_defaults <- list("channels" = c("FSC-A", "SSC-A"),
+                          "position" = c(TRUE, NA),
+                          "percentile" = c(0.85, NA))
 
-  # Change gate types, if needed
-  if (inherits(debris_gate, "polygonGate")) {
-    debris_gate <- methods::slot(debris_gate, "boundaries")
-    gating_scheme[["debris_gate"]][["filter"]] <- debris_gate
+  # Add additional parameters specified by user, if necessary
+  if (is.null(debris_gate)) {
+    debris_gate <- debris_defaults
+  } else if (is.list(debris_gate)) {
+    debris_gate <- utils::modifyList(debris_defaults, debris_gate)
+  } else {
+    debris_gate <- prepareGateParams(debris_gate)
   }
-  if (inherits(live_gate, "polygonGate")) {
-    live_gate <- methods::slot(live_gate, "boundaries")
-    gating_scheme[["live_gate"]][["filter"]] <- live_gate
+  gating_scheme <- append(gating_scheme, list("debris_gate" = debris_gate))
+
+  # If there is a marker for live/dead cells and a compensation matrix was given
+  if (!is.null(ld_channel) & !is.null(compensation)) {
+    # Set default parameters for live/dead gate
+    live_defaults <- list("channels" = c(ld_channel, "SSC-A"),
+                          "position" = c(FALSE, NA),
+                          "percentile" = c(0.70, NA),
+                          "twin.factor" = c(0.1, NA))
+    # Add additional parameters specified by user, if necessary
+    if (is.null(live_gate)) {
+      live_gate <- live_defaults
+    } else if (is.list(live_gate)) {
+      live_gate <- utils::modifyList(live_defaults, live_gate)
+    } else {
+      live_gate <- prepareGateParams(live_gate)
+    }
+    gating_scheme <- append(gating_scheme, list("live_gate" = live_gate))
   }
 
   # Preprocess all given files and generate PDF of preprocessing results
-  grDevices::pdf(file.path(dir, pdf_name))
-  for (file in raw_files) {
+  for (i in seq_along(raw_files)) {
+    file <- raw_files[i]
     print(paste0("Processing ", basename(file), "..."))
     ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
 
@@ -324,27 +359,10 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
     ff_m <- PeacoQC::RemoveMargins(ff, c("FSC-A", all_channels))
     ff_d <- PeacoQC::RemoveDoublets(ff_m, nmad = nmad)
 
-    # Create plot for results of doublet removal
-    p1 <- plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000)
-
-    # Apply debris gate if given, otherwise draw automatically
-    if (!is.null(debris_gate)) {
-      ff_g <- flowDensity::flowDensity(obj = ff_d,
-                                       channels = c("FSC-A", "SSC-A"),
-                                       position = c(TRUE, NA),
-                                       filter = debris_gate)
-      ff_g <- flowDensity::getflowFrame(ff_g)
-    } else {
-      ff_g <- flowDensity::flowDensity(obj = ff_d,
-                                       channels = c("FSC-A", "SSC-A"),
-                                       position = c(TRUE, NA),
-                                       percentile = c(debris_percent, NA)) # base on last gate if it exists
-      debris_percent <- methods::slot(ff_g, "proportion")/100
-      ff_g <- flowDensity::getflowFrame(ff_g)
-    }
-
-    # Create plot for results of debris removal
-    p2 <- plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000)
+    # Apply debris gate
+    ff_g <- do.call(flowDensity::flowDensity, c(list("obj" = ff_d), debris_gate))
+    debris_percent <- methods::slot(ff_g, "proportion")/100
+    ff_g <- flowDensity::getflowFrame(ff_g)
 
     # Apply compensation matrix if given
     if (!is.null(compensation)) {
@@ -373,31 +391,25 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
       ff_t <- flowCore::transform(ff_c, transformation)
     }
 
-    # If there is a live/dead channel
-    if (!is.null(ld_channel)) {
-      # Apply live/dead gate if given, otherwise draw automatically
-      if (!is.null(live_gate)) {
-        ff_l <- flowDensity::flowDensity(obj = ff_t,
-                                         channels = c("ld_channel", "FSC-A"),
-                                         position = c(FALSE, NA),
-                                         filter = live_gate)
-        ff_l <- flowDensity::getflowFrame(ff_g)
-      } else {
-        ff_l <- flowDensity::flowDensity(obj = ff_t,
-                                         channels = c(ld_channel, "FSC-A"),
-                                         position = c(FALSE, NA),
-                                         percentile = c(live_percent, NA),
-                                         twin.factor = c(0.1, NA))
-        live_percent <- methods::slot(ff_l, "proportion")/100
-        ff_l <- flowDensity::getflowFrame(ff_l)
-      }
+    if (!is.null(live_gate)) {
+      ff_l <- do.call(flowDensity::flowDensity, c(list("obj" = ff_t), live_gate))
+      live_percent <- methods::slot(ff_l, "proportion")/100
+      ff_l <- flowDensity::getflowFrame(ff_l)
     }
+
+    # Create plot for results of doublet removal
+    p1 <- plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000)
+
+    # Create plot for results of debris removal
+    p2 <- plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000)
 
     # Create plot for results of live/dead cell removal
     p3 <- plotBeforeAfter(ff_t, ff_l, ld_channel, "FSC-A", 5000)
 
-    # Arrange above plots on single page
-    gridExtra::grid.arrange(p1, p2, p3, nrow = 2, ncol = 2, top = file)
+    j = 1 + 3*(i-1)
+    grobs[[j]] <- ggplot2::ggplotGrob(p1)
+    grobs[[j+1]] <- ggplot2::ggplotGrob(p2)
+    grobs[[j+2]] <- ggplot2::ggplotGrob(p3)
 
     # Perform quality control via flowCut package
     fc <- suppressWarnings(flowCut::flowCut(f = ff_l,
@@ -433,16 +445,29 @@ doPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, trans
       }
     } else {
       warning(paste0(file, " was removed due to poor quality. If desired, parameters `pctg_live`",
-      " and `pctg_qc` may be edited to change the strictness of sample removal."))
+                     " and `pctg_qc` may be edited to change the strictness of sample removal."))
     }
   }
-  grDevices::dev.off()
+
+  # Save PDF of gating plots for each sample
+  names(grobs) <- basename(raw_files)
+  ml <- gridExtra::marrangeGrob(grobs,
+                                nrow = 2,
+                                ncol = 1,
+                                layout_matrix = rbind(c(1,1,2,2),
+                                                      c(1,1,2,2),
+                                                      c(NA,3,3,NA),
+                                                      c(NA,3,3,NA)),
+                                top = quote(names(grobs)[g]))
+  ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, width = 11, height = 8, device = "pdf")
 
   # Concatenate all data tables into one, with column for sample ID
   prepr_table <- tidytable::bind_rows(prepr_tables, .id = TRUE)
-  prepr_table <- prepr_table %>%
-    tidytable::mutate(cell_id = seq(1, nrow(prepr_table)),
-                      .before = 2)
+  if (!("cell_id" %in% colnames(prepr_table))) {
+    prepr_table <- prepr_table %>%
+      tidytable::mutate(cell_id = seq(1, nrow(prepr_table)),
+                        .before = 2)
+  }
 
   # Add attributes
   if (is.null(compensation)) {
@@ -481,6 +506,7 @@ prepareGateParams <- function(gate) {
   # Set default options
   default_options <- list(position = c(TRUE, NA))
 
+  # If `gate` was drawn with flowCore
   if (inherits(gate, "parameterFilter")) {
     gate <- methods::as(gate, "polygonGate")
     boundaries <- methods::slot(gate, "boundaries")
@@ -489,16 +515,18 @@ prepareGateParams <- function(gate) {
     all_options <- utils::modifyList(default_options, list("channels" = channels,
                                                            "filter" = boundaries))
   } else if (inherits(gate, "CellPopulation")) {
-    filter <- methods::slot(gate, "filter")
-    channels <- colnames(filter)
+    filters <- methods::slot(gate, "filter")
+    channels <- colnames(filters)
 
     all_options <- utils::modifyList(default_options, list("channels" = channels,
-                                                           "filter" = filter))
+                                                           "filter" = filters))
   } else if (is.list(gate)) {
     # Add any additional options chosen by user, and overwrite defaults if needed
     all_options <- utils::modifyList(default_options, gate)
-  } else {
-    stop("The provided gate's data type is not supported.")
+  }
+  else {
+    stop("The provided gate's data type is not supported. Please ensure that it is either a
+         gate drawn with the flowCore/flowDensity packages, or a list.")
   }
 
   return(all_options)
@@ -509,43 +537,58 @@ prepareGateParams <- function(gate) {
 #' Preview preprocessing settings for a single file before applying it to all data.
 #'
 #' @inheritParams doPreprocessing
-#' @param file A filepath or flowFrame.
+#' @param input A filepath or flowFrame.
 #'
 #' @export
-previewPreprocessing <- function(file, ld_channel = NULL, compensation = NULL, transformation = NULL,
+previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, transformation = NULL,
                                  transformation_type = c("logicle", "arcsinh", "other", "none"),
                                  debris_gate = NULL, live_gate = NULL, nmad = 4) {
-  if (file.exists(file)) {
-    ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
+  .id <- NULL
+  if (methods::is(input, "data.frame")) {
+    input <- input %>%
+      tidytable::pull(.id) %>%
+      unique()
+    input <- input[1]
+    print("Checking first file found in table..")
+  }
+
+  # Read in input, if necessary
+  if (file.exists(input)) {
+    ff <- flowCore::read.FCS(input, truncate_max_range = FALSE)
   } else {
-    ff <- file
+    ff <- input
   }
 
   all_channels <- as.vector(Biobase::pData(flowCore::parameters(ff))$name[which(!is.na(Biobase::pData(flowCore::parameters(ff))$desc))])
 
   # RENAME HERE
 
-  # Prepare parameters for gating functions
+  # Set default parameters for debris gate
   debris_defaults <- list("channels" = c("FSC-A", "SSC-A"),
                           "position" = c(TRUE, NA),
                           "percentile" = c(0.85, NA))
+
+  # Add to or override defaults with user specified parameters
   if (is.null(debris_gate)) {
-    debris_gate <- prepareGateParams(debris_defaults)
+    debris_gate <- debris_defaults
   } else if (is.list(debris_gate)) {
-    debris_gate <- prepareGateParams(utils::modifyList(debris_defaults, debris_gate))
+    debris_gate <- utils::modifyList(debris_defaults, debris_gate)
   } else {
     debris_gate <- prepareGateParams(debris_gate)
   }
 
+  # If there is a marker for live/dead cells and a compensation matrix was given
   if (!is.null(ld_channel) & !is.null(compensation)) {
-    live_defaults <- list("channels" = c(ld_channel, "SSC-A"),
+    # Set default parameters for live gate
+    live_defaults <- list("channels" = c(ld_channel, "FSC-A"),
                           "position" = c(FALSE, NA),
-                          "percentile" = c(0.65, NA),
+                          "percentile" = c(0.70, NA),
                           "twin.factor" = c(0.1, NA))
+    # Add to or override defaults with user specified parameters
     if (is.null(live_gate)) {
-      live_gate <- prepareGateParams(live_defaults)
+      live_gate <- live_defaults
     } else if (is.list(live_gate)) {
-      live_gate <- prepareGateParams(utils::modifyList(live_defaults, live_gate))
+      live_gate <- utils::modifyList(live_defaults, live_gate)
     } else {
       live_gate <- prepareGateParams(live_gate)
     }
@@ -555,15 +598,9 @@ previewPreprocessing <- function(file, ld_channel = NULL, compensation = NULL, t
   ff_m <- PeacoQC::RemoveMargins(ff, c("FSC-A", "SSC-A", all_channels))
   ff_d <- PeacoQC::RemoveDoublets(ff_m, nmad = nmad)
 
-  # Create plot for results of doublet removal
-  p1 <- plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000)
-
   # Apply debris gate
-  ff_g <- do.call(flowDensity::flowDensity, c(ff_d, debris_gate))
+  ff_g <- do.call(flowDensity::flowDensity, c(list("obj" = ff_d), debris_gate))
   ff_g <- flowDensity::getflowFrame(ff_g)
-
-  # Create plot for results of debris removal
-  p2 <- plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000)
 
   # Apply compensation matrix if given
   if (!is.null(compensation)) {
@@ -577,7 +614,7 @@ previewPreprocessing <- function(file, ld_channel = NULL, compensation = NULL, t
     ff_t <- flowCore::transform(ff_c, transformation)
   } else {
     transformation <- switch(transformation_type,
-                             "logicle" = flowCore::estimateLogicle(ff_c, channels = all_channels),
+                             "logicle" = flowCore::estimateLogicle(ff_c, channels = ld_channel),
                              "arcsinh" = {
                                res <- flowCore::arcsinhTransform(b = 5)
                                res <- flowCore::transformList(all_channels, res)
@@ -594,16 +631,33 @@ previewPreprocessing <- function(file, ld_channel = NULL, compensation = NULL, t
 
   # Apply live/dead gate
   if (!is.null(live_gate)) {
-    ff_l <- do.call(flowDensity::flowDensity, c(ff_t, live_gate))
+    ff_l <- do.call(flowDensity::flowDensity, c(list("obj" = ff_t), live_gate))
     ff_l <- flowDensity::getflowFrame(ff_l)
+    # o = flowDensity::deGate(ff_t, "BUV496-A", tinypeak.removal = 1/20, spar = 0.9)
+    # print(o)
+    # rect = flowCore::rectangleGate(.gate = list("BUV496-A"= c(-0.5, o),
+    #                                             "FSC-A" = c(0, 300000)))
+    # filt = flowCore::filter(ff_t, rect)
+    # ff_l = flowCore::Subset(ff_t, filt)
   }
+
+  # Create plot for results of doublet removal
+  p1 <- plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000)
+
+  # Create plot for results of debris removal
+  p2 <- plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000)
 
   # Create plot for results of live/dead cell removal
   p3 <- plotBeforeAfter(ff_t, ff_l, ld_channel, "FSC-A", 5000)
 
   # Arrange above plots
-  gridExtra::grid.arrange(p1, p2, p3, nrow = 2, ncol = 2, top = file)
-
-  return(ff_l)
+  gridExtra::grid.arrange(p1, p2, p3,
+                          nrow = 2,
+                          ncol = 2,
+                          layout_matrix = rbind(c(1,1,2,2),
+                                                c(1,1,2,2),
+                                                c(NA,3,3,NA),
+                                                c(NA,3,3,NA)),
+                          top = file)
 }
 

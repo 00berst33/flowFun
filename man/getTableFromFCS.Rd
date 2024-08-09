@@ -4,10 +4,13 @@
 \alias{getTableFromFCS}
 \title{getTableFromFCS}
 \usage{
-getTableFromFCS(input)
+getTableFromFCS(input, num_cells = NULL)
 }
 \arguments{
 \item{input}{List of filenames with relative file paths, or a directory name.}
+
+\item{num_cells}{Optional parameter for stratified sampling, the number of
+cells to randomly sample from each file.}
 }
 \value{
 A data.table containing .fcs file data.
