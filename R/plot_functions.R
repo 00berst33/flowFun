@@ -65,7 +65,7 @@ plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
 #'
 #' @keywords internal
 #' @export
-plotMetaclusterMFIs.data.frame = function(input, cols_to_use = NULL, ...) {
+plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   Metacluster <- NULL
 
   if (methods::is(input, "data.table") & is.null(cols_to_use)) {

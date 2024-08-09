@@ -12,7 +12,7 @@ editTableMetaclusters(
 )
 }
 \arguments{
-\item{table}{A data table that has been clustered by \code{\link[=flowSOMWrapper]{flowSOMWrapper()}}.}
+\item{table}{A data table with columns for "Metacluster" and "Cluster".}
 
 \item{new_labels}{Optional. A named vector, where names are the original metacluster names,
 and values are the new labels.}

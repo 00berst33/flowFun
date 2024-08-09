@@ -302,7 +302,7 @@ doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
   }
 
   # Initialize list of data.tables to store results
-  prepr_tables <- lapply(1:length(raw_files), function(i) {tidytable::data.table()})
+  prepr_tables <- lapply(1:length(raw_files), function(i) {tidytable::tidytable()})
 
   # Initialize list to store plots
   grobs <- list()
@@ -439,7 +439,7 @@ doPreprocessing <- function(input, compensation = NULL, transformation = NULL,
 
     # If it is high enough quality, bind sample to greater data table and save
     if (!remove) {
-      dt <- tidytable::data.table(flowCore::exprs(ff_fc))
+      dt <- tidytable::tidytable(flowCore::exprs(ff_fc))
       prepr_tables[[file]] <- rbind(prepr_tables[[file]], dt)
 
       if (save_fcs) {
