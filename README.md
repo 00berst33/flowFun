@@ -1,6 +1,11 @@
 # flowFun
 R package containing functions for analysis of flow cytometry data. This package can be installed from the Rstuio console as follows: 
 ```{r, eval = FALSE}
+install.packages("BiocManager")
+BiocManager::install("flowCut")
+BiocManager::install("flowDensity")
+BiocManager::install("flow")
+
 install.packages("devtools")
 devtools::install_github("00berst33/flowFun")
 ```
@@ -8,6 +13,7 @@ devtools::install_github("00berst33/flowFun")
 Priority:
 - change plotBeforeAfter() to draw gates on flowDensity plots instead of 
 highlighting cells
+- normalization
 - improve automated gating of preprocessing, and allow for more gating schemes
 - allow for a single sample's gates to be redrawn manually after failed automated attempt
 - relational database for data management?
