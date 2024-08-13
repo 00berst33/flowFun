@@ -2,12 +2,9 @@
 R package containing functions for analysis of flow cytometry data. This package can be installed from the Rstuio console as follows: 
 ```{r, eval = FALSE}
 install.packages("BiocManager")
-BiocManager::install("flowCut")
-BiocManager::install("flowDensity")
-BiocManager::install("flow")
-
 install.packages("devtools")
-devtools::install_github("00berst33/flowFun")
+
+devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 Priority:

@@ -7,7 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 # Installation
 ```{r, eval = FALSE}
-install.packages("devtools")
+install.packages("devtools", dependencies = TRUE, build_vignettes = TRUE)
 devtools::install_github("00berst33/flowFun")
 ```
 
@@ -38,28 +38,43 @@ library(tidytable)
 library(flowFun)
 
 # Specify path to .fcs file
-file <- system.file("extdata", "aggregate.fcs", package = "flowFun") # filename
+file <- system.file("extdata", "aggregate.fcs", package = "flowFun")
 # Read in as tidytable
 table <- getTableFromFCS(file, num_cells = 1000)
-# Check result
-print(table)
+```
+
+The following is a snippet of the resulting table:
+
+```{r print-table, fig.align='center', echo=FALSE} 
+table$.id <- basename(table$.id)
+
+table %>% 
+  tidytable::select(tidytable::all_of(1:10)) %>%
+  tidytable::slice_head(5) %>%
+  data.frame() %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    ) %>%
+  kableExtra::kable_styling(
+      position = "center"
+    )
 ```
 
 # Preprocessing
 
 Once setup files have been cleaned and a compensation matrix has been generated, the next step is to preprocess the raw data. In order, the steps this pipeline implements are as follows:
-   1. Removing margin events (i.e. values that fall outside the range the
-      cytometer should be able to pick up).
-   2. Removing doublets.
-   3. Removing debris.
-   4. Compensating the data.
-   5. Transforming the data.
-   6. Removing dead cells.
-   7. Quality control via flowCut, to check and correct for occurrences like clogs, speed
-      changes, etc. and flag any files that may be too low-quality to include
-      in the analysis.
+
+1. Removing margin events (i.e. values that fall outside the range the cytometer should be able to pick up).
+2. Removing doublets.
+3. Removing debris.
+4. Compensating the data.
+5. Transforming the data.
+6. Removing dead cells.
+7. Quality control via flowCut, to check and correct for occurrences like clogs, speed changes, etc. and flag any files that may be too low-quality to include in the analysis.
       
-Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, by either simply using the same one for each sample, or ##retroactively selecting samples which the automated gating performed poorly for and re-drawing gates as necessary. Although it is implemented, it is highly recommended to avoid as much manual gating as possible. Doing so greatly improves the objectivity and reproducibility of the analysis.
+Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, by either simply using the same one for each sample, or retroactively selecting samples which the automated gating performed poorly for and re-drawing gates as necessary. Although it is implemented, it is highly recommended to avoid as much manual gating as possible. Doing so greatly improves the objectivity and reproducibility of the analysis.
 
 Note that this workflow is currently restricted to the outlined gating scheme, but will later support user-defined gating schemes. ###
 
@@ -71,7 +86,7 @@ The strictness of the doublet removal may be controlled with the `nmad` paramete
 
 If `debris_gate` and `live_gate` are left unspecified, then automated gates will be found for each sample. Alternatively, the user may specify their own gate for each of these parameters, and the same gate will be applied across all samples. These gates should be defined via either the flowCore or flowDensity packages, as demonstrated below.
 
-```{r manual-gates, fig.height=5, fig.width=7, fig.align='default'}
+```{r manual-gates, fig.height=5, fig.width=7}
 library(flowDensity)
 
 # Get sample data
@@ -110,9 +125,10 @@ previewPreprocessing(files[2],
 
 Once the desired parameters have been selected, all samples may be processed. During this step, the user can set minimum thresholds a sample must meet to avoid being removed from analysis. `pctg_live` sets the minimum proportion of live cells a sample must have, and `pctg_qc` sets the minium proportion of quality events a sample must have. To avoid any samples being removed, these parameters may be set to 0.
 
-```{r preprocess-samples}
+```{r preprocess-samples, eval=FALSE}
 # Preprocess all samples
 prepr_table <- doPreprocessing(table,
+                               num_cells = 10000,
                                ld_channel = "BUV496-A", 
                                compensation = comp_mat,
                                transformation_type = "logicle",
@@ -131,17 +147,19 @@ channel is plotted against time, and removed events are marked. If desired, the 
 
 This package is compatible with various clustering algorithms, but was designed specifically with FlowSOM in mind due to its fast runtime and tools for data visualization. Therefore, much focus will be given to FlowSOM in the following section.
 
-The strategy for identifying cell type populations outlined by this workflow is not entirely automated, and instead uses a human-in-the-loop approach. Such an approach aims to reduce the burden of analyzing such a large volume of data, while still incorporating expert knowledge to ensure that results are biologically meaningful. To accomplish this, the data is initially overclustered. The expert then examines the result of the clustering through various relevant plots, taking into account not only marker expression but also cluster sizes and mathematical similarity, and uses their best judgement to merge clusters until an appropriate final number has been reached and labelled. 
+The strategy for identifying cell type populations outlined by this workflow is not entirely automated, and instead uses a human-in-the-loop approach. Such an approach aims to reduce the burden of analyzing such a large volume of data, while still incorporating expert knowledge to ensure that results are biologically meaningful. To accomplish this, the data is initially overclustered. The expert then examines the result of the clustering through various relevant plots, taking into account not only marker expression but also cluster sizes and mathematical distance, and uses their best judgement to merge clusters until an appropriate final clustering has been reached and labelled. 
 
-This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user.
+It is also necessary for the user to specify which markers are to be used for clustering. There are a few considerations to account for when selecting these, the most important being that it is highly recommended that any markers the user intends to test for differential expression are NOT used for clustering. There is a number of reasons for this, but in short, it generally makes little sense to test for differential expression of a marker in a cluster when the cluster is defined by high or low expression of said marker (i.e. testing for differential expression of CD8 in CD8 T cells). Furthermore, parameters like side and forward scatter should not be included, and if a viability stain was used, it should also be excluded.
 
-``` {r flowsom-clustering, fig.height=5, fig.width=5}
-# Get filename
-# file <- system.file("extdata", "aggregate.fcs", package = "flowFun")
-# file <- getTableFromFCS(file, num_cells = 1000)
+Below, the preprocessed data from earlier is clustered using the FlowSOM algorithm via the function `flowSOMWrapper()`. This outputs the same table that is given to it, but with the columns `Metacluster` and `Cluster` joined to the right, giving the results of the clustering. Specifying a seed is optional, but strongly recommended for the sake of reproducibility.
+
+``` {r flowsom-clustering}
+# Read in table
+prepr_table <- system.file("extdata", "prep_table.rds", package = "flowFun")
+prepr_table <- readRDS(prepr_table)
 
 # Define markers/columns to use for clustering
-cols_to_cluster <- c(10, 12:14, 15, 17:22, 25:34)+2
+cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)
 
 # Perform clustering
 fsom_dt <- flowSOMWrapper(prepr_table,
@@ -151,11 +169,135 @@ fsom_dt <- flowSOMWrapper(prepr_table,
                           ydim = 12,
                           seed = 42)
 
-# Generate heatmap
-plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
+```
 
+```{r print-fsom-table, echo=FALSE} 
+fsom_dt %>% 
+  tidytable::select(tidytable::all_of(c("cell_id", "Metacluster", "Cluster"))) %>%
+  tidytable::slice_head(5) %>%
+  data.frame() %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+A number of different plots may be generated by this package to aid the user in merging metaclusters, but the arguably the most important are heatmaps and dimension reduction plots. Below, a heatmap of MFIs by metacluster is generated. 
+
+```{r first-heatmap, fig.height=5, fig.width=6, fig.align='center'}
+# Generate heatmap
+plotMetaclusterMFIs(fsom_dt)
+```
+
+This heatmap is what the user should be using as their main reference when merging metaclusters. The dendrogram on the left-hand side, which displays a hierarchal clustering of the metaclusters, is of particular interest, and this hierarchy may be followed to perform the clustering. However, this dendrogram should not be followed blindly. First, the metaclusters that are determined to be similar by the clustering may not be of biological interest; some cell type markers may be of greater significance than others, and this is something that the clustering does not take into account. Second, dendrograms may be created with different linkage methods (single-linkage, average-linkage, centroid-linkage, etc.), and these different methods may result in slightly different hierarchies. This is not to say that the dendrogram is useless, only that it has its limitations.
+
+The user should also consider cluster size when merging. If a metacluster is rather small, and differs from its neighboring clusters in irrelevant markers, then it is reasonable to merge it. However, if the metacluster is small but distinct in markers of interest, it may be left
+unmerged. Finally, if a metacluster does not represent any particular cell type of interest, it may be dropped from the analysis entirely. For example, depending on how strict you were with your gating, there may be some debris remaining in your preprocessed data. The clustering algorithm will likely cluster these together, and you may decide to exclude them from further analysis.
+
+To further aid the decision making process, a UMAP colored by metacluster is generated below. 
+
+```{r umap, fig.height=5, fig.width=6, fig.align='center'}
+# Generate UMAP
+plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
 
 ```
+
+This plot is most useful to check metaclusters' relative sizes, and how similar they are to one another. The closer clusters (and cells) are to each other, the more similar they are to each other. However, the opposite is not necessarily true.
+
+By examining these plots, it starts to become clear which metaclusters are more similar to one another, and what their phenotype may be. For example, we see that metaclusters 1, 2, and 9 are all closely linked by the dendrogram in the heatmap, and are rather close to one another in the UMAP. They all have a high expression of the markers CD3 and CD8, but differ noticeably in markers PD1, CCR7, and CD45RA. It seems that these metaclusters are each a subset of CD8 T cells, and it is reasonable to merge them. Depending on the question being investigated, the user may wish to instead keep them separate, and perhaps specify exhausted and non-exhausted CD8 T cells, which could also be reasonable. 
+
+It should be noted that if a user does desire to look at a particular cell type in greater resolution, this workflow allows for backgating on and reclustering cells belonging to a particular metacluster; therefore identifying every sub-population of interest is not necessary at this step. For now, this example will find an initial low-resolution clustering.
+
+The function `editTableMetaclusters()` can be used to merge and rename metaclusters. A new column, `Meta_original`, is added to the given table, specifying the metaclusters that were found when the clustering algorithm was first called. The existing `Metaclusters` column is edited to contain the new assignments. 
+
+```{r first-merge}
+# Merge metaclusters
+fsom_dt <- editTableMetaclusters(fsom_dt, 
+                                 new_labels = c("9" = "1",
+                                                "2" = "1",
+                                                "8" = "4",
+                                                "23" = "15",
+                                                "21" = "15",
+                                                "20" = "15",
+                                                "22" = "15",
+                                                "7" = "6"))
+
+```
+
+```{r print-fsom-table-merge1, echo=FALSE} 
+fsom_dt %>% 
+  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::slice_head(5) %>%
+  data.frame() %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+A new heatmap and UMAP are generated to reflect the new clustering, and help decide whether any further merging should be performed.
+
+```{r second-plots, fig.height=5, fig.width=6, fig.align='center'}
+# Generate new heatmap
+plotMetaclusterMFIs(fsom_dt, 
+                    cols_to_cluster,
+                    row_names_gp = grid::gpar(fontsize = 7),
+                    column_names_gp = grid::gpar(fontsize = 7), 
+                    height = grid::unit(0.6, "npc"), 
+                    width = grid::unit(0.6, "npc"))
+
+# Generate new UMAP
+plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
+```
+
+Again, metaclusters are merged and new plots are generated.
+
+```{r second-merge, fig.height=5, fig.width=6, fig.align='center'}
+# Merge metaclusters
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("12" = "5",
+                                                         "13" = "5",
+                                                         "10" = "6",
+                                                         "14" = "6",
+                                                         "25" = "18",
+                                                         "16" = "11",
+                                                         "24" = "3"))
+
+# New heatmap
+plotMetaclusterMFIs(fsom_dt, 
+                    cols_to_cluster,
+                    row_names_gp = grid::gpar(fontsize = 7),
+                    column_names_gp = grid::gpar(fontsize = 7), 
+                    height = grid::unit(0.6, "npc"), 
+                    width = grid::unit(0.6, "npc"))
+
+# New UMAP
+plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
+```
+
+Finally, the remaining metaclusters may be labelled by setting each of them equal to the desired name, instead of another metacluster to be merged into.
+
+```{r new-labels, fig.height=5, fig.width=6, fig.align='center'}
+# Label metaclusters
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
+                                                         "5" = "cDC",
+                                                         "4" = "B cells",
+                                                         "17" = "NK T cells",
+                                                         "19" = "NK cells",
+                                                         "1" = "CD8 T cells",
+                                                         "11" = "gdT cells",
+                                                         "15" = "CD4 T cells",
+                                                         "18" = "pDC",
+                                                         "3" = "Undefined"))
+
+# Generate final heatmap
+plotMetaclusterMFIs(fsom_dt, 
+                    cols_to_cluster)
+```
+
+This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user.
+
 
 ## Plots
 
@@ -174,22 +316,24 @@ plotClusterFileProportions()
 Perform differential marker expression analysis of flow cytometry data using limma, and differential count analysis using edgeR.
 
 
-Define the comparisons you are interested in testing during the analysis, as
-# a list of lists. Each nested list should include at least two levels of a 
-# factor to be used for the comparison. If you would like to compare two groups
-# within another group, you should specify the level(s) of interest for both of 
-# these factors. For example, if you were interested in control vs MIBC in 
-# females only, and male vs female for all samples, you would define the 
-# variable as follows: 
-# 
-# comparisons = list(
-#   female_mibc_vs_ctrl = list(Sex = "female", Disease = list("Ctrl", "MIBC")),
-#   male_vs_female = list(Sex = list("male", "female"))
-# )
-# 
-# You may name each comparison as you see fit, just ensure that it is R-friendly. 
-# The factor names, however (which would be "Sex" and "Disease" in the above 
-# example), should be identical to their column names in our "sample_df" data 
-# frame. Furthermore, the factor levels (which would be "female", "male", "Ctrl",
-# and "MIBC" in the above example), should be listed identical to how they 
-# appear in the data frame (AFTER correcting for any non-R-friendly values). 
+Define the comparisons you are interested in testing during the analysis, as a list of lists. Each nested list should include at least two levels of a factor to be used for the comparison. If you would like to compare two groups within another group, you should specify the level(s) of interest for both of these factors. You may name each comparison as you see fit, just ensure that it is R-friendly. 
+
+```{r extra, include=FALSE}
+# 12 - cDC
+# 10 - monocytes
+# 14 - monocytes
+# 13 - cDC
+# 6 - monocytes
+# 5 - cDC
+# 4 - B cells 
+# 18 - pDC
+# 17 - NK T cells
+# 19 - NK cells
+# 11 - gdT cells
+# 3 - undefined
+# 1 - cd8 T cells
+# 16 - gdT cells
+# 15 - cd4 T cells
+# 25 - pDC
+# 24 - undefined
+```

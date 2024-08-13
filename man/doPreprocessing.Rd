@@ -6,6 +6,7 @@
 \usage{
 doPreprocessing(
   input,
+  num_cells = 50000,
   compensation = NULL,
   transformation = NULL,
   transformation_type = c("logicle", "arcsinh", "other", "none"),
