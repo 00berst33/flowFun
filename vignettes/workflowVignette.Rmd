@@ -56,9 +56,6 @@ table %>%
     format = "html",
     align = "c",
     linesep = "",
-    ) %>%
-  kableExtra::kable_styling(
-      position = "center"
     )
 ```
 
