@@ -86,19 +86,15 @@ If `debris_gate` and `live_gate` are left unspecified, then automated gates will
 ```{r manual-gates, fig.height=5, fig.width=7}
 library(flowDensity)
 
-# Get sample data
-table <- system.file("extdata", "raw_samples.rds", package = "flowFun")
-table <- readRDS(table)
+# Get filepath to .fcs file of interest
+file <- system.file("extdata", "sample_2.fcs", package = "flowFun")
 
 # Read in compensation matrix
 comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFun")
 comp_mat <- read.csv(comp_mat, check.names = FALSE)
 
-# Get filenames
-files <- unique(table$.id)
-
 # Preview parameters
-previewPreprocessing(files[2],
+previewPreprocessing(file,
                      ld_channel = "BUV496-A",
                      compensation = comp_mat,
                      transformation_type = "logicle")
@@ -112,7 +108,7 @@ manual_live <- flowCore::rectangleGate(.gate = list("BUV496-A"= c(-1, 1.7),
                                                     "FSC-A" = c(0, 270000)))
 
 # Check new plots
-previewPreprocessing(files[2],
+previewPreprocessing(file,
                      ld_channel = "BUV496-A",
                      compensation = comp_mat,
                      transformation_type = "logicle",
@@ -123,6 +119,10 @@ previewPreprocessing(files[2],
 Once the desired parameters have been selected, all samples may be processed. During this step, the user can set minimum thresholds a sample must meet to avoid being removed from analysis. `pctg_live` sets the minimum proportion of live cells a sample must have, and `pctg_qc` sets the minium proportion of quality events a sample must have. To avoid any samples being removed, these parameters may be set to 0.
 
 ```{r preprocess-samples, eval=FALSE}
+# Get all sample data
+table <- system.file("extdata", "raw_samples.rds", package = "flowFun")
+table <- readRDS(table)
+
 # Preprocess all samples
 prepr_table <- doPreprocessing(table,
                                num_cells = 10000,
@@ -440,6 +440,8 @@ counts %>%
     )
 ```
 
+#### Differential Abundance
+
 Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
 
 Results are also saved as a .csv file for each comparison in the directory `Analysis Results/edgeR`. If running an edgeR analysis on multiple objects, or running the script multiple times for any reason, the user may wish to create sub-directories within `Analysis Results/edgeR` to stay organized. To do this, simply set the \code{dir_tables} parameter to a preferred sub-directory name.
@@ -472,6 +474,22 @@ da_results[[2]] %>%
     linesep = "",
     )
 ```
+
+#### Differential Expression
+
+To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
+
+```{r de-analysis}
+# Perform differential expression analysis
+de_analysis <- doDEAnalysis(fsom_dt, 
+                            sample_df = sample_info, 
+                            design = design, 
+                            contrasts = contrasts, 
+                            counts = counts, 
+                            markers_of_interest = c("PHA-L", "IL10R"),
+                            meta_names = meta_of_interest)
+
+# cols_from_fcs had to be retroactively changed
 ```
 
 ```{r extra, include=FALSE}
