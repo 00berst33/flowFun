@@ -12,6 +12,12 @@ plotUMAP(input, num_cells = 5000, labels = NULL, colors = NULL, seed = NULL)
 \item{num_cells}{The number of cells to use for the dimension reduction.
 Default is 5000.}
 
+\item{labels}{Optional, a vector specifying the order in which metacluster
+name will appear in the legend. All metacluster names present in \code{input}
+should exists in this vector.}
+
+\item{colors}{Optional, a vector of colors to use in the plot for each metacluster.}
+
 \item{seed}{Optional, a seed for reproducibility.}
 }
 \value{

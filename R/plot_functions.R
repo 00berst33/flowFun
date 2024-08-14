@@ -114,10 +114,10 @@ getPrettyColNames <- function(col, input) {
 #'
 #' Plot a heatmap of cluster MFIs.
 #'
-#' @param fsom The FlowSOM object whose data you would like to plot.
-#' @param markers_of_interest A character vector specifying which markers you
-#' would like to include in the plot. Default is \code{fsom$map$colsUsed} (the markers
-#' used for clustering).
+#' @param input The FlowSOM object or data table to plot.
+#' @param cols_to_use A character vector specifying which markers you
+#' would like to include in the plot. Default is the markers
+#' used for clustering.
 #' @param metaclusters A vector specifying which metaclusters whose clusters
 #' you would like to include in the plot. If NULL (default), all clusters are included.
 #' @param ... Additional parameters to pass to [ComplexHeatmap::Heatmap()].
@@ -141,23 +141,30 @@ getPrettyColNames <- function(col, input) {
 #'
 #' # Plot only clusters belonging to metaclusters 9 and 10
 #' plotClusterMFIs(fsom, metaclusters = c(9, 10))
-plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
-                           metaclusters = NULL, ...) {
+plotClusterMFIs <- function(input, cols_to_use, metaclusters, ...) {
+  results <- UseMethod("plotClusterMFIs")
+  return(results)
+}
+
+#' @keywords internal
+#' @export
+plotClusterMFIs.FlowSOM <- function(input, cols_to_use = input$map$colsUsed,
+                                    metaclusters = NULL, ...) {
 
   # Get cluster MFIs for each marker/channel of interest
-  mfi_mat <- FlowSOM::GetClusterMFIs(fsom, colsUsed = FALSE, prettyColnames = FALSE)
-  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(fsom, markers_of_interest))]
+  mfi_mat <- FlowSOM::GetClusterMFIs(input, colsUsed = FALSE, prettyColnames = FALSE)
+  mfi_mat <- mfi_mat[, which(colnames(mfi_mat) %in% FlowSOM::GetChannels(input, cols_to_use))]
 
   # Plot only clusters belonging to given metaclusters
   if (!is.null(metaclusters)) {
-    ind <- fsom$metaclustering %in% metaclusters
+    ind <- input$metaclustering %in% metaclusters
     if (!(TRUE %in% ind)) {
       stop("No clusters found in the given metacluster(s). Check that either your indices are within bounds, or names have no typos.")
     }
     mfi_mat <- mfi_mat[ind, ]
   }
 
-  colnames(mfi_mat) <- fsom$prettyColnames[colnames(mfi_mat)]
+  colnames(mfi_mat) <- input$prettyColnames[colnames(mfi_mat)]
 
   # Set default heatmap options
   default_options <- list(border = TRUE,
@@ -170,6 +177,66 @@ plotClusterMFIs = function(fsom, markers_of_interest = fsom$map$colsUsed,
                            title = "Expression",
                            title_gp = grid::gpar(fontsize = 9),
                            labels_gp = grid::gpar(fontsize = 8)))
+
+  # Add any additional options chosen by user, overwrite defaults if necessary
+  additional_options <- list(...)
+  heatmap_options <- utils::modifyList(default_options, additional_options)
+
+  # Generate heatmap
+  mfi_heatmap <- do.call(ComplexHeatmap::Heatmap, c(list(matrix = as.matrix(mfi_mat)), heatmap_options))
+
+  return(mfi_heatmap)
+}
+
+#' @keywords internal
+#' @export
+plotClusterMFIs.data.frame <- function(input, cols_to_use, metaclusters, ...) {
+  Metacluster <- Cluster <- NULL
+
+  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+    cols_to_use <- attributes(input)$clustered
+  }
+
+  # Get cluster MFIs for each marker/channel of interest
+  mfi_mat <- input %>%
+    tidytable::summarise(tidytable::across(.cols = cols_to_use,
+                                           .fns = stats::median,
+                                           .drop = "keep"),
+                         .by = Cluster)
+
+  # If metacluster(s) of interest were specified
+  if (!is.null(metaclusters)) {
+    # Get only clusters belonging to given metaclusters
+    clust_to_keep <- input %>%
+      tidytable::filter(Metacluster %in% metaclusters) %>%
+      tidytable::pull(Cluster) %>%
+      unique()
+
+    # If no clusters belong to the given metacluster(s)
+    if (length(clust_to_keep) < 1) {
+      stop("No clusters found in the given metacluster(s). Check that either your indices are within bounds, or names have no typos.")
+    }
+
+    # Subset MFI matrix to relevant clusters
+    mfi_mat <- mfi_mat %>%
+      tidytable::filter(Cluster %in% clust_to_keep)
+  }
+
+  # Turn results into a matrix and rename columns
+  mfi_mat <- as.matrix(mfi_mat, rownames = "Cluster")
+  colnames(mfi_mat) <- sapply(colnames(mfi_mat), getPrettyColNames, input = input)
+
+  # Set default heatmap options
+  default_options <- list(border = TRUE,
+                          show_row_names = TRUE,
+                          show_column_dend = FALSE,
+                          row_names_gp = grid::gpar(fontsize = 4),
+                          column_names_gp = grid::gpar(fontsize = 6),
+                          width = grid::unit(0.5, "npc"),
+                          heatmap_legend_param = list(
+                            title = "Expression",
+                            title_gp = grid::gpar(fontsize = 9),
+                            labels_gp = grid::gpar(fontsize = 8)))
 
   # Add any additional options chosen by user, overwrite defaults if necessary
   additional_options <- list(...)
@@ -476,6 +543,10 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
 #' @param input A FlowSOM object or data table.
 #' @param num_cells The number of cells to use for the dimension reduction.
 #' Default is 5000.
+#' @param labels Optional, a vector specifying the order in which metacluster
+#' name will appear in the legend. All metacluster names present in \code{input}
+#' should exists in this vector.
+#' @param colors Optional, a vector of colors to use in the plot for each metacluster.
 #' @param seed Optional, a seed for reproducibility.
 #'
 #' @return
@@ -538,8 +609,6 @@ plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
   if (!is.null(labels)) {
     meta_vec <- factor(meta_vec, levels = labels)
   }
-
-  # add parameter for choosing order of legend
 
   umap_df <- data.frame(umap$layout, Metacluster = meta_vec, Indices = inds)
 

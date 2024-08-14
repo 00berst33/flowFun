@@ -4,19 +4,14 @@
 \alias{plotClusterMFIs}
 \title{plotClusterMFIs}
 \usage{
-plotClusterMFIs(
-  fsom,
-  markers_of_interest = fsom$map$colsUsed,
-  metaclusters = NULL,
-  ...
-)
+plotClusterMFIs(input, cols_to_use, metaclusters, ...)
 }
 \arguments{
-\item{fsom}{The FlowSOM object whose data you would like to plot.}
+\item{input}{The FlowSOM object or data table to plot.}
 
-\item{markers_of_interest}{A character vector specifying which markers you
-would like to include in the plot. Default is \code{fsom$map$colsUsed} (the markers
-used for clustering).}
+\item{cols_to_use}{A character vector specifying which markers you
+would like to include in the plot. Default is the markers
+used for clustering.}
 
 \item{metaclusters}{A vector specifying which metaclusters whose clusters
 you would like to include in the plot. If NULL (default), all clusters are included.}
