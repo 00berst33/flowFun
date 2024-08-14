@@ -138,7 +138,7 @@ createFilteredAggregate.data.frame <- function(input, num_cells, clusters = NULL
       tidytable::pull(cell_id)
 
     # Sample cells and subset table
-    inds <- sample(x = sample_cells, size = per_sample)
+    inds <- sample(x = sample_cells, size = min(per_sample, length(sample_cells)))
     all_inds <- c(all_inds, inds)
   }
 

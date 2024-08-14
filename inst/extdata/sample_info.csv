@@ -1,0 +1,7 @@
+"filename","sample.name","disease","NAC","FMO","Isotype"
+"sample_1.fcs","Ctrl 1","Ctrl","","FMO_sample_1.fcs","Iso_sample_1.fcs"
+"sample_2.fcs","Ctrl 2","Ctrl","","FMO_sample_2.fcs","Iso_sample_2.fcs"
+"sample_3.fcs","MIBC 3","MIBC","No NAC","FMO_sample_3.fcs","Iso_sample_3.fcs"
+"sample_4.fcs","MIBC 4","MIBC","No NAC","FMO_sample_4.fcs","Iso_sample_4.fcs"
+"sample_5.fcs","MIBC 5","MIBC","NAC","FMO_sample_5.fcs","Iso_sample_5.fcs"
+"sample_6.fcs","MIBC 6","MIBC","NAC","FMO_sample_6.fcs","Iso_sample_6.fcs"

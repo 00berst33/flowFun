@@ -527,13 +527,13 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
                          dir_tables = NULL) {
 
   # Get sample info from sample_df object
-  sample_info <- sample_df[, -c(1, ncol(sample_df))] # remove?
+  #sample_info <- sample_df[, -c(1, ncol(sample_df))] # remove?
 
   # Create DGEList object
   if (!is.null(norm_method)) { # if user wants to normalize data
     norm_factors <- edgeR::calcNormFactors(counts, method = norm_method)
     dge_list <- edgeR::DGEList(counts = counts,
-                               samples = sample_info,
+                               samples = sample_df,
                                group = sample_df$group,
                                norm.factors = norm_factors,
                                remove.zeros = TRUE)
@@ -563,6 +563,8 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
     dir.create(dir_write, recursive = TRUE)
   }
 
+  pval_dfs <- lapply(1:ncol(contrasts), function(i) {data.frame()})
+
   # Perform likelihood ratio tests, and save results as a .csv file for each
   # comparison in the directory `dir_edger`.
   #
@@ -575,7 +577,13 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
     utils::write.csv(top, file = file.path(dir_write,
                                            paste0(colnames(contrasts)[i],
                                                   "_", dir_tables, "_edger.csv")))
+
+    pval_dfs[[i]] <- top$table
   }
+
+  names(pval_dfs) <- colnames(contrasts)
+
+  return(pval_dfs)
 }
 
 

@@ -108,8 +108,8 @@ Here we see that the gates for dead cells and doublets are a bit loose for this 
 
 ```{r manual-fix, fig.height=5, fig.width=7, fig.align='default'} 
 # Define manual gate for removal of dead cells
-manual_live <- rectangleGate(.gate = list("BUV496-A"= c(-1, 1.7),
-                                          "FSC-A" = c(0, 270000)))
+manual_live <- flowCore::rectangleGate(.gate = list("BUV496-A"= c(-1, 1.7),
+                                                    "FSC-A" = c(0, 270000)))
 
 # Check new plots
 previewPreprocessing(files[2],
@@ -238,12 +238,7 @@ A new heatmap and UMAP are generated to reflect the new clustering, and help dec
 
 ```{r second-plots, fig.height=5, fig.width=6, fig.align='center'}
 # Generate new heatmap
-plotMetaclusterMFIs(fsom_dt, 
-                    cols_to_cluster,
-                    row_names_gp = grid::gpar(fontsize = 7),
-                    column_names_gp = grid::gpar(fontsize = 7), 
-                    height = grid::unit(0.6, "npc"), 
-                    width = grid::unit(0.6, "npc"))
+plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
 # Generate new UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
@@ -262,12 +257,7 @@ fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("12" = "5",
                                                          "24" = "3"))
 
 # New heatmap
-plotMetaclusterMFIs(fsom_dt, 
-                    cols_to_cluster,
-                    row_names_gp = grid::gpar(fontsize = 7),
-                    column_names_gp = grid::gpar(fontsize = 7), 
-                    height = grid::unit(0.6, "npc"), 
-                    width = grid::unit(0.6, "npc"))
+plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
 # New UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
@@ -289,31 +279,200 @@ fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
                                                          "3" = "Undefined"))
 
 # Generate final heatmap
-plotMetaclusterMFIs(fsom_dt, 
-                    cols_to_cluster)
+plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 ```
 
-This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user.
+An annotated heatmap displaying the merged clusters may be created with the function `annotateMFIHeatmap()`.
 
+```{r annotate-heatmap, fig.height=5, fig.width=6, fig.align='center'}
+# Generate annotated heatmap
+annotateMFIHeatmap(fsom_dt, cols_to_cluster)
+```
+
+### Reclustering
+
+This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user. The former approach is demonstrated below to further investigate the cells identified as CD8 T cells.
+
+```{r subset}
+# Get table of only CD8 T cells
+new_table <- createFilteredAggregate(fsom_dt, 
+                                     num_cells = Inf, 
+                                     metaclusters = "CD8 T cells",
+                                     clusters = NULL)
+```
+
+```{r subset-table, echo=FALSE} 
+new_table %>% 
+  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::slice_head(5) %>%
+  data.frame() %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+One an appropriate subset has been created, the next step is to create a scree plot, which may be used to determine which principal components should be used in the analysis. Typically, there is a distinct "elbow" in the plot, where the amount of variance explained by each component becomes drastically smaller. So, if this elbow appears at principal component 5, components 1-5 would be selected to recluster the data. If there is no obvious elbow, it is instead reasonable to use whichever number of components explains roughly 70-80% of the variance. First, `doPCA()` is called to perform PCA. Then, `plotPCAScree()` creates the scree plot.
+
+```{r pca, fig.height=4, fig.width=6, fig.align='center'}
+# Perform PCA
+pca_obj <- doPCA(new_table, cols_to_cluster)
+
+# Draw scree plot
+plotPCAScree(pca_obj)
+```
+Here, there appears to be a fairly distinct elbow at `M = 6`. To recluster using these principal components, the following call to `clusterSubsetWithPCA()` is made, with `num_components = 6`. Fewer metaclusters are created than in the initial clustering, as fewer cell types are expected.
+
+```{r reclustering}
+# Recluster CD8 T cells
+fsom_sub <- clusterSubsetWithPCA(new_table, 
+                                 pca_obj = pca_obj, 
+                                 num_components = 6, # number of principal components
+                                 num_clus = 15, # number of metaclusters
+                                 seed = 33)
+```
+
+Note that the plot functions demonstrated earlier function the same for any subsets created. Since the current cells of interest are CD8 T cells, it is appropriate to define a new subset of markers to create the heatmap.
+
+```{r reclustering-plots, fig.height=6, fig.width=5, fig.align='center'}
+# Define new columns to use
+cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+
+# Generate heatmap for subsetted cells
+plotMetaclusterMFIs(fsom_sub, cols_of_interest)
+
+# Likewise, generate UMAP
+plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
+```
 
 ## Plots
 
 Various plotting functions that are not essential to the workflow, but potentially still of interest, have been included in this package. 
 
-annotateMFIHeatmap()
-searchByExpression()
-plotLabeled2DScatter()
-plotSampleProportions()
-plotClusterGroupProportions()
-plotClusterFileProportions()
+- searchByExpression()
+- plotLabeled2DScatter()
+- plotSampleProportions()
+- plotClusterGroupProportions()
+- plotClusterFileProportions()
 
 
 # Differential Analysis
 
-Perform differential marker expression analysis of flow cytometry data using limma, and differential count analysis using edgeR.
+The final analysis step in this workflow is differential analysis. Differential marker expression is implemented using limma, and differential count analysis using edgeR, both R packages found on Bioconductor. 
 
+Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). Below is an example of what an appropriate .csv file might look like.
 
-Define the comparisons you are interested in testing during the analysis, as a list of lists. Each nested list should include at least two levels of a factor to be used for the comparison. If you would like to compare two groups within another group, you should specify the level(s) of interest for both of these factors. You may name each comparison as you see fit, just ensure that it is R-friendly. 
+```{r sample-info, echo=FALSE} 
+# Get filepath
+file <- system.file("extdata", "sample_info.csv", package = "flowFun")
+table <- read.csv(file)
+
+table %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+Before calling `prepareSampleInfo()`, the user must also specify the comparisons they wish to make between groups, as a series of nested lists. Each nested list should include at least two levels of a factor to be used for the comparison. Each comparison may be named however the user desires, given that it is R-friendly. Below, two comparisons, `ctrl_vs_mibc` and `nac_vs_no_nac` are defined.
+
+```{r comparisons}
+comparisons <- list(
+  ctrl_vs_mibc = list(disease = list("MIBC", "Ctrl")),
+  nac_vs_no_nac = list(disease = "MIBC", NAC = list("NAC", "No.NAC"))
+)
+```
+
+The factor names (which would be "disease" and "NAC" in the above example), unlike the names of comparisons, should be identical to their column names in the .csv file or data frame given to `prepareSampleInfo()`. Similarly, the factor levels (which would be "Ctrl", "MIBC", "NAC", and "No NAC" in the above example), should be listed identical to how they appear in the data frame. Note how these values match those present in the table just shown.
+
+Once these two items have been specified, the remainder of analysis is rather straightforward. `prepareSampleInfo()` is called, formatting the given table as necessary, and adding a new column called `group`.
+
+```{r prep-sample-info}
+# Get filepath
+file <- system.file("extdata", "sample_info.csv", package = "flowFun")
+
+# Prepare metadata for further analysis
+sample_info <- prepareSampleInfo(file, 
+                                 name_col = "sample.name", # column containing sample names
+                                 filename_col = "filename", # column containing filenames
+                                 comparisons = comparisons)
+```
+
+```{r print-sample-info, echo=FALSE}
+sample_info %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+Next, the design, contrasts, and count matrices are created. The current population of interest (in this case, `fsom_dt`) should be given to `makeCountMatrix()`. Furthermore, the parameter `meta_names` should be used to specify the metaclusters to use for analysis. By default, all metaclusters are included, but if the final merging included an undefined metacluster, or some are of no interest, it is useful to specify this parameter.
+
+```{r matrices}
+# Generate design matrix
+design <- makeDesignMatrix(sample_info)
+
+# Generate contrasts matrix
+contrasts <- makeContrastsMatrix(sample_info, comparisons)
+
+# Define metaclusters to test - here, "Undefined" is excluded
+meta_of_interest <- c("Monocytes", "CD4 T cells", "CD8 T cells", "gdT cells", 
+                      "B cells", "pDC", "cDC", "NK cells", "NK T cells")
+
+# Generate matrix of sample/metacluster cell counts
+counts <- makeCountMatrix(fsom_dt, 
+                          meta_names = meta_of_interest,
+                          min_cells = 3, 
+                          min_samples = 4)
+```
+
+The table of counts is printed below:
+
+```{r print-counts, echo=FALSE}
+counts %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    linesep = "",
+    )
+```
+
+Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
+
+Results are also saved as a .csv file for each comparison in the directory `Analysis Results/edgeR`. If running an edgeR analysis on multiple objects, or running the script multiple times for any reason, the user may wish to create sub-directories within `Analysis Results/edgeR` to stay organized. To do this, simply set the \code{dir_tables} parameter to a preferred sub-directory name.
+
+```{r da-analysis}
+# Perform differential abundance analysis
+da_results <- doDAAnalysis(design = design, 
+                           counts = counts, 
+                           contrasts = contrasts,
+                           sample_df = sample_info, 
+                           norm_method = "TMM")
+```
+
+The resulting individual tables may be accessed with either double brackets `[[]]` or `$`, e.g. `da_results[[1]]` or `da_results$MIBC_NAC__vs__MIBC_No.NAC`. In this example, two comparisons were tested, so the resulting list contains two tables:
+
+```{r da-analysis-tables, echo=FALSE}
+da_results[[1]] %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    caption = "Ctrl vs. MIBC",
+    linesep = "",
+    )
+
+da_results[[2]] %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    caption = "NAC vs. No NAC",
+    linesep = "",
+    )
+```
+```
 
 ```{r extra, include=FALSE}
 # 12 - cDC
