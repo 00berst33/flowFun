@@ -82,6 +82,8 @@ plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
                          .by = Metacluster)
   mfi_mat <- as.matrix(mfi_mat, rownames = "Metacluster")
 
+  colnames(mfi_mat) <- sapply(colnames(mfi_mat), getPrettyColNames, input = input)
+
   # Set default heatmap options
   default_options <- list(border = TRUE,
                           show_row_names = TRUE,
@@ -103,6 +105,10 @@ plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   return(mfi_heatmap)
 }
 
+getPrettyColNames <- function(col, input) {
+  temp_col <- which(colnames(input) == col)
+  colnames(input)[temp_col] <- paste0(col, " <", attr(input[[col]], "marker"), ">")
+}
 
 #' plotClusterMFIs
 #'
@@ -249,6 +255,7 @@ annotateMFIHeatmap.data.frame <- function(merged_input, cols_to_use = NULL, ...)
                                            .drop = "keep"),
                          .by = Meta_original)
   mfi_mat <- as.matrix(mfi_mat, rownames = "Meta_original")
+  colnames(mfi_mat) <- sapply(colnames(mfi_mat), getPrettyColNames, input = merged_input)
 
   # Set default heatmap options
   default_options <- list(border = TRUE,

@@ -432,6 +432,7 @@ counts <- makeCountMatrix(fsom_dt,
 The table of counts is printed below:
 
 ```{r print-counts, echo=FALSE}
+colnames(counts) <- sample_info$filename
 counts %>%
   knitr::kable(
     format = "html",

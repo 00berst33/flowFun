@@ -510,8 +510,8 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   for (i in fcs_col_nums) {
     col <- fcs_channels[i]
     data.table::setattr(prepr_table[[col]], "marker", as.vector(Biobase::pData(flowCore::parameters(ff))$desc)[i])
-    temp_col <- which(colnames(prepr_table) == col)
-    colnames(prepr_table)[temp_col] <- paste0(col, " <", attr(prepr_table[[col]], "marker"), ">")
+    # temp_col <- which(colnames(prepr_table) == col)
+    # colnames(prepr_table)[temp_col] <- paste0(col, " <", attr(prepr_table[[col]], "marker"), ">")
   }
   prepr_table[]
   return(prepr_table)
