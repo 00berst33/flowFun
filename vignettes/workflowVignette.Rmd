@@ -479,7 +479,7 @@ da_results[[2]] %>%
 
 To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
 
-```{r de-analysis}
+```{r de-analysis, eval=FALSE}
 # Perform differential expression analysis
 de_analysis <- doDEAnalysis(fsom_dt, 
                             sample_df = sample_info, 
@@ -488,11 +488,11 @@ de_analysis <- doDEAnalysis(fsom_dt,
                             counts = counts, 
                             markers_of_interest = c("PHA-L", "IL10R"),
                             meta_names = meta_of_interest)
-
-# cols_from_fcs had to be retroactively changed
 ```
 
 ```{r extra, include=FALSE}
+# cols_from_fcs had to be retroactively changed in DE analysis
+
 # 12 - cDC
 # 10 - monocytes
 # 14 - monocytes
