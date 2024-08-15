@@ -780,16 +780,25 @@ clusterControls.data.frame <- function(input, fsom, subsetted_fsom = NULL, subse
 #' add functionality for tidytable
 #'
 #' @param input A FlowSOM object, flowFrame, or matrix of expression values.
-#' Must have a \code{"File"} column in the data matrix.
+#' Must have a \code{"File"} or \code{".id"} column in the data matrix.
 #'
 #' @return A data frame, where each row is a sample, and each column is a channel/marker.
 #'
 #' @export
 getSampleMFIs <- function(input) {
+  result <- UseMethod("getSampleMFIs")
+  return(result)
+}
+
+#' @keywords internal
+#' @export
+getSampleMFIs.default <- function(input) {
   if (methods::is(input, "FlowSOM")) {
     input <- input$data
   } else if (methods::is(input, "flowFrame")) {
     input <- flowCore::exprs(input)
+  } else {
+    stop("Invalid input.")
   }
 
   medians <- data.frame(input,
@@ -802,8 +811,9 @@ getSampleMFIs <- function(input) {
                check.names = FALSE)
 }
 
-# method for tidytable
-getSampleMFIsTable <- function(input) {
+#' @keywords internal
+#' @export
+getSampleMFIs.data.frame <- function(input) {
   .id <- NULL
 
   fcs_cols <- attr(input, "cols_from_fcs")

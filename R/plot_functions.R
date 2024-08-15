@@ -1,3 +1,63 @@
+#' getMetaclusterMFIs
+#'
+#' @param input A data frame or table, with column \code{"Metacluster"}.
+#' @param cols_to_use A vector specifying which columns to calculate medians for.
+#' Default is all columns used for clustering.
+#'
+#' @return A data frame, where rows are metaclusters and columns are channels.
+#'
+#' @export
+getMetaclusterMFIs <- function(input, cols_to_use = NULL) {
+  Metacluster <- NULL
+
+  if (is.null(cols_to_use)) {
+    cols_to_use <- attr(input, "clustered")
+  }
+
+  medians <- input %>%
+    tidytable::group_by(Metacluster) %>%
+    tidytable::summarise(tidytable::across(.cols = cols_to_use,
+                                           .fns = stats::median,
+                                           .drop = "keep")) %>%
+    tidytable::select(c(Metacluster, cols_to_use)) %>%
+    data.frame(row.names = "Metacluster",
+               check.names = FALSE)
+
+  rownames(medians) <- basename(rownames(medians))
+
+  return(medians)
+}
+
+#' getClusterMFIs
+#'
+#' @param input A data frame or table, with column \code{"Cluster"}.
+#' @param cols_to_use A vector specifying which columns to calculate medians for.
+#' Default is all columns used for clustering.
+#'
+#' @return A data frame, where rows are clusters and columns are channels.
+#'
+#' @export
+getClusterMFIs <- function(input, cols_to_use = NULL) {
+  Cluster <- NULL
+
+  if (is.null(cols_to_use)) {
+    cols_to_use <- attr(input, "clustered")
+  }
+
+  medians <- input %>%
+    tidytable::group_by(Cluster) %>%
+    tidytable::summarise(tidytable::across(.cols = cols_to_use,
+                                           .fns = stats::median,
+                                           .drop = "keep")) %>%
+    tidytable::select(c(Cluster, cols_to_use)) %>%
+    data.frame(row.names = "Cluster",
+               check.names = FALSE)
+
+  rownames(medians) <- basename(rownames(medians))
+
+  return(medians)
+}
+
 #' plotMetaclusterMFIs
 #'
 #' Plot a heatmap of metacluster MFIs.
@@ -466,19 +526,22 @@ searchByExpression = function(fsom, levels) {
 #'                          label_type = "cluster")
 #' print(p[[1]])
 #' print(p[[2]])
-plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters = NULL,
-                                label_type = c("cluster", "metacluster")) {
+plotLabeled2DScatter <- function(fsom, channelpair, clusters = NULL, metaclusters = NULL,
+                                 label_type = c("cluster", "metacluster")) { # provide legend for colored groups?
 
   if (is.null(clusters) && is.null(metaclusters)) {
     stop("clusters and/or metaclusters must be a vector of indices.")
 
   } else if (is.null(clusters) && !is.null(metaclusters)) {
+    # color by metacluster, plot colored labels with cluster numbers
     all_clust <- which(fsom$metaclustering %in% metaclusters)
 
   } else if (!is.null(clusters) && is.null(metaclusters)) {
+    # color by cluster
     all_clust <- clusters
 
   } else if (!is.null(clusters) && !is.null(metaclusters)) {
+    # color by metacluster, plot colored labels with cluster numbers
     meta_nodes <- which(fsom$metaclustering %in% metaclusters)
     all_clust <- unique(c(meta_nodes, clusters))
 
@@ -510,7 +573,7 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
          stop("label_type must be either 'cluster' or 'metacluster'")
   )
 
-  print(metaclusters)
+  print(df)
 
   # Generate unlabeled ggplot2 plot list
   p <- FlowSOM::Plot2DScatters(fsom = fsom,
@@ -521,17 +584,142 @@ plotLabeled2DScatter = function(fsom, channelpair, clusters = NULL, metaclusters
                               density = FALSE,
                               centers = FALSE)
 
-  if (!is.null(metaclusters)) { # generates single plot
+  if (!is.null(metaclusters)) { # generates single plot  # color is normally 'black' but want to color label based on metacluster
     p <- p[[length(p)]] + ggplot2::geom_label(data = df,
-                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                             color = "black", size = 2.5, fontface = "bold")
+                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
+                                              color = labs, size = 2.5, fontface = "bold")
   } else { # generates list of plots
     for (i in 1:length(p)) {
       p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
-                                            ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                            color = "black", size = 2.5, fontface = "bold")
+                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
+                                             color = "black", size = 2.5, fontface = "bold")
     }
   }
+
+  return(p)
+}
+
+plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
+                                            metaclusters = NULL,
+                                            label_type = c("cluster", "metacluster")) { # provide legend for colored groups?
+  # Variable to indicate whether to color cells by metacluster
+  color_by_clust <- TRUE
+
+  if (is.null(clusters) && is.null(metaclusters)) {
+    stop("clusters and/or metaclusters must be a vector of indices.")
+
+  } else if (is.null(clusters) && !is.null(metaclusters)) {
+    # color by metacluster, plot colored labels with cluster numbers
+
+    # Find all clusters within given metaclusters
+    all_clust <- input %>%
+      tidytable::filter(Metacluster %in% metaclusters) %>%
+      tidytable::pull(Cluster) %>%
+      unique()
+
+    color_by_clust <- FALSE
+
+  } else if (!is.null(clusters) && is.null(metaclusters)) {
+    # color by cluster
+    all_clust <- clusters
+
+  } else if (!is.null(clusters) && !is.null(metaclusters)) {
+    # color by metacluster, plot colored labels with cluster numbers
+
+    # Combine nodes within given metaclusters with those specified by `clusters`
+    meta_nodes <- input %>%
+      tidytable::filter(Metacluster %in% metaclusters) %>%
+      tidytable::pull(Cluster) %>%
+      unique()
+    all_clust <- unique(c(meta_nodes, clusters))
+
+    color_by_clust <- FALSE
+  }
+
+  # edit !!!
+  # values in `metaclusters` and levels(input$metaclustering) can conflict
+  # need to handle when `metaclusters` is given as a numeric vs character vector
+  # if (is.character(metaclusters)) {
+  #   metaclusters <- which(levels(input$Metacluster) %in% metaclusters)
+  # } else if (is.numeric(metaclusters)) {
+  #   metaclusters <- list(metaclusters)
+  # }
+
+  # Get all label coordinates
+  if (length(all_clust) == 1) {
+    clust_mfis <- as.matrix(getClusterMFIs(input)[all_clust, channelpair], # make MFI functions separate
+                            nrow = 1,
+                            dimnames = list(all_clust, channelpair))
+  } else {
+    clust_mfis <- getClusterMFIs(input)[all_clust, channelpair]
+  }
+
+  # Create data frame for labels
+  df_lab <- as.data.frame(clust_mfis)
+
+  # Get the metacluster each cluster belongs to
+  inds <- sapply(all_clust, function(clust) {match(clust, input$Cluster)})
+  cluster_meta <- input %>%
+    tidytable::slice(inds) %>%
+    tidytable::mutate(all_clust) %>%
+    tidytable::pull(Metacluster, name = all_clust)
+
+  cluster_meta <- factor(cluster_meta)
+
+  # Get label names
+  switch(label_type,
+         cluster = {labs <- rownames(df_lab)},
+         metacluster = {labs <- cluster_meta}, # get metacluster each cluster belongs to
+         stop("label_type must be either 'cluster' or 'metacluster'")
+  )
+
+  # Background data frame
+  samp_ids <- sample.int(nrow(input), size = min(nrow(input), 5000))
+  df_bg <- input %>%
+    tidytable::select(channelpair) %>%
+    tidytable::slice(samp_ids) %>%
+    data.frame(check.names = FALSE)
+
+  # Generate metacluster/cluster data frame
+  if (color_by_clust) {
+    # If coloring by cluster
+    df_c <- input %>%
+      tidytable::filter(Cluster %in% all_clust) %>%
+      tidytable::select(tidytable::all_of(c(channelpair, "Cluster"))) %>%
+      tidytable::rename(Group = Cluster) %>%
+      data.frame(check.names = FALSE)
+  } else {
+    # If coloring by metacluster
+    df_c <- input %>%
+      tidytable::filter(Metacluster %in% metaclusters) %>%
+      tidytable::select(tidytable::all_of(c(channelpair, "Metacluster"))) %>%
+      tidytable::rename(Group = Metacluster) %>%
+      data.frame(check.names = FALSE)
+  }
+
+  # Rename columns
+  colnames(df_bg) <- colnames(df_c)[1:2] <- c("x1", "x2")
+
+  # Get colors
+  #colors <- viridis::viridis(length(unique()))
+
+  # Generate plot
+  p <- ggplot2::ggplot(data = df_c,
+                       mapping = ggplot2::aes(x = .data$x1, y = .data$x2)) +
+    ggplot2::geom_point(data = df_bg,
+                        color = "grey",
+                        size = 0.5) +
+    ggplot2::geom_point(mapping = ggplot2::aes(color = .data$Group), # here
+                        size = 0.8) +
+    ggplot2::geom_label(data = df_lab,
+                        mapping = ggplot2::aes(x = df_lab[,1], y = df_lab[,2], label = labs),
+                        color = cluster_meta, # here
+                        size = 2.5,
+                        fontface = "bold") +
+    ggplot2::theme_classic() +
+    ggplot2::xlab(channelpair[1]) +
+    ggplot2::ylab(channelpair[2]) +
+    ggplot2::labs(color = ifelse(color_by_clust, "Cluster", "Metacluster"))
 
   return(p)
 }
@@ -571,16 +759,7 @@ plotUMAP <- function(input, num_cells = 5000, labels = NULL, colors = NULL, seed
   return(result)
 }
 
-#' plotUMAP.FlowSOM
-#'
-#' *parameter tweaking
-#'
-#' @param input A data table or FlowSOM object.
-#' @param num_cells The number of cells to use to generate the UMAP. Default is 5000.
-#' @param seed Optional, a seed for reproducibility.
-#'
-#' @return A UMAP plot drawn with ggplot2.
-#'
+#' @keywords internal
 #' @export
 plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
                              colors = NULL, seed = NULL) {
@@ -629,14 +808,7 @@ plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
   return(p)
 }
 
-#' plotUMAP.data.frame
-#'
-#' @param input A data table or FlowSOM object.
-#' @param num_cells The number of cells to use to generate the UMAP. Default is 5000.
-#' @param seed Optional, a seed for reproducibility.
-#'
-#' @return A UMAP plot drawn with ggplot2.
-#'
+#' @keywords internal
 #' @export
 plotUMAP.data.frame <- function(input, num_cells = 5000, labels = NULL,
                                 colors = NULL, seed = NULL) {

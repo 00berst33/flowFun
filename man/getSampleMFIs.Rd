@@ -8,7 +8,7 @@ getSampleMFIs(input)
 }
 \arguments{
 \item{input}{A FlowSOM object, flowFrame, or matrix of expression values.
-Must have a \code{"File"} column in the data matrix.}
+Must have a \code{"File"} or \code{".id"} column in the data matrix.}
 }
 \value{
 A data frame, where each row is a sample, and each column is a channel/marker.
