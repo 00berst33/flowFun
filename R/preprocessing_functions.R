@@ -166,9 +166,10 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #'
 #' Preprocess all files in the given directory.
 #' !rename markers if necessary
-#' !save setting used somehow, .json, .csv, etc.
 #'
 #' @param input A directory, list of filenames, or data.table.
+#' @param num_cells The number of cells to sample from each sample. Default is
+#' 50000. To use as many cells as possible, this parameter may be set to \code{Inf}.
 #' @param compensation Optional. A compensation matrix, or a file path to one.
 #' @param transformation The transformation to apply to the data. If \code{NULL}
 #' (default), a log-icle transformation is applied to the data.

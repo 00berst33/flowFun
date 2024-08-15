@@ -4,7 +4,7 @@
 \alias{plotClusterMFIs}
 \title{plotClusterMFIs}
 \usage{
-plotClusterMFIs(input, cols_to_use, metaclusters, ...)
+plotClusterMFIs(input, cols_to_use = NULL, metaclusters = NULL, ...)
 }
 \arguments{
 \item{input}{The FlowSOM object or data table to plot.}

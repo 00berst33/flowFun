@@ -12,7 +12,8 @@
   counts,
   markers_of_interest,
   meta_names = NULL,
-  ctrl_list = NULL
+  ctrl_list = NULL,
+  subsetted_meta = NULL
 )
 }
 \description{

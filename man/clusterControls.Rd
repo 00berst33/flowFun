@@ -4,10 +4,11 @@
 \alias{clusterControls}
 \title{clusterControls}
 \usage{
-clusterControls(fsom, subsetted_meta = NULL, ...)
+clusterControls(input, subsetted_meta = NULL, ...)
 }
 \arguments{
-\item{fsom}{A FlowSOM object, to be used for differential expression analysis.}
+\item{input}{A FlowSOM object or data table, to be used for differential
+expression analysis.}
 
 \item{subsetted_meta}{A character vector specifying the metaclusters that were
 used for metaclusters, if \code{fsom} is a reclustering. Default is \code{NULL}.}

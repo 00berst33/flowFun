@@ -189,8 +189,9 @@ plotMetaclusterMFIs(fsom_dt)
 
 This heatmap is what the user should be using as their main reference when merging metaclusters. The dendrogram on the left-hand side, which displays a hierarchal clustering of the metaclusters, is of particular interest, and this hierarchy may be followed to perform the clustering. However, this dendrogram should not be followed blindly. First, the metaclusters that are determined to be similar by the clustering may not be of biological interest; some cell type markers may be of greater significance than others, and this is something that the clustering does not take into account. Second, dendrograms may be created with different linkage methods (single-linkage, average-linkage, centroid-linkage, etc.), and these different methods may result in slightly different hierarchies. This is not to say that the dendrogram is useless, only that it has its limitations.
 
-The user should also consider cluster size when merging. If a metacluster is rather small, and differs from its neighboring clusters in irrelevant markers, then it is reasonable to merge it. However, if the metacluster is small but distinct in markers of interest, it may be left
-unmerged. Finally, if a metacluster does not represent any particular cell type of interest, it may be dropped from the analysis entirely. For example, depending on how strict you were with your gating, there may be some debris remaining in your preprocessed data. The clustering algorithm will likely cluster these together, and you may decide to exclude them from further analysis.
+The user should also consider cluster size when merging. If a metacluster is rather small, and differs from its neighboring clusters in irrelevant markers, then it is reasonable to merge it. However, if the metacluster is small but distinct in markers of interest, it may be left unmerged. 
+
+Finally, if a metacluster does not represent any particular cell type of interest, it may be dropped from the analysis entirely. For example, depending on how strict you were with your gating, there may be some debris remaining in your preprocessed data. The clustering algorithm will likely cluster these together, and you may decide to exclude them from further analysis.
 
 To further aid the decision making process, a UMAP colored by metacluster is generated below. 
 
@@ -234,28 +235,50 @@ fsom_dt %>%
     )
 ```
 
-A new heatmap and UMAP are generated to reflect the new clustering, and help decide whether any further merging should be performed.
+A new heatmap may be generated to reflect the new clustering, and help decide whether any further merging should be performed.
 
 ```{r second-plots, fig.height=5, fig.width=6, fig.align='center'}
 # Generate new heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
-# Generate new UMAP
-plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
 ```
 
-Again, metaclusters are merged and new plots are generated.
+Examining this heatmap suggests that metacluster 3 and 11 may be subsets of gdT cells, but the somewhat low expression of TCRgd makes it difficult to determine this with much certainty. Sometimes, once the most obvious merging has been done, UMAPs and MFI heatmaps alone are no longer sufficient to make informed decisions. Two other notable functions are provided to give further info about the clusters, the first being `plotClusterMFIs()`. It functions almost identically to `plotMetaclusterMFIs()`, except that its rows are clusters, and it may be used to look at the clusters within a specific metacluster of interest via the parameter `metaclusters`. This is demonstrated below by calling the function on metaclusters 3 and 11.
 
-```{r second-merge, fig.height=5, fig.width=6, fig.align='center'}
+```{r cluster-heatmap, fig.height=5, fig.width=5, fig.align='center'}
+# Generate cluster MFI heatmap
+plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = c(3, 11))
+```
+
+It seems that clusters 4 and 42 have a particularly low expression of TCRgd, and express other markers that are barely present in the rest of this subset. This may be further investigated with the second notable function, `plotLabeled2DScatter()`. It creates a 2D scatterplot colored by metacluster, where each cluster center is labeled with its cluster's number. Below, this function is called on clusters 4 and 42, as well as cluster 76 to act as a point of reference.
+
+```{r 2d-scatter, fig.height=5, fig.width=6, fig.align='center'}
+# Generate 2D scatterplot
+plotLabeled2DScatter(fsom_dt, 
+                     channelpair = c("APC-Cy7-A", "BUV563-A"), 
+                     clusters = c(4, 42, 76),
+                     metaclusters = NULL)
+```
+
+Clusters 4 and 42 clearly do not have a high enough expression of TCRgd to justify classifying them as gdT cells. In fact, cluster 4 isn't defined by any significant phenotyping markers, and cluster 42 has high expression of multiple unrelated phenotyping markers, suggesting that it may be a population of cells that were stuck together. In the next merging step performed below, these clusters are reassigned to a new metacluster named `"Undefined"`. It is recommended to avoid reassigning clusters as much as possible, as doing so increases the subjectivity of the analysis, but it is ultimately up to the user to determine when this step is appropriate.
+
+```{r second-merge}
 # Merge metaclusters
-fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("12" = "5",
-                                                         "13" = "5",
-                                                         "10" = "6",
-                                                         "14" = "6",
-                                                         "25" = "18",
-                                                         "16" = "11",
-                                                         "24" = "3"))
+fsom_dt <- editTableMetaclusters(fsom_dt, 
+                                 new_labels = c("12" = "5",
+                                                "13" = "5",
+                                                "10" = "6",
+                                                "14" = "6",
+                                                "25" = "18",
+                                                "16" = "11",
+                                                "24" = "3"),
+                                 cluster_assignments = c("4" = "Undefined",
+                                                         "42" = "Undefined"))
+```
 
+Again, new plots are generated.
+
+```{r second-merge-plots, fig.height=5, fig.width=6, fig.align='center'}
 # New heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
@@ -263,7 +286,7 @@ plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
 ```
 
-Finally, the remaining metaclusters may be labelled by setting each of them equal to the desired name, instead of another metacluster to be merged into.
+Finally, once the clustering is complete, the remaining metaclusters may be labelled by setting each of them equal to the desired name, instead of another metacluster to be merged into.
 
 ```{r new-labels, fig.height=5, fig.width=6, fig.align='center'}
 # Label metaclusters
@@ -322,6 +345,7 @@ pca_obj <- doPCA(new_table, cols_to_cluster)
 # Draw scree plot
 plotPCAScree(pca_obj)
 ```
+
 Here, there appears to be a fairly distinct elbow at `M = 6`. To recluster using these principal components, the following call to `clusterSubsetWithPCA()` is made, with `num_components = 6`. Fewer metaclusters are created than in the initial clustering, as fewer cell types are expected.
 
 ```{r reclustering}
@@ -480,19 +504,58 @@ da_results[[2]] %>%
 
 To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
 
-```{r de-analysis, eval=FALSE}
+```{r de-analysis}
 # Perform differential expression analysis
-de_analysis <- doDEAnalysis(fsom_dt, 
-                            sample_df = sample_info, 
-                            design = design, 
-                            contrasts = contrasts, 
-                            counts = counts, 
-                            markers_of_interest = c("PHA-L", "IL10R"),
-                            meta_names = meta_of_interest)
+de_results <- doDEAnalysis(fsom_dt, 
+                           sample_df = sample_info, 
+                           design = design, 
+                           contrasts = contrasts, 
+                           counts = counts, 
+                           markers_of_interest = c("PHA-L", "IL10R"),
+                           meta_names = meta_of_interest)
 ```
 
-```{r extra, include=FALSE}
-# cols_from_fcs had to be retroactively changed in DE analysis
+```{r de-analysis-tables, echo=FALSE}
+de_results$tests[[1]] %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    caption = "Ctrl vs. MIBC",
+    linesep = "",
+    )
+
+de_results$tests[[2]] %>%
+  knitr::kable(
+    format = "html",
+    align = "c",
+    caption = "NAC vs. No NAC",
+    linesep = "",
+    )
+```
+
+```{r extra, include=FALSE, eval=FALSE}
+# fsom_dt$.id <- file.path(dirname(fsom_dt$.id), sample_info$filename[as.numeric(factor(fsom_dt$.id))])
+
+fmos <- c("C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB4.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB9.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR93.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR66.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR110.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR75.fcs")
+
+ctrl_dt <- doPreprocessing(fmos,
+                           ld_channel = attr(fsom_dt, "gating_scheme")$live_gate$channels[1],
+                           compensation = attr(fsom_dt, "compensation_matrix"),
+                           transformation = attr(fsom_dt, "transformation"),
+                           transformation_type = "logicle", ###
+                           debris_gate = attr(fsom_dt, "gating_scheme")$debris_gate,
+                           live_gate = attr(fsom_dt, "gating_scheme")$live_gate,
+                           # nmad = ,
+                           pctg_live = 0,
+                           pctg_qc = 0)
+
+ctrl <- FlowSOM::ReadInput(fmos,
+                           compensate = TRUE,
+                           spillover = attr(fsom_dt, "compensation_matrix"),
+                           transformList = attr(fsom_dt, "transformation"))
+
+# ctrl_list <- list("PHA-L" = fmos)
+ctrl_list <- list("PHA-L" = ctrl_dt)
 
 # 12 - cDC
 # 10 - monocytes
