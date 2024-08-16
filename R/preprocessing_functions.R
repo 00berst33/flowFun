@@ -481,6 +481,7 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   # Save PDF of gating plots for each sample if desired
   if (save_plots) {
     names(grobs) <- basename(raw_files)
+    grDevices::pdf(file.path(dir, pdf_name))
     ml <- gridExtra::marrangeGrob(grobs,
                                   nrow = 2,
                                   ncol = 1,
@@ -489,7 +490,7 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
                                                         c(NA,3,3,NA),
                                                         c(NA,3,3,NA)),
                                   top = quote(names(grobs)[g]))
-    ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, width = 11, height = 8, device = "pdf")
+    grDevices::dev.off()
   }
 
   # Concatenate all data tables into one, with column for sample ID
