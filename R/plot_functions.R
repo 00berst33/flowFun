@@ -526,119 +526,116 @@ plotLabeled2DScatter <- function(input, channelpair, clusters = NULL,
 }
 
 ### needs edits
-#' Note that the output of this function changes slightly depending on the combination
-#' of clusters and metaclusters the user is plotting. If the user plots metaclusters,
-#' with or without additional clusters defined in the \code{clusters} argument,
-#' then the output will be a single ggplot object, where each metacluster has a
-#' unique color. If the user plots only clusters, such that the \code{metaclusters}
-#' argument remains \code{NULL}, then a list of ggplot objects will be returned.
-#' Each plot will correspond to a cluster, and color only the cells belonging to
-#' said cluster. See examples for further explanation.
-#'
-#' The (meta)cluster number labels are included on every plot.
-#'
-#' #' file <- system.file("extdata", "aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 10,
-#'                          seed = 42,
-#'                          xdim = 6,
-#'                          ydim = 6)
-#'
-#' # Returns a single plot colored by metacluster
-#' plotLabeled2DScatter(fsom,
-#'                      channelpair = c("APC-Cy7-A", "BUV615-P-A"),
-#'                      metaclusters = c(1, 2, 7),
-#'                      label_type = "metacluster")
-#'
-#' # Also returns a single plot colored by metacluster
-#' plotLabeled2DScatter(fsom,
-#'                      channelpair = c("APC-Cy7-A", "BUV805-A"),
-#'                      clusters = c(25, 33),
-#'                      metaclusters = c(1, 4),
-#'                      label_type = "cluster")
-#'
-#' # Returns a list of two plots, once for each cluster
-#' p = plotLabeled2DScatter(fsom,
-#'                          channelpair = c("APC-Cy7-A", "BUV805-A"),
-#'                          clusters = c(4, 19),
-#'                          label_type = "cluster")
-#' print(p[[1]])
-#' print(p[[2]])
-#' @keywords internal
-plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL,
-                                         metaclusters = NULL,
-                                         label_type = c("cluster", "metacluster")) {
-
-  if (is.null(clusters) && is.null(metaclusters)) {
-    stop("clusters and/or metaclusters must be a vector of indices.")
-
-  } else if (is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    all_clust <- which(input$metaclustering %in% metaclusters)
-
-  } else if (!is.null(clusters) && is.null(metaclusters)) {
-    # color by cluster
-    all_clust <- clusters
-
-  } else if (!is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    meta_nodes <- which(input$metaclustering %in% metaclusters)
-    all_clust <- unique(c(meta_nodes, clusters))
-
-  }
-
-  # edit !!!
-  # values in `metaclusters` and levels(input$metaclustering) can conflict
-  if (is.character(metaclusters)) {
-    metaclusters <- which(levels(input$metaclustering) %in% metaclusters)
-  } else if (is.numeric(metaclusters)) {
-    metaclusters <- list(metaclusters)
-  }
-
-  # Get all label coordinates
-  if (length(all_clust) == 1) {
-    mfis <- matrix(FlowSOM::GetClusterMFIs(input)[all_clust, channelpair],
-                  nrow = 1,
-                  dimnames = list(all_clust, channelpair))
-  } else {
-    mfis <- FlowSOM::GetClusterMFIs(input)[all_clust, channelpair]
-  }
-
-  df <- as.data.frame(mfis)
-
-  # Get label names
-  switch(label_type,
-         cluster = {labs <- rownames(df)},
-         metacluster = {labs <- input$metaclustering[all_clust]},
-         stop("label_type must be either 'cluster' or 'metacluster'")
-  )
-
-  print(df)
-
-  # Generate unlabeled ggplot2 plot list
-  p <- FlowSOM::Plot2DScatters(fsom = input,
-                              channelpairs = list(channelpair),
-                              clusters = clusters,
-                              metaclusters = metaclusters,
-                              plotFile = NULL,
-                              density = FALSE,
-                              centers = FALSE)
-
-  if (!is.null(metaclusters)) { # generates single plot  # color is normally 'black' but want to color label based on metacluster
-    p <- p[[length(p)]] + ggplot2::geom_label(data = df,
-                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                              color = labs, size = 2.5, fontface = "bold")
-  } else { # generates list of plots
-    for (i in 1:length(p)) {
-      p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
-                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                             color = "black", size = 2.5, fontface = "bold")
-    }
-  }
-
-  return(p)
-}
+# Note that the output of this function changes slightly depending on the combination
+# of clusters and metaclusters the user is plotting. If the user plots metaclusters,
+# with or without additional clusters defined in the \code{clusters} argument,
+# then the output will be a single ggplot object, where each metacluster has a
+# unique color. If the user plots only clusters, such that the \code{metaclusters}
+# argument remains \code{NULL}, then a list of ggplot objects will be returned.
+# Each plot will correspond to a cluster, and color only the cells belonging to
+# said cluster. See examples for further explanation.
+#
+# The (meta)cluster number labels are included on every plot.
+#
+# file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
+# fsom <- FlowSOM::FlowSOM(file,
+#                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
+#                          nClus = 10,
+#                          seed = 42,
+#                          xdim = 6,
+#                          ydim = 6)
+#
+# # Returns a single plot colored by metacluster
+# plotLabeled2DScatter(fsom,
+#                      channelpair = c("APC-Cy7-A", "BUV615-P-A"),
+#                      metaclusters = c(1, 2, 7),
+#                      label_type = "metacluster")
+#
+# # Also returns a single plot colored by metacluster
+# plotLabeled2DScatter(fsom,
+#                      channelpair = c("APC-Cy7-A", "BUV805-A"),
+#                      clusters = c(25, 33),
+#                      metaclusters = c(1, 4),
+#                      label_type = "cluster")
+#
+# # Returns a list of two plots, once for each cluster
+# p = plotLabeled2DScatter(fsom,
+#                          channelpair = c("APC-Cy7-A", "BUV805-A"),
+#                          clusters = c(4, 19),
+#                          label_type = "cluster")
+# plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL,
+#                                          metaclusters = NULL,
+#                                          label_type = c("cluster", "metacluster")) {
+#
+#   if (is.null(clusters) && is.null(metaclusters)) {
+#     stop("clusters and/or metaclusters must be a vector of indices.")
+#
+#   } else if (is.null(clusters) && !is.null(metaclusters)) {
+#     # color by metacluster, plot colored labels with cluster numbers
+#     all_clust <- which(input$metaclustering %in% metaclusters)
+#
+#   } else if (!is.null(clusters) && is.null(metaclusters)) {
+#     # color by cluster
+#     all_clust <- clusters
+#
+#   } else if (!is.null(clusters) && !is.null(metaclusters)) {
+#     # color by metacluster, plot colored labels with cluster numbers
+#     meta_nodes <- which(input$metaclustering %in% metaclusters)
+#     all_clust <- unique(c(meta_nodes, clusters))
+#
+#   }
+#
+#   # edit !!!
+#   # values in `metaclusters` and levels(input$metaclustering) can conflict
+#   if (is.character(metaclusters)) {
+#     metaclusters <- which(levels(input$metaclustering) %in% metaclusters)
+#   } else if (is.numeric(metaclusters)) {
+#     metaclusters <- list(metaclusters)
+#   }
+#
+#   # Get all label coordinates
+#   if (length(all_clust) == 1) {
+#     mfis <- matrix(FlowSOM::GetClusterMFIs(input)[all_clust, channelpair],
+#                   nrow = 1,
+#                   dimnames = list(all_clust, channelpair))
+#   } else {
+#     mfis <- FlowSOM::GetClusterMFIs(input)[all_clust, channelpair]
+#   }
+#
+#   df <- as.data.frame(mfis)
+#
+#   # Get label names
+#   switch(label_type,
+#          cluster = {labs <- rownames(df)},
+#          metacluster = {labs <- input$metaclustering[all_clust]},
+#          stop("label_type must be either 'cluster' or 'metacluster'")
+#   )
+#
+#   print(df)
+#
+#   # Generate unlabeled ggplot2 plot list
+#   p <- FlowSOM::Plot2DScatters(fsom = input,
+#                               channelpairs = list(channelpair),
+#                               clusters = clusters,
+#                               metaclusters = metaclusters,
+#                               plotFile = NULL,
+#                               density = FALSE,
+#                               centers = FALSE)
+#
+#   if (!is.null(metaclusters)) { # generates single plot  # color is normally 'black' but want to color label based on metacluster
+#     p <- p[[length(p)]] + ggplot2::geom_label(data = df,
+#                                               ggplot2::aes(x = df[,1], y = df[,2], label = labs),
+#                                               color = labs, size = 2.5, fontface = "bold")
+#   } else { # generates list of plots
+#     for (i in 1:length(p)) {
+#       p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
+#                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
+#                                              color = "black", size = 2.5, fontface = "bold")
+#     }
+#   }
+#
+#   return(p)
+# }
 
 #' @keywords internal
 #' @export
@@ -937,7 +934,7 @@ plotTSNE = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
 #' Plot cell type proportions by sample.
 #'
 #' @param fsom A FlowSOM object as generated by \code{\link[FlowSOM:FlowSOM]{FlowSOM()}},
-#' [clusterSubset()], or [clusterSubsetWithPCA()].
+#' or [clusterSubsetWithPCA()].
 #' @param reg_expr Optional, a regular expression to rename sample files.
 #'
 #' @details

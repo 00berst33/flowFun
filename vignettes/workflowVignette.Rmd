@@ -120,7 +120,7 @@ Once the desired parameters have been selected, all samples may be processed. Du
 
 ```{r preprocess-samples, eval=FALSE}
 # Get all sample data
-table <- system.file("extdata", "raw_samples.rds", package = "flowFun")
+table <- system.file("extdata", "raw_flowset.rds", package = "flowFun")
 table <- readRDS(table)
 
 # Preprocess all samples
@@ -133,7 +133,7 @@ prepr_table <- doPreprocessing(table,
                                nmad = 3.5, 
                                pctg_live = 0.7,
                                pctg_qc = 0.8,
-                               save_plots = FALSE,
+                               save_plots = TRUE,
                                save_fcs = FALSE)
 ```
 
@@ -324,7 +324,7 @@ new_table <- createFilteredAggregate(fsom_dt,
                                      clusters = NULL)
 ```
 
-```{r subset-table, echo=FALSE} 
+```{r subset-table, include=FALSE, eval=FALSE} 
 new_table %>% 
   tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
@@ -537,6 +537,12 @@ de_results$tests[[2]] %>%
 # fsom_dt$.id <- file.path(dirname(fsom_dt$.id), sample_info$filename[as.numeric(factor(fsom_dt$.id))])
 
 fmos <- c("C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB4.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB9.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR93.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR66.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR110.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR75.fcs")
+f1 <- flowCore::read.FCS(files[1], truncate_max_range = FALSE)
+f2 <- flowCore::read.FCS(files[2], truncate_max_range = FALSE)
+f3 <- flowCore::read.FCS(files[3], truncate_max_range = FALSE)
+f4 <- flowCore::read.FCS(files[4], truncate_max_range = FALSE)
+f5 <- flowCore::read.FCS(files[5], truncate_max_range = FALSE)
+f6 <- flowCore::read.FCS(files[6], truncate_max_range = FALSE)
 
 ctrl_dt <- doPreprocessing(fmos,
                            ld_channel = attr(fsom_dt, "gating_scheme")$live_gate$channels[1],
@@ -557,21 +563,28 @@ ctrl <- FlowSOM::ReadInput(fmos,
 # ctrl_list <- list("PHA-L" = fmos)
 ctrl_list <- list("PHA-L" = ctrl_dt)
 
-# 12 - cDC
-# 10 - monocytes
-# 14 - monocytes
-# 13 - cDC
-# 6 - monocytes
-# 5 - cDC
-# 4 - B cells 
-# 18 - pDC
-# 17 - NK T cells
-# 19 - NK cells
-# 11 - gdT cells
-# 3 - undefined
-# 1 - cd8 T cells
-# 16 - gdT cells
-# 15 - cd4 T cells
-# 25 - pDC
-# 24 - undefined
+fsom_dt <- editTableMetaclusters(fsom_dt, 
+                                 new_labels = c("9" = "1",
+                                                "2" = "1",
+                                                "8" = "4",
+                                                "23" = "15",
+                                                "21" = "15",
+                                                "20" = "15",
+                                                "22" = "15",
+                                                "7" = "6"))
+fsom_dt <- editTableMetaclusters(fsom_dt, 
+                                 new_labels = c("12" = "5",
+                                                "13" = "5",
+                                                "10" = "6",
+                                                "14" = "6",
+                                                "25" = "18",
+                                                "16" = "11",
+                                                "24" = "3"),
+                                 cluster_assignments = c("4" = "Undefined", 
+                                                         "42" = "Undefined"))
+
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
+                                                         "5" = "cDC",      
+                                                         "4" = "B cells",     
+                                                         "17" = "NK T cells",                                                                                                 "19" = "NK cells",                                                                                                   "1" = "CD8 T cells",                                                                                                 "11" = "gdT cells",                                                                                                  "15" = "CD4 T cells",                                                                                                "18" = "pDC",                                                                                                        "3" = "Undefined"))
 ```

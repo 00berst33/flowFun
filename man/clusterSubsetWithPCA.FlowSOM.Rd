@@ -12,7 +12,8 @@
   xdim = 10,
   ydim = 10,
   seed = NULL,
-  convert_to_channels = TRUE
+  convert_to_channels = TRUE,
+  fsom_file = NULL
 )
 }
 \description{

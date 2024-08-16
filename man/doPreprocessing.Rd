@@ -25,6 +25,9 @@ doPreprocessing(
 \arguments{
 \item{input}{A directory, list of filenames, or data.table.}
 
+\item{num_cells}{The number of cells to sample from each sample. Default is
+50000. To use as many cells as possible, this parameter may be set to \code{Inf}.}
+
 \item{compensation}{Optional. A compensation matrix, or a file path to one.}
 
 \item{transformation}{The transformation to apply to the data. If \code{NULL}
@@ -72,7 +75,6 @@ A data.table containing preprocessed data.
 \description{
 Preprocess all files in the given directory.
 !rename markers if necessary
-!save setting used somehow, .json, .csv, etc.
 }
 \details{
 The steps taken by this function, in order, are:

@@ -12,7 +12,7 @@
   marker,
   subsetted_meta = NULL,
   dir_clustr_ctrl = NULL,
-  parent_ctrl_fsom = NULL
+  parent_ctrl_input = NULL
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ used for metaclusters, if \code{fsom} is a reclustering. Default is \code{NULL}.
 \item{dir_clustr_ctrl}{A filepath to the directory containing clustered control
 files, if \code{fsom} is a reclustering. Default is \code{NULL}.}
 
-\item{parent_ctrl_fsom}{The parent control FlowSOM whose cells are to be
+\item{parent_ctrl_input}{The parent control FlowSOM whose cells are to be
 reclustered, if \code{fsom} is a reclustering. Default is \code{NULL}.}
 }
 \value{
@@ -41,3 +41,4 @@ A FlowSOM object.
 \description{
 Prepare isotype or FMO controls for calculating delta MFI.
 }
+\keyword{internal}

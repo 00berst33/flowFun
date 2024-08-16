@@ -35,3 +35,4 @@ A data table with metacluster and cluster assignments for each cell.
 \description{
 Cluster FMO and/or isotype controls to facilitate calculation of delta MFIs.
 }
+\keyword{internal}

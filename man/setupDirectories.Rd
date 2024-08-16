@@ -10,7 +10,7 @@ setupDirectories(dirs_custom = list())
 \item{dirs_custom}{A named list specifying any custom directory names.}
 }
 \description{
-!!! edit !!! Initializes and creates all directories necessary for the pipeline.
+Initializes and creates all directories necessary for the pipeline.
 }
 \details{
 By default, this function creates a directory structure as follows:
