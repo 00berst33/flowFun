@@ -432,11 +432,11 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
 
     # Perform quality control via flowCut package
     fc <- flowCut::flowCut(f = ff_l,
-                                            FileID = make.names(file),
-                                            Plot = "All",
-                                            Directory = file.path("Preprocessing Results",
-                                                                  "flowCut"),
-                                            Verbose = TRUE)
+                          FileID = make.names(file),
+                          Plot = "All",
+                          Directory = file.path("Preprocessing Results",
+                                                "flowCut"),
+                          Verbose = TRUE)
     ff_fc <- fc$frame
 
     remove <- FALSE
@@ -484,13 +484,13 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
     #grDevices::pdf(file.path(dir, pdf_name))
     ml <- gridExtra::marrangeGrob(grobs,
                                   nrow = 2,
-                                  ncol = 1,
+                                  ncol = 2,
                                   layout_matrix = rbind(c(1,1,2,2),
                                                         c(1,1,2,2),
                                                         c(NA,3,3,NA),
                                                         c(NA,3,3,NA)),
                                   top = quote(names(grobs)[g]))
-    ggplot2::ggsave(file.path(dir, pdf_name), device = grDevices::pdf)
+    ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, device = grDevices::pdf)
     #grDevices::dev.off()
   }
 
