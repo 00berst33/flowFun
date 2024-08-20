@@ -150,82 +150,6 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, comparisons,
   return(sample_df)
 }
 
-#' prepareControlInfo
-#'
-#' use in clusterControls ?
-#'
-#' @param markers ...
-#' @param ctrl_cols ...
-#' @param ctrl_prepr_dirs ...
-#' @param ctrl_clustr_dirs ...
-#' @param parent_ctrl_fsom ...
-#'
-#' @return A data frame with FMO/Isotype control information.
-#'
-#' @export
-prepareControlInfo <- function(markers, ctrl_cols, ctrl_prepr_dirs,
-                               ctrl_clustr_dirs = NULL, parent_ctrl_fsom = NULL) {
-  ctrl_df <- data.frame("Column.Name" = ctrl_cols,
-                        "Prepr.Dir" = ctrl_prepr_dirs,
-                        row.names = markers)
-
-  if (!is.null(ctrl_clustr_dirs)) {
-    ctrl_df <- data.frame(ctrl_df,
-                          "Clustered.Parent.Dir" = ctrl_clustr_dirs,
-                          "Parent.fsom" = parent_ctrl_fsom)
-  }
-
-  return(ctrl_df)
-}
-
-#' makeFactorDF
-#'
-#' !!! original function now mostly merged with prepareSampleInfo(), only really
-#' necessary if sampleinfo is given as a list
-#'
-#' @param sample_info A list of lists containing sample information
-#' @param comparisons A named list of named lists, defining the groups to be
-#' compared during analysis. See example for how this variable should be defined.
-#'
-#' @return A data frame of factors, with an added column for group.
-#'
-#' @export
-makeFactorDF <- function (sample_info, comparisons) {
-  # Create factors data frame, which will be used to create our design matrix.
-  sample_names <- c()
-  for (i in 1:length(sample_info)) {
-    sample_names <- c(sample_names, sample_info[[i]][[1]])
-  }
-  factors <- data.frame(row.names = sample_names, check.names = FALSE) # consider using file names read from dir_prepr() instead
-  for (i in 1:length(sample_info)) {
-    idx <- grep(paste(sample_info[[i]][[1]], collapse = "|"), rownames(factors))
-    for (a in attributes(sample_info[[i]])$names[-1]) {
-      if (!(a %in% attributes(factors)$names)) {
-        factors[[a]] <- NA
-      }
-      factors[[a]][idx] <- sample_info[[i]][[a]]
-    }
-  }
-
-  # Determine the factors that should be used to create a "group" factor that
-  # combines individual factors.
-  comp_factors <- c()
-  for (i in 1:length(comparisons)) {
-    new_atts <- attributes(comparisons[[i]])$names
-    new_atts <- new_atts[!(new_atts %in% comp_factors)]
-    comp_factors <- append(comp_factors, new_atts)
-  }
-
-  # Create a new "group" column that concatenates the factors for comparisons.
-  factors$group <- do.call(paste, c(factors[comp_factors], sep = "_"))
-
-  # Convert the columns in the "factors" data frame to factors.
-  factors[] <- lapply(factors, as.factor)
-
-  # add choice to relevel?
-
-  return(factors)
-}
 
 #' makeDesignMatrix
 #'
@@ -250,6 +174,7 @@ makeDesignMatrix <- function(sample_df) {
 
   return(design)
 }
+
 
 #' makeContrastsMatrix
 #'
@@ -351,6 +276,7 @@ makeContrastsMatrix <- function(sample_df, comparisons) {
 
   return(Contrasts)
 }
+
 
 #' makeCountMatrix
 #'
@@ -494,6 +420,7 @@ makeCountMatrix.data.frame <- function(input, meta_names = NULL,
 
   return(counts)
 }
+
 
 #' doDAAnalysis
 #'
@@ -690,7 +617,6 @@ clusterControls.FlowSOM <- function(input, sample_df, ctrl_col, dir_prepr_ctrl, 
   return(ctrl_fsom)
 }
 
-
 #' clusterControls.data.frame
 #'
 #' Cluster FMO and/or isotype controls to facilitate calculation of delta MFIs.
@@ -777,6 +703,7 @@ clusterControls.data.frame <- function(input, fsom, subsetted_fsom = NULL, subse
   return(ctrl_dt)
 }
 
+
 #' getSampleMFIs
 #'
 #' A helper function to get sample MFIs.
@@ -835,7 +762,8 @@ getSampleMFIs.data.frame <- function(input) {
   return(medians)
 }
 
-#' getSampleMetaMatrix
+
+#' getSampleMetaclusterMFIs
 #'
 #' Helper function for creating matrices of interest from \code{df_full}.
 #'
@@ -849,7 +777,7 @@ getSampleMFIs.data.frame <- function(input) {
 #' @return A matrix, where each column is a metacluster and each row is a sample.
 #' The entries may be median expression on either a linear or logicle-transformed
 #' scale.
-getSampleMetaMatrix = function(df_full, col_to_use) {
+getSampleMetaclusterMFIs = function(df_full, col_to_use) {
   cell_type <- NULL
 
   if (is.numeric(col_to_use)) {
@@ -1076,7 +1004,7 @@ doDEAnalysis.FlowSOM <- function(input, sample_df, design, contrasts, counts,
   # Create expression matrix for testing.
   expr_matrix <- data.frame()
   for (i in 1:length(df_full)) {
-    new_df <- as.matrix(t(getSampleMetaMatrix(df_full[[i]], 1)))
+    new_df <- as.matrix(t(getSampleMetaclusterMFIs(df_full[[i]], 1)))
     expr_matrix <- as.matrix(rbind(expr_matrix, new_df))
   }
 
@@ -1123,8 +1051,7 @@ doDEAnalysis.FlowSOM <- function(input, sample_df, design, contrasts, counts,
 }
 
 #' @keywords internal
-#' @export
-getSampleMetaclusterMFIs <- function(input, sample_df, marker_of_interest,
+getSampleMetaclusterMFIsHelper <- function(input, sample_df, marker_of_interest,
                                      linear = FALSE, meta_names = NULL,
                                      ctrl_input = NULL, subsetted_meta = NULL) {
   Metacluster <- .id <- NULL
@@ -1273,7 +1200,7 @@ getSampleMetaclusterMFIs <- function(input, sample_df, marker_of_interest,
     col <- 1
   }
 
-  matrix <- getSampleMetaMatrix(df_full, col_to_use = col)
+  matrix <- getSampleMetaclusterMFIs(df_full, col_to_use = col)
 
   return(matrix)
 }
@@ -1459,7 +1386,7 @@ doDEAnalysis.data.frame <- function(input, sample_df, design, contrasts, counts,
   expr_matrix <- data.frame()
   for (i in 1:length(df_full)) {
     #print(head(df_full[[i]]))
-    new_df <- as.matrix(t(getSampleMetaMatrix(df_full[[i]], 1)))
+    new_df <- as.matrix(t(getSampleMetaclusterMFIs(df_full[[i]], 1)))
     expr_matrix <- as.matrix(rbind(expr_matrix, new_df))
   }
 
@@ -1522,6 +1449,47 @@ calculateSE <- function(x) {
   return(se)
 }
 
+
+####
+getGroups <- function(comparison, sample_df) {
+  # Get the names of all factors
+  factor_names <- names(comparison)
+
+  # Generate all combinations of factors
+  combinations <- expand.grid(comparison, stringsAsFactors = FALSE)
+
+  # Paste each combination together
+  groups <- apply(combinations, 1, function(row) paste(row, collapse = " "))
+
+  # Initialize list to store groups
+  sorted_groups <- list()
+
+  # Iterate over all possible found groups
+  for (i in seq_len(nrow(combinations))) { # for each combination
+    combination <- combinations[i, ]
+    samples <- sample_df
+    for (j in seq_len(ncol(combinations))) { # for each factor
+      var <- colnames(combinations)[j]
+      level <- combinations[i, j]
+
+      # Get samples belonging to current factor's level
+      samples <- samples %>%
+        tidytable::filter(which(samples[[var]] == level))
+    }
+
+    # Get files belonging to group
+    samples <- samples %>%
+      tidytable::pull(2) %>%
+      list()
+
+    # Name group and add to list
+    names(samples) <- groups[i]
+    sorted_groups <- append(sorted_groups, samples)
+  }
+
+  return(sorted_groups)
+}
+
 #' plotGroupMFIBars
 #'
 #' Function to draw bar plot of MFIs or dMFIs by group.
@@ -1529,7 +1497,7 @@ calculateSE <- function(x) {
 #' @param input A matrix, data frame, or path to a .csv file, where each row is
 #' a sample and each column is a metacluster.
 #' @param sample_df A factor data frame as generated by [prepareSampleInfo()].
-#' @param grps_of_interest A list defining which groups to plot.
+#' @param comparison A list defining a comparison.
 #' @param upper_lim The y-axis upper limit.
 #'
 #' @details
@@ -1543,14 +1511,107 @@ calculateSE <- function(x) {
 #' @return A bar plot drawn with \code{\link[ggplot2]{ggplot2}}.
 #'
 #' @export
-#'
-#' @examples
-#' # Define groups of interest
-#' grps_of_interest <- list("Male Ctrl" = c("male_Ctrl_X"),
-#'                          "Female Ctrl" = c("female_Ctrl_X"),
-#'                          "Male MIBC" = c("male_MIBC_No.NAC", "male_MIBC_NAC"),
-#'                          "Female MIBC" = c("female_MIBC_No.NAC", "female_MIBC_NAC"))
-plotGroupMFIBars <- function(input, sample_df, grps_of_interest, upper_lim = NULL) {
+plotGroupMFIBars <- function(input, sample_df, comparison, upper_lim = NULL) {
+  Group <- value <- name <- NULL
+
+  grps_of_interest <- getGroups(comparison, sample_df)
+  print(grps_of_interest)
+
+  # Get input as data frame
+  if (is.character(input)) {
+    orig_df <- utils::read.csv(input, check.names = FALSE)
+  } else if (is.matrix(input)) {
+    orig_df <- as.data.frame(input, check.names = FALSE)
+  } else {
+    orig_df <- input
+  }
+
+  # Add group column to input
+  df <- cbind(orig_df, factor_group = sample_df$group) # !!! this column is later removed,
+  # binding it shouldn't be necessary
+  # Remove sample ID column
+  #df <- orig_df[,-1]
+
+  # Convert entries to numeric
+  for (col in colnames(df)) {
+    if (col != "factor_group") {
+      df[, col] <- as.numeric(df[, col])
+    }
+  }
+
+  # Ensure "group" column is treated as a factor.
+  df <- df %>%
+    dplyr::mutate(factor_group = as.factor(factor_group))
+
+  # Create new column defining which group of interest each sample belongs to
+  df$Group <- factor(seq(1:nrow(df)), levels = names(grps_of_interest))
+  for (i in 1:nrow(df)) {
+    group <- as.character(df$factor_group[i])
+    for (j in 1:length(grps_of_interest)) {
+      if (group %in% grps_of_interest[[j]]) {
+        df$Group[i] <- names(grps_of_interest)[j]
+      }
+    }
+  }
+
+  df <- df %>%
+    dplyr::mutate(Group = ) # set based on sample_df$File.Name
+
+  # Remove group column not of interest
+  #df <- df[, -(which(colnames(df) == "factor_group"))]
+  df <- df %>%
+    dplyr::select(-factor_group)
+
+  print(df)
+
+  # Data frame to plot a data point for each sample
+  point_df <- tidyr::pivot_longer(df, cols = -Group)
+
+  # Calculate medians for each group
+  median_df <- df %>%
+    dplyr::group_by(Group) %>%
+    dplyr::summarise_if(is.numeric, stats::median, na.rm = TRUE) %>%
+    dplyr::ungroup()
+
+  # Calculate standard errors for each group
+  se_df <- df %>%
+    dplyr::group_by(Group) %>%
+    dplyr::summarise_if(is.numeric, calculateSE) %>%
+    dplyr::ungroup()
+
+  # Pivot data to long format
+  med_dat_long <- tidyr::pivot_longer(median_df, cols = -Group)
+  se_dat_long <- tidyr::pivot_longer(se_df, cols = -Group)
+
+  # If `upper_lim` is null, approximate appropriate value
+  if (is.null(upper_lim)) {
+    upper_lim <- max(med_dat_long$value)
+    upper_lim <- upper_lim + (upper_lim/2)
+  }
+
+  # Draw plot
+  ggplot2::ggplot(med_dat_long, ggplot2::aes(x = name, y = value, fill = Group)) +
+    ggplot2::geom_bar(stat = "identity", position = "dodge", color = "black") +
+    ggplot2::geom_point(data = point_df,
+                        mapping = ggplot2::aes(name, value, shape = Group, fill = Group),
+                        position = ggplot2::position_jitterdodge(jitter.width = 0.05, dodge.width = 1, seed = 42),
+                        size = 1,
+                        inherit.aes = FALSE) +
+    ggplot2::geom_errorbar(mapping = ggplot2::aes(x = name,
+                                                  ymin = value-se_dat_long$value,
+                                                  ymax = value+se_dat_long$value),
+                           position = ggplot2::position_dodge(width = 0.9, preserve = "single"),
+                           width = 0.5,
+                           inherit.aes = TRUE) +
+    viridis::scale_fill_viridis(discrete = TRUE, option = "G", begin = 0.2) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, hjust = 1, size = 8),
+                   aspect.ratio = 0.6) +
+    ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, upper_lim))
+}
+
+
+plotGroupMFIBarsOld <- function(input, sample_df, grps_of_interest, upper_lim = NULL) {
   Group <- value <- name <- NULL
 
   # Get input as data frame
@@ -1808,4 +1869,81 @@ plotGroupUMAPs <- function(fsom, sample_df, grps_of_interest, umap = NULL,
   print(p)
 
   return(p)
+}
+
+#' prepareControlInfo
+#'
+#' use in clusterControls ?
+#'
+#' @param markers ...
+#' @param ctrl_cols ...
+#' @param ctrl_prepr_dirs ...
+#' @param ctrl_clustr_dirs ...
+#' @param parent_ctrl_fsom ...
+#'
+#' @return A data frame with FMO/Isotype control information.
+#'
+#' @export
+prepareControlInfo <- function(markers, ctrl_cols, ctrl_prepr_dirs,
+                               ctrl_clustr_dirs = NULL, parent_ctrl_fsom = NULL) {
+  ctrl_df <- data.frame("Column.Name" = ctrl_cols,
+                        "Prepr.Dir" = ctrl_prepr_dirs,
+                        row.names = markers)
+
+  if (!is.null(ctrl_clustr_dirs)) {
+    ctrl_df <- data.frame(ctrl_df,
+                          "Clustered.Parent.Dir" = ctrl_clustr_dirs,
+                          "Parent.fsom" = parent_ctrl_fsom)
+  }
+
+  return(ctrl_df)
+}
+
+#' makeFactorDF
+#'
+#' !!! original function now mostly merged with prepareSampleInfo(), only really
+#' necessary if sampleinfo is given as a list
+#'
+#' @param sample_info A list of lists containing sample information
+#' @param comparisons A named list of named lists, defining the groups to be
+#' compared during analysis. See example for how this variable should be defined.
+#'
+#' @return A data frame of factors, with an added column for group.
+#'
+#' @export
+makeFactorDF <- function (sample_info, comparisons) {
+  # Create factors data frame, which will be used to create our design matrix.
+  sample_names <- c()
+  for (i in 1:length(sample_info)) {
+    sample_names <- c(sample_names, sample_info[[i]][[1]])
+  }
+  factors <- data.frame(row.names = sample_names, check.names = FALSE) # consider using file names read from dir_prepr() instead
+  for (i in 1:length(sample_info)) {
+    idx <- grep(paste(sample_info[[i]][[1]], collapse = "|"), rownames(factors))
+    for (a in attributes(sample_info[[i]])$names[-1]) {
+      if (!(a %in% attributes(factors)$names)) {
+        factors[[a]] <- NA
+      }
+      factors[[a]][idx] <- sample_info[[i]][[a]]
+    }
+  }
+
+  # Determine the factors that should be used to create a "group" factor that
+  # combines individual factors.
+  comp_factors <- c()
+  for (i in 1:length(comparisons)) {
+    new_atts <- attributes(comparisons[[i]])$names
+    new_atts <- new_atts[!(new_atts %in% comp_factors)]
+    comp_factors <- append(comp_factors, new_atts)
+  }
+
+  # Create a new "group" column that concatenates the factors for comparisons.
+  factors$group <- do.call(paste, c(factors[comp_factors], sep = "_"))
+
+  # Convert the columns in the "factors" data frame to factors.
+  factors[] <- lapply(factors, as.factor)
+
+  # add choice to relevel?
+
+  return(factors)
 }

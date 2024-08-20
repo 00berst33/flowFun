@@ -41,6 +41,12 @@ library(flowFun)
 file <- system.file("extdata", "aggregate.fcs", package = "flowFun")
 # Read in as tidytable
 table <- getTableFromFCS(file, num_cells = 1000)
+
+print.tidytable <- function(tab) {
+  tab <- tidyr::as_tibble(tab)
+  print(tab)
+  invisible(tab)
+}
 ```
 
 The following is a snippet of the resulting table:
@@ -374,9 +380,12 @@ plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
 
 Various plotting functions that are not essential to the workflow, but potentially still of interest, have been included in this package. 
 
+``` {r sample-proportions, fig.height=5, fig.width=6, fig.align='center'}
+plotSampleProportions(fsom_dt)
+```
+
 - searchByExpression()
 - plotLabeled2DScatter()
-- plotSampleProportions()
 - plotClusterGroupProportions()
 - plotClusterFileProportions()
 
