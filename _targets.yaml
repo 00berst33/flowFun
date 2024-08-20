@@ -1,0 +1,3 @@
+main:
+  script: scripts/_targets.R
+  inherits: R/preprocessing_targets.R
