@@ -431,12 +431,12 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
     grobs[[j+2]] <- ggplot2::ggplotGrob(p3)
 
     # Perform quality control via flowCut package
-    fc <- suppressWarnings(flowCut::flowCut(f = ff_l,
+    fc <- flowCut::flowCut(f = ff_l,
                                             FileID = make.names(file),
-                                            Plot = ifelse(save_plots, "Flagged Only", "None"),
+                                            Plot = "All",
                                             Directory = file.path("Preprocessing Results",
                                                                   "flowCut"),
-                                            Verbose = TRUE))
+                                            Verbose = TRUE)
     ff_fc <- fc$frame
 
     remove <- FALSE
@@ -481,7 +481,7 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   # Save PDF of gating plots for each sample if desired
   if (save_plots) {
     names(grobs) <- basename(raw_files)
-    grDevices::pdf(file.path(dir, pdf_name))
+    #grDevices::pdf(file.path(dir, pdf_name))
     ml <- gridExtra::marrangeGrob(grobs,
                                   nrow = 2,
                                   ncol = 1,
@@ -490,7 +490,8 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
                                                         c(NA,3,3,NA),
                                                         c(NA,3,3,NA)),
                                   top = quote(names(grobs)[g]))
-    grDevices::dev.off()
+    ggplot2::ggsave(file.path(dir, pdf_name), device = grDevices::pdf)
+    #grDevices::dev.off()
   }
 
   # Concatenate all data tables into one, with column for sample ID
