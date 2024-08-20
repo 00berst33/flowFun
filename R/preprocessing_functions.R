@@ -654,7 +654,7 @@ previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, 
     ff_t <- flowCore::transform(ff_c, transformation)
   } else {
     transformation <- switch(transformation_type,
-                             "logicle" = flowCore::estimateLogicle(ff_c, channels = ld_channel),
+                             "logicle" = flowCore::estimateLogicle(ff_c, channels = all_channels),
                              "arcsinh" = {
                                res <- flowCore::arcsinhTransform(b = 5)
                                res <- flowCore::transformList(all_channels, res)
@@ -681,17 +681,24 @@ previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, 
     # ff_l = flowCore::Subset(ff_t, filt)
   }
 
+  p <- list()
+
   # Create plot for results of doublet removal
-  p1 <- plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000)
+  p1 <- ggplot2::ggplotGrob(plotBeforeAfter(ff_m, ff_d, "FSC-A", "FSC-H", 5000))
+  p[[1]] <- p1
 
   # Create plot for results of debris removal
-  p2 <- plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000)
+  p2 <- ggplot2::ggplotGrob(plotBeforeAfter(ff_d, ff_g, "FSC-A", "SSC-A", 5000))
+  p[[2]] <- p2
 
   # Create plot for results of live/dead cell removal
-  p3 <- plotBeforeAfter(ff_t, ff_l, ld_channel, "FSC-A", 5000)
+  if (!is.null(ld_channel)) {
+    p3 <- ggplot2::ggplotGrob(plotBeforeAfter(ff_t, ff_l, ld_channel, "FSC-A", 5000))
+    p[[3]] <- p3
+  }
 
   # Arrange above plots
-  gridExtra::grid.arrange(p1, p2, p3,
+  gridExtra::marrangeGrob(p,
                           nrow = 2,
                           ncol = 2,
                           layout_matrix = rbind(c(1,1,2,2),
