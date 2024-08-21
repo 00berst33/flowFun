@@ -24,7 +24,7 @@ devtools::install_github("00berst33/flowFun")
 
 # Reading in Data
 
-Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package encourages the use of the `data.table` data structure.
+Blob Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package encourages the use of the `data.table` data structure.
 
 Other advantages of using this data structure is that it is futureproof, as it can easily be converted to a `data.frame`, a structure found in base R. This also makes the package more flexible, as although it focuses on the use of the FlowSOM package for clustering, the package could easily be expanded to work with any other clustering algorithm the user may prefer.
 
