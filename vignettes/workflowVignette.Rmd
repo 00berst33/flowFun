@@ -139,7 +139,7 @@ prepr_table <- doPreprocessing(table,
                                nmad = 3.5, 
                                pctg_live = 0.7,
                                pctg_qc = 0.8,
-                               save_plots = TRUE,
+                               save_plots = FALSE,
                                save_fcs = FALSE)
 ```
 
@@ -251,7 +251,7 @@ plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
 Examining this heatmap suggests that metacluster 3 and 11 may be subsets of gdT cells, but the somewhat low expression of TCRgd makes it difficult to determine this with much certainty. Sometimes, once the most obvious merging has been done, UMAPs and MFI heatmaps alone are no longer sufficient to make informed decisions. Two other notable functions are provided to give further info about the clusters, the first being `plotClusterMFIs()`. It functions almost identically to `plotMetaclusterMFIs()`, except that its rows are clusters, and it may be used to look at the clusters within a specific metacluster of interest via the parameter `metaclusters`. This is demonstrated below by calling the function on metaclusters 3 and 11.
 
-```{r cluster-heatmap, fig.height=5, fig.width=5, fig.align='center'}
+```{r cluster-heatmap, fig.height=4, fig.width=7, fig.align='center'}
 # Generate cluster MFI heatmap
 plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = c(3, 11))
 ```
@@ -358,8 +358,8 @@ Here, there appears to be a fairly distinct elbow at `M = 6`. To recluster using
 # Recluster CD8 T cells
 fsom_sub <- clusterSubsetWithPCA(new_table, 
                                  pca_obj = pca_obj, 
-                                 num_components = 6, # number of principal components
-                                 num_clus = 15, # number of metaclusters
+                                 num_components = 6,
+                                 num_clus = 15,
                                  seed = 33)
 ```
 
@@ -428,8 +428,8 @@ file <- system.file("extdata", "sample_info.csv", package = "flowFun")
 
 # Prepare metadata for further analysis
 sample_info <- prepareSampleInfo(file, 
-                                 name_col = "sample.name", # column containing sample names
-                                 filename_col = "filename", # column containing filenames
+                                 name_col = "sample.name",
+                                 filename_col = "filename",
                                  comparisons = comparisons)
 ```
 
@@ -557,10 +557,9 @@ ctrl_dt <- doPreprocessing(fmos,
                            ld_channel = attr(fsom_dt, "gating_scheme")$live_gate$channels[1],
                            compensation = attr(fsom_dt, "compensation_matrix"),
                            transformation = attr(fsom_dt, "transformation"),
-                           transformation_type = "logicle", ###
+                           transformation_type = "logicle",
                            debris_gate = attr(fsom_dt, "gating_scheme")$debris_gate,
                            live_gate = attr(fsom_dt, "gating_scheme")$live_gate,
-                           # nmad = ,
                            pctg_live = 0,
                            pctg_qc = 0)
 
