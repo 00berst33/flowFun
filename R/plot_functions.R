@@ -800,9 +800,9 @@ plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
   cols_used <- input$map$colsUsed
   meta_vec <- FlowSOM::GetMetaclusters(input)
 
-  input <- input$data[, cols_used]
+  data <- input$data[, cols_used]
 
-  nrows <- nrow(input)
+  nrows <- nrow(data)
 
   if (num_cells < nrows) {
     inds <- sample(nrows, num_cells)
@@ -810,7 +810,7 @@ plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
     inds <- 1:nrows
   }
 
-  data <- input[inds, ]
+  data <- data[inds, ]
   umap <- umap::umap(data)
   meta_vec <- meta_vec[inds]
   if (!is.null(labels)) {
@@ -828,7 +828,7 @@ plotUMAP.FlowSOM <- function(input, num_cells = 5000, labels = NULL,
 
   if (!is.null(colors)) {
     colors <- colors
-    names(colors) <- levels(input$metaclustering)
+    names(colors) <- levels(input[["metaclustering"]])
 
     p <- p + ggplot2::scale_fill_manual(aesthetics = "color", values = colors)
   }
