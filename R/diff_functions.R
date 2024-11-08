@@ -1519,31 +1519,18 @@ getGroups <- function(comparison, sample_df) {
 plotGroupMFIBars <- function(input, sample_df, comparison, meta_to_plot = NULL, upper_lim = NULL) {
   Group <- value <- name <- NULL
 
+  # Get list of groups by file
   grps_of_interest <- getGroups(comparison, sample_df)
-  print(grps_of_interest)
 
   # Get input as data frame
   if (is.character(input)) {
-    orig_df <- utils::read.csv(input, check.names = FALSE)
+    df <- utils::read.csv(input, check.names = FALSE)
   } else if (is.matrix(input)) {
-    orig_df <- as.data.frame(input, check.names = FALSE)
+    df <- as.data.frame(input, check.names = FALSE)
   } else {
-    orig_df <- input
+    df <- input
   }
 
-<<<<<<< Updated upstream
-  # Add group column to input
-  df <- cbind(orig_df, factor_group = sample_df$group) # !!! this column is later removed,
-  # binding it shouldn't be necessary
-  # Remove sample ID column
-  #df <- orig_df[,-1]
-
-  # Convert entries to numeric
-  for (col in colnames(df)) {
-    if (col != "factor_group") {
-      df[, col] <- as.numeric(df[, col])
-    }
-=======
   if (!is.null(meta_to_plot)) {
     vars <- rlang::enquos(meta_to_plot)
     df <- df %>%
@@ -1554,37 +1541,13 @@ plotGroupMFIBars <- function(input, sample_df, comparison, meta_to_plot = NULL, 
   find_list_name <- function(filename, list_of_lists) {
     list_name <- names(list_of_lists)[sapply(list_of_lists, function(lst) filename %in% lst)]
     ifelse(length(list_name) > 0, list_name, "X")
->>>>>>> Stashed changes
   }
 
-  # Ensure "group" column is treated as a factor.
+  # Add the new column with mutate()
   df <- df %>%
-    dplyr::mutate(factor_group = as.factor(factor_group))
+    dplyr::mutate(Group = purrr::map_chr(sample_df[, 2], ~ find_list_name(.x, grps_of_interest))) %>%
+    dplyr::filter(Group != "X")
 
-  # Create new column defining which group of interest each sample belongs to
-  df$Group <- factor(seq(1:nrow(df)), levels = names(grps_of_interest))
-  for (i in 1:nrow(df)) {
-    group <- as.character(df$factor_group[i])
-    for (j in 1:length(grps_of_interest)) {
-      if (group %in% grps_of_interest[[j]]) {
-        df$Group[i] <- names(grps_of_interest)[j]
-      }
-    }
-  }
-
-  df <- df %>%
-    dplyr::mutate(Group = ) # set based on sample_df$File.Name
-
-<<<<<<< Updated upstream
-  # Remove group column not of interest
-  #df <- df[, -(which(colnames(df) == "factor_group"))]
-  df <- df %>%
-    dplyr::select(-factor_group)
-
-  print(df)
-
-=======
->>>>>>> Stashed changes
   # Data frame to plot a data point for each sample
   point_df <- tidyr::pivot_longer(df, cols = -Group)
 
