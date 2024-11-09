@@ -1788,6 +1788,13 @@ plotGroupUMAPs <- function(fsom, sample_df, comparison, umap = NULL,
       group_vec[inds] <- group
     }
 
+    # Remove indices that don't belong to any groups of interest
+    not_in_groups <- which(!(group_vec %in% names(grps_of_interest)))
+    if (length(not_in_groups) > 0) {
+      group_vec <- group_vec[-not_in_groups]
+      umap_df <- umap_df[-not_in_groups, ]
+    }
+
     # Get group counts
     tab <- table(factor(group_vec, levels = names(grps_of_interest)))
     grp_inds <- c()
@@ -1864,7 +1871,6 @@ plotGroupUMAPs <- function(fsom, sample_df, comparison, umap = NULL,
     viridis::scale_color_viridis(option = "H", name = legend_name) +
     ggplot2::theme_void() +
     ggplot2::theme(aspect.ratio = 1, strip.text = ggplot2::element_text(size = 12))
-  print(p)
 
   return(p)
 }
