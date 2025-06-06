@@ -1,3 +1,55 @@
+#' startProject
+#'
+#' Set working directory to a previous analysis, or create a new one.
+#' ??? anything else to instantiate here ???
+#'
+#' @param dir_name Absolute or relative filepath giving the name of the directory
+#' that you would like your analysis to be saved in. By default, a folder named
+#' "Cytometry_Analysis" is created in the current working directory.
+#'
+#' @export
+startProject <- function(dir_name = "Cytometry_Analysis") {
+  if (!dir.exists(dir_name)) {
+    dir.create(dir_name)
+    setwd(dir_name)
+  } else {
+    setwd(dir_name)
+  }
+
+  # save sample info or filepath
+  # save compensation matrix or filepath
+  # set working directory accordingly
+}
+
+#' getChannelMarkerPairs
+#'
+#' ...
+#'
+#' @param ff A flowFrame or filepath to a .fcs file
+#' @param save_res Boolean; should the results be saved to the current working directory
+#'
+#' @return A two column table specifying channel/marker pairs
+#' @export
+getChannelMarkerPairs <- function(ff, save_res = TRUE) {
+  # If a filepath was given
+  if (is.character(ff)) {
+    ff <- flowCore::read.FCS(ff)
+  }
+
+  tab <- Biobase::pData(flowCore::parameters(ff)) %>%
+    # select columns with marker and channel names
+    select(name, desc) %>%
+    # remove channels that have no corresponding marker
+    filter(!is.na(desc))
+
+  # Save resulting table if desired
+  if (save_res) {
+    write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
+  }
+
+  return(tab)
+}
+
 #' NEED TO HANDLE MISSING PARAMETERS FROM TRANSFORMATION
 #'
 #' @keywords internal

@@ -274,7 +274,9 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
                             debris_gate = NULL, ld_channel = NULL, live_gate = NULL, nmad = 4,
                             pctg_live = 0.6, pctg_qc = 0.8,
                             save_plots = TRUE, save_fcs = FALSE,
-                            pdf_name = "preprocessing_results.pdf", flowcut_dir = "flowCut") {
+                            pdf_name = "preprocessing_results.pdf"
+                            #flowcut_dir = "flowCut"
+                            ) {
   Plot <- df <- .id <- NULL
 
   # Prepare data
@@ -320,10 +322,10 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   grobs <- list()
 
   # Create directory if needed
-  dir <- "Preprocessing Results"
-  if (!dir.exists(dir)) {
-    dir.create(dir)
-  }
+  # dir <- "Preprocessing Results"
+  # if (!dir.exists(dir)) {
+  #   dir.create(dir)
+  # }
 
   # Initialize gating scheme
   gating_scheme <- list()
@@ -343,22 +345,27 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   }
   gating_scheme <- append(gating_scheme, list("debris_gate" = debris_gate))
 
-  # If there is a marker for live/dead cells and a compensation matrix was given
-  if (!is.null(ld_channel) & !is.null(compensation)) {
-    # Set default parameters for live/dead gate
-    live_defaults <- list("channels" = c(ld_channel, "SSC-A"),
-                          "position" = c(FALSE, NA),
-                          "percentile" = c(0.70, NA),
-                          "twin.factor" = c(0.1, NA))
-    # Add additional parameters specified by user, if necessary
-    if (is.null(live_gate)) {
-      live_gate <- live_defaults
-    } else if (is.list(live_gate)) {
-      live_gate <- utils::modifyList(live_defaults, live_gate)
-    } else {
-      live_gate <- prepareGateParams(live_gate)
+  # If a compensation matrix was given
+  if (!is.null(compensation)) {
+    # Save to current project directory
+    write.csv(compensation, "compensation_matrix.csv")
+    # If there is a marker for live/dead cells
+    if(!is.null(ld_channel)) {
+      # Set default parameters for live/dead gate
+      live_defaults <- list("channels" = c(ld_channel, "SSC-A"),
+                            "position" = c(FALSE, NA),
+                            "percentile" = c(0.70, NA),
+                            "twin.factor" = c(0.1, NA))
+      # Add additional parameters specified by user, if necessary
+      if (is.null(live_gate)) {
+        live_gate <- live_defaults
+      } else if (is.list(live_gate)) {
+        live_gate <- utils::modifyList(live_defaults, live_gate)
+      } else {
+        live_gate <- prepareGateParams(live_gate)
+      }
+      gating_scheme <- append(gating_scheme, list("live_gate" = live_gate))
     }
-    gating_scheme <- append(gating_scheme, list("live_gate" = live_gate))
   }
 
   # Preprocess all given files and generate PDF of preprocessing results
@@ -434,7 +441,7 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
     fc <- flowCut::flowCut(f = ff_l,
                           FileID = make.names(file),
                           Plot = "All",
-                          Directory = file.path("Preprocessing Results",
+                          Directory = file.path(#"Preprocessing Results",
                                                 "flowCut"),
                           Verbose = TRUE)
     ff_fc <- fc$frame
@@ -511,6 +518,13 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
   if (is.null(compensation)) {
     compensation <- "none"
   }
+
+  # CHANGE TO SAVING OR MAKING LIST OBJECT HERE
+  ###
+  saveRDS(transformation, "transformation.rds")
+  saveRDS(gating_scheme, "gating_scheme.rds")
+  # save table in case of multiple clusterings with same preprocessing steps?
+  ###
   data.table::setattr(prepr_table, "compensation_matrix", compensation)
 
   data.table::setattr(prepr_table, "transformation", transformation)

@@ -18,8 +18,7 @@ doPreprocessing(
   pctg_qc = 0.8,
   save_plots = TRUE,
   save_fcs = FALSE,
-  pdf_name = "preprocessing_results.pdf",
-  flowcut_dir = "flowCut"
+  pdf_name = "preprocessing_results.pdf"
 )
 }
 \arguments{

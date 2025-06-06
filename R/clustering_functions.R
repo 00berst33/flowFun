@@ -21,6 +21,11 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
     cols_to_cluster <- colnames(table)[cols_to_cluster] #edit?
   }
 
+  # Flag columns used for clustering in channel_marker_pairs.csv
+  tab <- read.csv("channel_marker_key.csv") %>%
+    mutate(clustered_flag = ifelse(tab[["name"]] %in% cols_to_cluster, 1, 0))
+  write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
+
   # Set input data.table to appropriate format
   prepr_mat <- as.matrix(table, rownames = TRUE)
 
@@ -53,12 +58,13 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
-    dirpath <- file.path("RDS", "Unedited")
-    if (!dir.exists(dirpath)) {
-      dir.create(dirpath, recursive = TRUE)
-    }
+    # dirpath <- file.path("RDS", "Unedited")
+    # if (!dir.exists(dirpath)) {
+    #   dir.create(dirpath, recursive = TRUE)
+    # }
 
-    saveRDS(fsom, file.path(dirpath, fsom_file))
+    saveRDS(fsom, fsom_file)
+    # saveRDS(fsom, file.path(dirpath, fsom_file))
   }
 
   return(table)
