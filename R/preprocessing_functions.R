@@ -497,7 +497,7 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
                                                         c(NA,3,3,NA),
                                                         c(NA,3,3,NA)),
                                   top = quote(names(grobs)[g]))
-    ggplot2::ggsave(file.path(dir, pdf_name), plot = ml, device = grDevices::pdf)
+    ggplot2::ggsave(pdf_name, plot = ml, device = grDevices::pdf)
     #grDevices::dev.off()
   }
 

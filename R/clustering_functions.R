@@ -22,12 +22,13 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
   }
 
   # Flag columns used for clustering in channel_marker_pairs.csv
-  tab <- read.csv("channel_marker_key.csv") %>%
-    mutate(clustered_flag = ifelse(tab[["name"]] %in% cols_to_cluster, 1, 0))
+  tab <- read.csv("channel_marker_key.csv", header = TRUE) %>%
+    mutate(clustered_flag = ifelse(name %in% cols_to_cluster, 1, 0))
   write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
 
   # Set input data.table to appropriate format
-  prepr_mat <- as.matrix(table, rownames = TRUE)
+  prepr_mat <- tableToFlowSet(table)
+  # prepr_mat <- as.matrix(table, rownames = TRUE)
 
   # Set default options
   default_options <- list(colsToUse = cols_to_cluster,

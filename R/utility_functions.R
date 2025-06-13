@@ -21,6 +21,70 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
   # set working directory accordingly
 }
 
+#' tableToFlowSet
+#'
+#' Convert a table of single-cell data
+#' !!! from here, add function to save .fcs files
+#'
+#' @param table
+#'
+#' @return A flowSet
+#' @export
+tableToFlowSet <- function(table, id_col = .id) {
+  id_col <- enquo(id_col)
+
+  # Get (file)names of all samples in the table
+  sample_names <- table %>%
+    pull(!!id_col) %>%
+    unique()
+
+  # Make a flowFrame for each sample and put it in a list
+  fs <- lapply(sample_names, function(i) {
+    table %>%
+      filter(!!id_col == i) %>%
+      #select(where(is.double)) %>%
+      mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
+      select(where(is.numeric)) %>%
+      as.matrix() %>%
+      flowCore::flowFrame()})
+  names(fs) <- sample_names
+
+  # Convert data type to flowSet
+  fs <- methods::as(fs, "flowSet")
+
+  return(fs)
+}
+
+flowSetToTable <- function(fs) {
+  table <- fs %>%
+    dplyr::ungroup() %>%
+    flowCore::exprs()
+}
+
+#' flowSOMToTable
+#'
+#' Convert FlowSOM object to a tidytable
+#'
+#' @param fsom
+#'
+#' @return A tidytable
+#' @export
+flowSOMToTable <- function(fsom) {
+  # Get metacluster and cluster labels
+  meta_labels <- FlowSOM::GetMetaclusters(fsom)
+  clust_labels <- factor(FlowSOM::GetClusters(fsom))
+
+  # Append labels as columns to the data.table
+  dt <- fsom$data
+  dt <- dt %>%
+    tidytable::as_tidytable() %>%
+    tidytable::mutate(Cluster = clust_labels,
+                      Metacluster = meta_labels,
+                      .keep = "all")
+
+  return(dt)
+}
+
 #' getChannelMarkerPairs
 #'
 #' ...

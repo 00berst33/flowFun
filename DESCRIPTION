@@ -37,6 +37,7 @@ Imports:
     Rtsne,
     scattermore,
     stats,
+    tidyFlowCore,
     tidyr,
     tidytable,
     umap,
