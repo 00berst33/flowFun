@@ -550,6 +550,105 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
 }
 
 
+#' doPreprocessing.GatingSet
+#'
+#' @param input A \code{GatingSet} created with the \code{flowWorkspace} package
+#' @param compensation A numeric matrix
+#' @param transformation A character string specifying which transformation to apply,
+#' or a \code{transformList} defining a custom one
+#' @param debris_args A string defining any additional gating arguments to use
+#' for the non-debris gate; see [openCyto::gate_mindensity()]
+#' @param singlet_args A string defining any additional gating arguments to use
+#' for the non-debris gate; see [flowStats::gate_singlet()]
+#' @param live_args A string defining any additional gating arguments to use
+#' for the live cell gate; see [openCyto::gate_mindensity()]
+#' @param ld_channel Optional; a string specifying the name of the channel used
+#' to detect live/dead cells
+#'
+#' @return No return value, the input GatingSet is edited
+#' @export
+doPreprocessing.GatingSet <- function(input,
+                                      compensation = NULL,
+                                      transformation = c("logicle", "arcsinh", "linear"),
+                                      debris_args = list(),
+                                      singlet_args = list(),
+                                      live_args = list(),
+                                      ld_channel = NULL) {
+  Plot <- df <- .id <- NULL # ???
+
+
+  # If a compensation matrix was given
+  if (!is.null(compensation)) {
+    # Apply compensation matrix
+    input <- flowCore::compensate(input, comp_mat)
+  }
+
+  # Apply transformation if it was given/desired
+  if (!is.null(transformation)) {
+    all_channels <- names(flowWorkspace::markernames(input))
+    if(is.character(transformation)) {
+      transformation <- switch(transformation,
+                               "logicle" = flowCore::estimateLogicle(input[[1]], channels = all_channels),
+                               "arcsinh" = {
+                                 res <- flowCore::arcsinhTransform(b = 5)
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res},
+                               "linear" = {
+                                 res <- flowCore::linearTransform()
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res
+                               })
+    }
+    input <- flowCore::transform(input, transformation)
+  }
+
+  # Debris
+  openCyto::gs_add_gating_method(input,
+                                 alias = "nonDebris",
+                                 pop = "+",
+                                 parent = "root",
+                                 dims = "FSC-A",
+                                 gating_method = "mindensity",
+                                 gating_args = debris_args) # string
+
+  # Doublets
+  openCyto::gs_add_gating_method(input,
+                                 alias = "singlets",
+                                 pop = "+",
+                                 parent = "nonDebris",
+                                 dims = "FSC-A,FSC-H",
+                                 gating_method = "singletGate",
+                                 gating_args = singlet_args)
+
+  # If there is a marker for live/dead cells
+  if(!is.null(ld_channel)) {
+    if(is.null(compensation)) { # !!! is compensation matrix essential? I don't remember
+      warning("`ld_channel` specified but no compensation matrix was given.")
+    }
+    # Add live/dead gate to Gating Set
+    openCyto::gs_add_gating_method(input,
+                                   alias = "live",
+                                   pop = "-",
+                                   parent = "singlets",
+                                   dims = paste0(ld_channel),
+                                   gating_method = "mindensity",
+                                   gating_args = live_args)
+  }
+
+
+  # Save PDF of gating plots for each sample if desired
+  ### make this separate function?
+  # if (save_plots) {
+  #   pl <- lapply(input, function(gh) {ggcyto::ggcyto_arrange(ggcyto::autoplot(gh, bins = 250, strip.text = "gate"), nrow = 2)})
+  #   names(pl) <- sampleNames(input)
+  #   ml <- gridExtra::marrangeGrob(pl,          # should change to uniquely created plots rather than lapply()
+  #                                 nrow = 1,
+  #                                 ncol = 1,
+  #                                 top = quote(names(pl)[g]))
+  #   ggplot2::ggsave(pdf_name, plot = ml, device = grDevices::pdf, pointsize = 8, scale = 2)
+  # }
+}
+
 #' prepareGateParams
 #'
 #' @keywords internal
@@ -716,3 +815,98 @@ previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, 
                           top = file)
 }
 
+
+#' previewPreprocessing.GatingSet
+#'
+#' ...
+#'
+#' @inheritParams doPreprocessing.GatingSet
+#' @param sample_ind A character string or integer specifying which sample to examine;
+#' default is \code{1}
+#'
+#' @importFrom patchwork wrap_plots
+#' @importFrom flowStats gate_singlet
+#'
+#' @return A plot
+#' @export
+previewPreprocessing.GatingSet <- function(input,
+                                           sample_ind = 1,
+                                           compensation = NULL,
+                                           transformation = c("logicle", "arcsinh", "linear"),
+                                           ld_channel = NULL,
+                                           debris_args = list(),
+                                           singlet_args = list(),
+                                           live_args = list()) {
+  # Get copy of first sample
+  ff <- flowWorkspace::cytoframe_to_flowFrame(flowWorkspace::gs_pop_get_data(input)[[sample_ind]])
+
+  # If a compensation matrix was given
+  if (!is.null(compensation)) {
+    # Apply compensation matrix
+    ff <- flowCore::compensate(ff, comp_mat)
+  }
+
+  # Apply transformation if it was given/desired
+  if (!is.null(transformation)) {
+    all_channels <- names(flowWorkspace::markernames(input))
+    if(is.character(transformation)) {
+      transformation <- switch(transformation,
+                               "logicle" = flowCore::estimateLogicle(ff, channels = all_channels),
+                               "arcsinh" = {
+                                 res <- flowCore::arcsinhTransform(b = 5)
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res},
+                               "linear" = {
+                                 res <- flowCore::linearTransform()
+                                 res <- flowCore::transformList(all_channels, res)
+                                 res
+                               })
+    }
+    ff <- flowCore::transform(ff, transformation)
+  }
+
+  # Add any additional options chosen by user, and overwrite defaults if needed
+  debris_options <- utils::modifyList(list(channel = "FSC-A"), debris_args)
+  live_options <- utils::modifyList(list(channel = ld_channel, positive = FALSE), live_args)
+
+  # Generate gates
+  g1 <- do.call(openCyto::gate_mindensity, c(list(fr = ff), debris_options))
+  g2 <- do.call(flowStats::gate_singlet, c(list(x = ff), singlet_args))
+  g3 <- do.call(openCyto::gate_mindensity, c(list(fr = ff), live_options))
+
+  # Make gates
+  # g1 <- openCyto::gate_mindensity(ff, channel = "FSC-A")
+  # g2 <- flowStats::gate_singlet(ff)
+  # g3 <- openCyto::gate_mindensity(ff, channel = ld_channel, positive = FALSE)
+
+  # # Make each plot
+  # p1 <- ggcyto::as.ggplot(ggcyto::ggcyto(ff, aes(x = `FSC-A`, y = `SSC-A`)) +
+  #                           ggplot2::geom_hex(bins = 200))
+  # p2 <- ggcyto::as.ggplot(ggcyto::ggcyto(ff, aes(x = `FSC-A`, y = `FSC-H`)) +
+  #                           ggplot2::geom_hex(bins = 200))
+  # p3 <- ggcyto::as.ggplot(ggcyto::ggcyto(ff, aes(x = !!enquo(ld_channel), y = `FSC-A`)) +
+  #                           ggplot2::geom_hex(bins = 200))
+
+  ranges <- Biobase::pData(flowCore::parameters(ff)) %>%
+    dplyr::filter(name == "FSC-A")
+  lwr <- ranges$minRange
+  upr <- ranges$maxRange
+  # should filter out instead
+
+  p1 <- ggcyto::as.ggplot(ggcyto::autoplot(ff, "FSC-A", "SSC-A", bins = 200) +
+                            ggplot2::xlim(c(lwr, upr)) +
+                            ggcyto::geom_gate(g1))
+  ff <- flowCore::Subset(ff, g1)
+
+  p2 <- ggcyto::as.ggplot(ggcyto::autoplot(ff, "FSC-A", "FSC-H", bins = 200) +
+                            ggplot2::xlim(c(lwr, upr)) +
+                            ggcyto::geom_gate(g2))
+  ff <- flowCore::Subset(ff, g2)
+
+  p3 <- ggcyto::as.ggplot(ggcyto::autoplot(ff, ld_channel, "FSC-A", bins = 200) +
+                            ggcyto::geom_gate(g3))
+
+  # Combine plots into one image
+  patchwork::wrap_plots(p1, p2, p3, ncol = 1)
+
+}
