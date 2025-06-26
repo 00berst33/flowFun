@@ -35,8 +35,11 @@ library(openCyto)
 library(ggcyto)
 library(ggplot2)
 
+# Set a seed for reproducibility
+set.seed(84)
+
 # Set the directory you would like to store analysis results in.
-work_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC/example1")
+work_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC")
 
 #####
 ## Load in raw data for first time
@@ -48,11 +51,8 @@ files <- list.files(data_dir, full.names = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files)
 gs <- flowWorkspace::GatingSet(cs)
 
-# Get name of your machine's temporary directory for storing h5 data
-tmp <- tempdir()
-
 # Save
-flowWorkspace::save_gs(gs, path = file.path(tmp, "example_gs")) ### `work_dir` instead?
+flowWorkspace::save_gs(gs, path = file.path(work_dir, "example_gs"))
 
 ## OR, Load in existing data
 # Load previously created GatingSet, if needed
@@ -92,11 +92,9 @@ doPreprocessing.GatingSet(gs1,
                           singlet_args = list(),
                           live_args = "gate_range = c(0, 2)")                   # see also `flowStats::gate_singlet()`
 
-## Graphs
-# NOTE: add subset attribute here? otherwise subset = "root" throws error
-
+## Make graphs to check results of preprocessing:
 # Non-debris gate
-ggcyto::ggcyto(gs1, mapping = aes(x = `FSC-A`, y = `SSC-A`), subset = "nonDebris") +
+ggcyto::ggcyto(gs1, mapping = aes(x = `FSC-A`, y = `SSC-A`), subset = "nonDebris") + #add subset attribute before here?
   geom_hex(bins = 200) +
   geom_gate("nonDebris") +
   theme(text = element_text(size = 4)) +
@@ -117,191 +115,10 @@ ggcyto::ggcyto(gs1, mapping = aes(x = !!enquo(ld_stain), y = `FSC-A`), subset = 
   geom_stats(size = 1)
 
 # Once you have results, save and convert data to flowSet to perform clustering
-flowWorkspace::save_gs(gs1, path = file.path(tmp, "preprocessed_gs")) ### should cytoset be saved instead?
+flowWorkspace::save_gs(gs1, path = file.path(work_dir, "preprocessed_gs")) ### should cytoset be saved instead?
 fs <- flowWorkspace::cytoset_to_flowSet(flowWorkspace::gs_pop_get_data(gs1))
 
 # After clustering; how to save results? write to cytoset? how to gate on subsets?
-#####
-
-# SCRATCH
-###
-# 4 ways to make GatingSet
-###
-
-# !!! scales horribly based on number of samples
-# table <- getTableFromFCS("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw", num_cells = 100000)
-
-files <- list.files("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw", full.names = TRUE)
-cs <- flowWorkspace::load_cytoset_from_fcs(files)
-gs <- flowWorkspace::GatingSet(cs)
-
-plot(gs)
-
-# openCyto::gt_list_methods() to see registered gating methods
-# openCyto::register_plugins() to add new gating/preprocessing functions to openCyto
-
-# Doublets (HELP IDK HOW TO DO CUSTOM FUNCTIONS)
-fr = peacoQC_singlets(PeacoQC::RemoveMargins(ff, channels = colnames(flowCore::exprs(ff))[-35]))
-fr = peacoQC_singlets(ff) # rewritten and renamed to peacoQC_doublets below, should likely remove from package
-test = flowCore::filter(ff, fr)
-test = flowCore::Subset(ff, test)
-
-peacoQC_singlets <- function(fr, pp_res = NULL, channels = "FSC-A,FSC-H",
-                             filterId="peacoQCDoubletFilter", ...) {
-
-  # Get x and y channel
-  channels <- unlist(strsplit(gsub(channels, pattern = " ", replacement = ""), "[,]"))
-  xChannel <- channels[1]
-  yChannel <- channels[2]
-
-  #print(fr)
-
-  # Run PeacoQC doublet removal
-  all_chnls <- colnames(flowCore::exprs(fr))
-  #fr <- PeacoQC::RemoveMargins(fr, channels = all_chnls[-length(all_chnls)])
-  ff_s <- PeacoQC::RemoveDoublets(fr, channel1 = xChannel, channel2 = yChannel,
-                                  output = "full")
-
-  #print(fr)
-
-  # Get preprocessed flowFrame's expression matrix
-  ff_s <- flowCore::exprs(ff_s[[1]])
-
-  # Find vertices of resulting gate
-  gate_verts <- rbind(cbind(min(ff_s[, xChannel]), min(ff_s[, yChannel])),
-                      cbind(min(ff_s[, xChannel]), max(ff_s[, yChannel])),
-                      cbind(max(ff_s[, xChannel]), max(ff_s[, yChannel])),
-                      cbind(max(ff_s[, xChannel]), min(ff_s[, yChannel])))
-  print(gate_verts)
-
-  # Set column names of vertex matrix
-  colnames(gate_verts) <- c(xChannel, yChannel)
-
-  # Create flowCore polygon gate from vertices
-  gate <- flowCore::polygonGate(gate_verts, filterId = filterId)
-  #gate <- flowCore::filter(fr, gate)
-
-  return(gate)
-}
-
-openCyto::register_plugins(
-  fun = peacoQC_singlets,
-  methodName = "peacoQC_singlets",
-  dep = "PeacoQC",
-  "gating")
-
-openCyto::gs_remove_gating_method(gs)
-# Add above gating method to GatingSet
-openCyto::gs_add_gating_method(gs,
-                               alias = "PQC_singlets",
-                               pop = "+",
-                               parent = "root",
-                               dims = "FSC-A,FSC-H",
-                               gating_method = "peacoQC_singlets")
-
-# Compensate
-comp_mat <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/morgans_comp_matrix.csv",
-                     check.names = FALSE) # note check.names
-gs <- flowCore::compensate(gs, comp_mat)
-
-# Transform
-trans <- flowCore::estimateLogicle(gs[[1]],
-                                   channels = colnames(comp_mat))
-gs <- transform(gs, trans)
-
-# Debris
-openCyto::gs_add_gating_method(gs,
-                               alias = "nonDebris",
-                               pop = "+",
-                               parent = "root",
-                               dims = "FSC-A",
-                               gating_method = "mindensity")
-
-# If error is thrown, try openCyto::cs_cleanup_temp() and/or openCyto::gs_cleanup_temp()
-
-# Doublets
-openCyto::gs_add_gating_method(gs,
-                               alias = "singlets",
-                               pop = "+",
-                               parent = "root",
-                               dims = "FSC-A,FSC-H",
-                               gating_method = "singletGate")
-
-# Check gates
-plot(gs[[1]])
-
-# Live/dead gate
-# Specify stain for dead cells
-ld_stain <- "BUV496-A"
-
-# Add gate to Gating Set
-openCyto::gs_add_gating_method(gs,
-                               alias = "live",
-                               pop = "-",
-                               parent = "singlets",
-                               dims = paste0(ld_stain, ",FSC-A"),
-                               gating_method = "mindensity")
-
-# Define the markers that you would like to use for clustering. Please make sure
-# that you type the marker names the same as they appear in the .fcs files.
-# IMPORTANT: These markers should not overlap with those that you would like to
-# test for differential expression.
-markers_to_cluster = c("CD3", "CD4", "CD8", "TCRgd", "CD56", "CD16", "CD14",
-                       "HLA-DR", "CD11c", "CD123", "CD19", "IgD", "CD45RA",
-                       "CCR7", "CD25", "CD39", "TIM3", "PD1", "CD38", "Fas")
-
-#################
-# PREPROCESSING #
-#################
-# Set a seed for reproducibility.
-set.seed(84)
-
-# Specify the directory containing your .fcs files, or a list of .fcs file names.
-data_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw")
-
-# Specify filepath to compensation matrix, if applicable.
-comp_mat <- NULL
-# comp_mat <- read.csv(comp_mat, check.names = FALSE)
-
-# Specify live/dead stain, if applicable.
-ld_stain <- "BUV496-A"
-
-# Select a single file to test pre-processing settings on.
-file <- list.files(data_dir, full.names = TRUE)[1]
-# file <- getTableFromFCS("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Aggregates/aggregate_26_meta.fcs")
-
-# Preview current pre-processing settings on a file.
-previewPreprocessing(file,
-                     ld_channel = ld_stain,
-                     compensation = comp_mat,
-                     transformation_type = "logicle")
-
-# Edit pre-processing settings or gates if desired.
-# In this example, a manual gate is added for removal of dead cells, in place of
-# the automated one.
-manual_live <- flowCore::rectangleGate(.gate = list("BUV496-A"= c(-1, 1.7),
-                                                    "FSC-A" = c(0, 270000)))
-
-# Check new plots
-previewPreprocessing(file,
-                     ld_channel = ld_stain,
-                     compensation = comp_mat,
-                     transformation_type = "logicle",
-                     nmad = 3,
-                     live_gate = manual_live)
-
-# Once satisfied with pre-processing settings, apply to all files of interest.
-prepr_table <- doPreprocessing(table,
-                               num_cells = 50000,
-                               ld_channel = ld_stain,
-                               compensation = comp_mat,
-                               transformation_type = "logicle",
-                               live_gate = manual_live,
-                               nmad = 3.5,
-                               pctg_live = 0.7,
-                               pctg_qc = 0.8,
-                               save_plots = FALSE,
-                               save_fcs = FALSE)
 
 ##############
 # CLUSTERING #
@@ -319,11 +136,22 @@ prepr_table <- doPreprocessing(table,
 # the SOM. You may also edit the number of metaclusters used by editing the
 # "num_clus" variable below.
 
-# Define markers/columns to use for clustering
+# Define the markers that you would like to use for clustering. Please make sure
+# that you type the marker names the same as they appear in the .fcs files.
+# IMPORTANT: These markers should not overlap with those that you would like to
+# test for differential expression.
+
+# May also be defined as a numeric vector of indices
 cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)
 
-# Perform clustering
-fsom_dt <- flowSOMWrapper(prepr_table,
+## Perform clustering
+# Returns FlowSOM object
+fsom <- FlowSOM::FlowSOM(fs,
+                         colsToUse = cols_to_cluster,
+                         seed = 42)
+
+# Returns tidytable
+fsom_dt <- flowSOMWrapper(fs,
                           cols_to_cluster = cols_to_cluster,
                           num_clus = 30,
                           xdim = 10,
