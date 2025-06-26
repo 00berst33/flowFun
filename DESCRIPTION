@@ -24,6 +24,7 @@ Imports:
     flowCut,
     flowDensity,
     FlowSOM,
+    flowStats,
     ggplot2,
     ggpubr,
     grDevices,
@@ -33,6 +34,7 @@ Imports:
     magrittr,
     MASS,
     methods,
+    patchwork,
     PeacoQC,
     Rtsne,
     scattermore,
@@ -45,3 +47,5 @@ Imports:
     viridis,
     viridisLite
 VignetteBuilder: knitr
+LinkingTo: 
+    cytolib
