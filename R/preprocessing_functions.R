@@ -519,12 +519,6 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
     compensation <- "none"
   }
 
-  # CHANGE TO SAVING OR MAKING LIST OBJECT HERE
-  ###
-  saveRDS(transformation, "transformation.rds")
-  saveRDS(gating_scheme, "gating_scheme.rds")
-  # save table in case of multiple clusterings with same preprocessing steps?
-  ###
   data.table::setattr(prepr_table, "compensation_matrix", compensation)
 
   data.table::setattr(prepr_table, "transformation", transformation)
