@@ -229,6 +229,21 @@ fsom_dt <- editTableMetaclusters(fsom_dt,
 
 ```
 
+```{r first-merge-alt, include=FALSE, eval=FALSE}
+# Merge metaclusters
+fsom <- readRDS("vignettes/test_fsom.rds")
+fsom <- FlowSOM::UpdateMetaclusters(fsom, 
+                                    newLabels = c("9" = "1",
+                                                  "2" = "1",
+                                                  "8" = "4",
+                                                  "23" = "15",
+                                                  "21" = "15",
+                                                  "20" = "15",
+                                                  "22" = "15",
+                                                  "7" = "6"))
+
+```
+
 ```{r print-fsom-table-merge1, echo=FALSE} 
 fsom_dt %>% 
   tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
@@ -282,6 +297,20 @@ fsom_dt <- editTableMetaclusters(fsom_dt,
                                                          "42" = "Undefined"))
 ```
 
+```{r second-merge-alt, include=FALSE, eval=FALSE}
+# Merge metaclusters
+fsom <- FlowSOM::UpdateMetaclusters(fsom, 
+                                    newLabels = c("12" = "5",
+                                                  "13" = "5",
+                                                  "10" = "6",
+                                                  "14" = "6",
+                                                  "25" = "18",
+                                                  "16" = "11",
+                                                  "24" = "3"),
+                                    clusterAssignment = c("4" = "Undefined",
+                                                          "42" = "Undefined"))
+```
+
 Again, new plots are generated.
 
 ```{r second-merge-plots, fig.height=5, fig.width=6, fig.align='center'}
@@ -309,6 +338,21 @@ fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
 
 # Generate final heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
+```
+
+```{r new-labels-alt, include=FALSE, eval=FALSE}
+# Merge metaclusters
+fsom <- FlowSOM::UpdateMetaclusters(fsom, 
+                                    newLabels = c("6" = "Monocytes",
+                                                  "5" = "cDC",
+                                                  "4" = "B cells",
+                                                  "17" = "NK T cells",
+                                                  "19" = "NK cells",
+                                                  "1" = "CD8 T cells",
+                                                  "11" = "gdT cells",
+                                                  "15" = "CD4 T cells",
+                                                  "18" = "pDC",
+                                                  "3" = "Undefined"))
 ```
 
 An annotated heatmap displaying the merged clusters may be created with the function `annotateMFIHeatmap()`.
@@ -513,19 +557,34 @@ da_results[[2]] %>%
 
 To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
 
-```{r de-analysis}
+```{r de-analysis, include=FALSE, eval=FALSE}
 # Perform differential expression analysis
-de_results <- doDEAnalysis(fsom_dt, 
-                           sample_df = sample_info, 
-                           design = design, 
-                           contrasts = contrasts, 
-                           counts = counts, 
-                           markers_of_interest = c("PHA-L", "IL10R"),
-                           meta_names = meta_of_interest)
+# de_results <- doDEAnalysis(fsom_dt, 
+#                            sample_df = sample_info, 
+#                            design = design, 
+#                            contrasts = contrasts, 
+#                            counts = counts, 
+#                            markers_of_interest = c("PHA-L", "IL10R"),
+#                            meta_names = meta_of_interest)
+
+
+# Make preparing FMO and Isotype controls a separate function; each necessary table passed as a list?
+# helper to evaluate one channel at a time?
+de_results <- doDEAnalysisNew(fsom_dt, 
+                              sample_df = sample_info, 
+                              design = design, 
+                              contrasts = contrasts, 
+                              cols_to_use = c("PHA-L", "IL10R"),
+                              meta_names = meta_of_interest, 
+                              ctrl_input = NULL, 
+                              subsetted_meta = NULL,
+                              save_csv = FALSE, 
+                              dir_tables = NULL) 
 ```
 
-```{r de-analysis-tables, echo=FALSE}
-de_results$tests[[1]] %>%
+```{r de-analysis-tables, echo=FALSE, eval=FALSE}
+de_results[[1]] %>%
+# de_results$tests[[1]] %>%
   knitr::kable(
     format = "html",
     align = "c",
@@ -533,7 +592,8 @@ de_results$tests[[1]] %>%
     linesep = "",
     )
 
-de_results$tests[[2]] %>%
+de_results[[2]] %>%
+# de_results$tests[[2]] %>%
   knitr::kable(
     format = "html",
     align = "c",
@@ -542,16 +602,18 @@ de_results$tests[[2]] %>%
     )
 ```
 
+
+
 ```{r extra, include=FALSE, eval=FALSE}
 # fsom_dt$.id <- file.path(dirname(fsom_dt$.id), sample_info$filename[as.numeric(factor(fsom_dt$.id))])
 
 fmos <- c("C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB4.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB9.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR93.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR66.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR110.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR75.fcs")
+
+fs <- flowCore::read.flowSet(fmos, truncate_max_range = FALSE)
 f1 <- flowCore::read.FCS(files[1], truncate_max_range = FALSE)
-f2 <- flowCore::read.FCS(files[2], truncate_max_range = FALSE)
-f3 <- flowCore::read.FCS(files[3], truncate_max_range = FALSE)
-f4 <- flowCore::read.FCS(files[4], truncate_max_range = FALSE)
-f5 <- flowCore::read.FCS(files[5], truncate_max_range = FALSE)
-f6 <- flowCore::read.FCS(files[6], truncate_max_range = FALSE)
+
+# gs <- flowWorkspace::GatingSet(fs, tmp = file.path(getwd(), "temp"))
+
 
 ctrl_dt <- doPreprocessing(fmos,
                            ld_channel = attr(fsom_dt, "gating_scheme")$live_gate$channels[1],
@@ -560,9 +622,55 @@ ctrl_dt <- doPreprocessing(fmos,
                            transformation_type = "logicle",
                            debris_gate = attr(fsom_dt, "gating_scheme")$debris_gate,
                            live_gate = attr(fsom_dt, "gating_scheme")$live_gate,
+                           save_plots = FALSE,
                            pctg_live = 0,
                            pctg_qc = 0)
 
+# Turn filtered control files into flowSet
+# ctrl_names <- ctrl_dt %>% pull(.id) %>% unique()
+# ctrl_fs <- lapply(ctrl_names, function(i) {
+#   ctrl_dt %>% 
+#     filter(.id == i) %>% 
+#     select(-c(1,2)) %>% 
+#     as.matrix() %>% 
+#     flowCore::flowFrame()})
+# names(ctrl_fs) <- ctrl_names
+# ctrl_fs <- methods::as(ctrl_fs, "flowSet")
+ctrl_fs <- tableToFlowSet(ctrl_dt)
+
+# Map new data to old FlowSOM codes
+ctrl_fsom <- FlowSOM::NewData(fsom, ctrl_fs)
+
+###
+# steps for if data of interest is a reclustering? 
+#
+###
+
+# helper to turn FlowSOM object into tidytable
+# ??? edit flowSOMWrapper() to accept control table ???
+ctrl_dt <- flowSOMToTable(ctrl_fsom)
+
+# make table for second term in delta MFI
+ctrl_mfis <- getSampleMetaclusterMFIsNew(ctrl_dt, sample_info, cols_to_use = c("PHA-L", "IL10R"))
+# acquire this table for all controls, put into list, pass as ctrl_input
+# make function to cluster/map control data to existing embedding
+
+# ^ above could be contained within DE function for single channel? 
+
+# differential expression
+de_table <- doDEAnalysisNew(fsom_dt, 
+                            sample_df = sample_info, 
+                            design = design, 
+                            contrasts = contrasts, 
+                            cols_to_use = c("PHA-L", "IL10R"),
+                            meta_names = meta_of_interest, 
+                            ctrl_input = NULL, 
+                            subsetted_meta = NULL, # remove need for this parameter
+                            save_csv = FALSE, 
+                            dir_tables = NULL)
+
+
+#####
 ctrl <- FlowSOM::ReadInput(fmos,
                            compensate = TRUE,
                            spillover = attr(fsom_dt, "compensation_matrix"),
@@ -594,5 +702,6 @@ fsom_dt <- editTableMetaclusters(fsom_dt,
 fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
                                                          "5" = "cDC",      
                                                          "4" = "B cells",     
-                                                         "17" = "NK T cells",                                                                                                 "19" = "NK cells",                                                                                                   "1" = "CD8 T cells",                                                                                                 "11" = "gdT cells",                                                                                                  "15" = "CD4 T cells",                                                                                                "18" = "pDC",                                                                                                        "3" = "Undefined"))
+                                                         "17" = "NK T cells",  
+                                                         "19" = "NK cells",                                                                                                   "1" = "CD8 T cells",                                                                                                 "11" = "gdT cells",                                                                                                  "15" = "CD4 T cells",                                                                                                "18" = "pDC",                                                                                                        "3" = "Undefined"))
 ```

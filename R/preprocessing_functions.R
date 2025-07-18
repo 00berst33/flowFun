@@ -868,6 +868,8 @@ previewPreprocessing.GatingSet <- function(input,
   debris_args <- eval(parse(text = paste0("list(", debris_args, ")")))
   debris_options <- utils::modifyList(list(channel = "FSC-A"), debris_args)
 
+  singlet_args <- eval(parse(text = paste0("list(", singlet_args, ")")))
+
   live_args <- eval(parse(text = paste0("list(", live_args, ")")))
   live_options <- utils::modifyList(list(channel = ld_channel, positive = FALSE), live_args)
 

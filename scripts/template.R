@@ -32,6 +32,7 @@ library(flowFun)
 library(flowCore)
 library(flowWorkspace)
 library(openCyto)
+library(CytoML)
 library(ggcyto)
 library(ggplot2)
 
@@ -51,19 +52,32 @@ files <- list.files(data_dir, full.names = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files)
 gs <- flowWorkspace::GatingSet(cs)
 
-# Save
-flowWorkspace::save_gs(gs, path = file.path(work_dir, "example_gs"))
-
+###
 ## OR, Load in existing data
+# note: changes made to object created from load_cytoset() do not affect
+#   original data unless `backend_readonly=FALSE`
 # Load previously created GatingSet, if needed
 # gs <- flowWorkspace::load_gs(file.path(tmp, "example_gs"))
+# cs <- flowWorkspace::load_cytoset(file.path(work_dir, "raw_cs"))
+###
 
 # Make deep clone of GatingSet
+# flowWorkspace::gs_cleanup_temp(gs1) # run first if overwriting old `gs1` edited with doPreprocessing()
 gs1 <- flowWorkspace::gs_clone(gs)
 
 # Compensate
 comp_mat <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/morgans_comp_matrix.csv",
                      check.names = FALSE) # note check.names
+
+# !!! Note: The column names of your compensation matrix must match those
+#     found in your GatingSet.
+# Check
+colnames(comp_mat)
+colnames(gs)
+
+# Standardize marker/channel names if necessary
+# colnames(comp_mat) <-
+# cs_swap_colnames(), cs_rename_channel(), cs_rename_marker()
 
 # Define custom transformation, if desired
 # Example:
@@ -74,16 +88,18 @@ comp_mat <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/morgans_comp_ma
 ld_stain <- "BUV496-A"
 
 # Preview preprocessing steps
+# !!! Note: debris_args, singlet_args, and live_args must be strings, specifying arguments
+# that are passed to openCyto::gate_mindensity and/or flowStats::gate_singlet
 previewPreprocessing.GatingSet(gs1,
                                sample_ind = 1,
                                compensation = comp_mat,
                                transformation = "logicle", # may be a custom `transformList`
                                ld_channel = ld_stain,
-                               debris_args = list(),
+                               debris_args = "gate_range = c(0, 75000)",
                                singlet_args = list(),
                                live_args = list())
 
-# Apply preprocessing steps
+# Apply preprocessing steps to all samples
 doPreprocessing.GatingSet(gs1,
                           compensation = comp_mat,
                           transformation = "logicle",
@@ -117,6 +133,32 @@ ggcyto::ggcyto(gs1, mapping = aes(x = !!enquo(ld_stain), y = `FSC-A`), subset = 
 # Once you have results, save and convert data to flowSet to perform clustering
 flowWorkspace::save_gs(gs1, path = file.path(work_dir, "preprocessed_gs")) ### should cytoset be saved instead?
 fs <- flowWorkspace::cytoset_to_flowSet(flowWorkspace::gs_pop_get_data(gs1))
+
+
+##########
+# CytoML #
+##########
+
+# Open FlowJo workspace in R from .xml file
+flowjo_file <- "path/to/flowjo.xml"
+ws <- CytoML::open_flowjo_xml(file)
+
+# Make GatingSet from FlowJo workspace
+gs <- CytoML::flowjo_to_gatingset(ws,
+                                  path = "path/to/fcs_files") # or cytoset = ...
+
+# Get first sample
+gh <- gs[[1]]
+
+# Plot gates of first sample
+ggcyto::autoplot(gh)
+
+
+# To save current GatingSet as a FlowJo workspace;
+CytoML::gatingset_to_flowjo(gs, "path/to/saved_ws.wsp")
+
+
+
 
 # After clustering; how to save results? write to cytoset? how to gate on subsets?
 
