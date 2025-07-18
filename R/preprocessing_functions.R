@@ -834,6 +834,9 @@ previewPreprocessing.GatingSet <- function(input,
   # Get copy of first sample
   ff <- flowWorkspace::cytoframe_to_flowFrame(flowWorkspace::gs_pop_get_data(input)[[sample_ind]])
 
+  # Remove margin events
+  ff <- suppressWarnings(PeacoQC::RemoveMargins(ff, channels = colnames(flowCore::exprs(ff))))
+
   # If a compensation matrix was given
   if (!is.null(compensation)) {
     # Apply compensation matrix
@@ -859,12 +862,17 @@ previewPreprocessing.GatingSet <- function(input,
     ff <- flowCore::transform(ff, transformation)
   }
 
+  # handle margin events?
+
   # Add any additional options chosen by user, and overwrite defaults if needed
+  debris_args <- eval(parse(text = paste0("list(", debris_args, ")")))
   debris_options <- utils::modifyList(list(channel = "FSC-A"), debris_args)
+
+  live_args <- eval(parse(text = paste0("list(", live_args, ")")))
   live_options <- utils::modifyList(list(channel = ld_channel, positive = FALSE), live_args)
 
   # Generate gates
-  g1 <- do.call(openCyto::gate_mindensity, c(list(fr = ff), debris_options))
+  g1 <- do.call(openCyto::gate_mindensity, c(list(fr = ff), debris_options)) # allow different types of gates
   g2 <- do.call(flowStats::gate_singlet, c(list(x = ff), singlet_args))
   g3 <- do.call(openCyto::gate_mindensity, c(list(fr = ff), live_options))
 
@@ -880,20 +888,20 @@ previewPreprocessing.GatingSet <- function(input,
   #                           ggplot2::geom_hex(bins = 200))
   # p3 <- ggcyto::as.ggplot(ggcyto::ggcyto(ff, aes(x = !!enquo(ld_channel), y = `FSC-A`)) +
   #                           ggplot2::geom_hex(bins = 200))
-
-  ranges <- Biobase::pData(flowCore::parameters(ff)) %>%
-    dplyr::filter(name == "FSC-A")
-  lwr <- ranges$minRange
-  upr <- ranges$maxRange
+#
+#   ranges <- Biobase::pData(flowCore::parameters(ff)) %>%
+#     dplyr::filter(name == "FSC-A")
+#   lwr <- ranges$minRange
+#   upr <- ranges$maxRange
   # should filter out instead
 
   p1 <- ggcyto::as.ggplot(ggcyto::autoplot(ff, "FSC-A", "SSC-A", bins = 200) +
-                            ggplot2::xlim(c(lwr, upr)) +
+                            # ggplot2::xlim(c(lwr, upr)) +
                             ggcyto::geom_gate(g1))
   ff <- flowCore::Subset(ff, g1)
 
   p2 <- ggcyto::as.ggplot(ggcyto::autoplot(ff, "FSC-A", "FSC-H", bins = 200) +
-                            ggplot2::xlim(c(lwr, upr)) +
+                            # ggplot2::xlim(c(lwr, upr)) +
                             ggcyto::geom_gate(g2))
   ff <- flowCore::Subset(ff, g2)
 
