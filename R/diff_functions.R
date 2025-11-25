@@ -126,10 +126,11 @@ prepareSampleInfo <- function(filepath, name_col, filename_col, comparisons,
   # Remove samples that were excluded from the analysis from the data frame
   # `sample_df`, and reorder its rows such that they are the same as
   # the file order in `dir_prepr()`.
-  prepr_files <- sample_df[[filename_col]][-c(30, 40)]#list.files(path = dir_prepr())
-  matched_ind <- match(prepr_files, sample_df[[filename_col]])
-  sample_df <- sample_df[matched_ind, ]
-  rownames(sample_df) <- seq(1, length(prepr_files))
+  #prepr_files <- sample_df[[filename_col]][-c(30, 40)]#list.files(path = dir_prepr())
+  # matched_ind <- match(prepr_files, sample_df[[filename_col]])
+  # sample_df <- sample_df[matched_ind, ]
+  # rownames(sample_df) <- seq(1, length(prepr_files))
+  # ???
 
   # Remove any samples that are not of interest.
   if (!is.null(samples_to_remove)) {
@@ -511,6 +512,41 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
   names(pval_dfs) <- colnames(contrasts)
 
   return(pval_dfs)
+}
+
+
+#' getExprMatDE
+#'
+#' Find expression matrix: metacluster.marker by sample
+#'
+#' @param fsom_dt A data.table which columns for markers/channels, a column `File`
+#' denoting the sample a cell is from, and a column `Metacluster` denoting the
+#' metacluster a cell belongs to
+#' @param marker_cols A character vector of markers/channels of interest; these
+#' should be column names of `fsom_dt`
+#'
+#' @return A data.table where columns are samples and rows are metacluster/marker groups
+#' @export
+getExprMatDE <- function(fsom_dt, marker_cols) {
+  vars <- enquo(marker_cols)
+
+  collapsed <- fsom_dt %>%
+    dplyr::group_by(File, Metacluster) %>%
+    dplyr::summarize(dplyr::across(tidyr::all_of(!!vars), median), .groups = "drop") %>%
+    # reshape long to wide
+    tidyr::pivot_longer(
+      cols = tidyr::all_of(!!marker_cols),
+      names_to = "marker",
+      values_to = "median_expr"
+    ) %>%
+    tidyr::unite("feature", Metacluster, marker, sep = ".") %>%   # e.g., C1.markerA
+    tidyr::pivot_wider(
+      names_from = File,
+      values_from = median_expr
+    ) %>%
+    dplyr::arrange(feature)
+
+  return(collapsed)
 }
 
 
@@ -1050,6 +1086,178 @@ doDEAnalysis.FlowSOM <- function(input, sample_df, design, contrasts, counts,
 
   return(de_res)
 }
+
+# recommended by LLM...
+#' @keywords internal
+getChannelSampleMFIs <- function(input, markers_of_interest, meta_name) {
+  all_samples <- unique(input$File)
+
+  res <- input %>%
+    dplyr::filter(Metacluster == meta_name) %>%
+    dplyr::group_by(File) %>%
+    dplyr::summarise(
+      dplyr::across(
+        tidyr::all_of(markers_of_interest), median)) %>%
+    tidyr::complete(File = all_samples) %>%
+    as.data.frame()
+
+  rownames(res) <- res$File
+  res <- res %>%
+    dplyr::select(-File) %>%
+    t()
+
+  #res <- res[, all_samples, drop = FALSE]
+  return(res)
+}
+#
+# mat_list <- lapply(levels(fsom$metaclustering),
+#                    getChannelSampleMFIs,
+#                    input = fsom_dt,
+#                    markers_of_interest = c("FITC-A", "BV711-A"))
+#
+# sample_info <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Info/experiment_info.csv")
+#' @keywords internal
+doDE <- function(input, sample_df, design, contrasts, #counts,
+                 markers_of_interest, meta_names, ...) {
+  all_samples <- sample_df$Sample.Name
+
+  res_list <- list()
+
+  for(meta_name in meta_names) {
+    mfi_mat <- getChannelSampleMFIs(input, markers_of_interest, meta_name)
+    #print(mfi_mat)
+
+    # Drop samples without enough cells in metacluster
+    mfi_mat <- mfi_mat[, colSums(is.na(mfi_mat)) < nrow(mfi_mat), drop = FALSE]
+    sample_sub <- sample_df[na.omit(match(colnames(mfi_mat), rownames(sample_df))), , drop = FALSE] # samples not in sample_df dropped; make sample_df contain all samples, add logical column for adding/dropping?
+    design_sub <- makeDesignMatrix(sample_sub)
+    print(mfi_mat)
+    print(design_sub)
+
+    # Skip testing clusters lacking enough data
+    if (ncol(mfi_mat) < 2 || length(unique(sample_sub$group)) < 2) {
+      message("Metacluster ", meta_name, " does not have enough data to perform tests.")
+      next
+    }
+
+    # Create linear models.
+    # NOTE: weights questionable
+    lm_model <- limma::lmFit(object = mfi_mat,
+                             design = design_sub)
+
+    # Perform statistical tests.
+    contrasts_fit <- limma::contrasts.fit(lm_model, contrasts)
+    limma_ebayes <- limma::eBayes(contrasts_fit)
+    print(meta_name)
+
+    table <- limma::topTable(limma_ebayes, coef = 1)
+    table$metacluster <- meta_name
+    print(table)
+    res_list[[as.character(meta_name)]] <- table
+
+    # Create tables containing results of our statistical tests, and add them
+    # to the data frame corresponding to the relevant comparison.
+    # for (i in 1:ncol(contrasts)) {
+    #   table <- limma::topTable(limma_ebayes,
+    #                            coef = colnames(contrasts)[i],
+    #                            sort.by = "p")
+    #
+    #   # Add column for marker ID
+    #   if (nrow(table) != 0) {
+    #     table$marker <- rep(markers_of_interest[1], nrow(table))
+    #
+    #     if (length(markers_of_interest) > 1) { # if more than one marker is being tested
+    #       for (j in 1:nrow(table)) {
+    #         curr <- rownames(table)[j]
+    #         ix <- ceiling(as.integer(curr)/length(meta_names))
+    #         table$marker[j] <- markers_of_interest[ix]
+    #       }
+    #       rownames(table) <- NULL
+    #     }
+    #
+    #     # Append table of results to returned list
+    #     temp_ind <- nrow(pval_dfs[[i]]) + 1
+    #     pval_dfs[[i]] <- rbind(pval_dfs[[i]], table)
+    #   }
+    # }
+  }
+  return(res_list)
+}
+#
+# # normally you are finding matrix where rows are samples and columns are metaclusters:
+# fsom_dt <- fsom_dt %>%
+#   dplyr::select(c(`FITC-A`, File, Metacluster)) %>%
+#   dplyr::group_by(File, Metacluster) %>%
+#   dplyr::summarise(med = median(`FITC-A`)) %>%
+#   tidyr::pivot_wider(names_from = File, values_from = med)
+#
+# rownames(fsom_dt) <- fsom_dt$Metacluster
+# fsom_dt <- fsom_dt %>%
+#   dplyr::select(-Metacluster)
+# do this for each marker we wish to pass to limma
+  # you are making lists where each item is a marker, but instead each item may be a metacluster instead,
+  # thus rows are markers instead of metaclusters for each item
+
+# if you want it back-transformed, do that before passing it to function
+
+# once you have final flowSOM object, add resulting clusters as column to GatingSet object.
+#' @keywords internal
+doIndividualDEAnalysis <- function(expr_mat, sample_info, design, contrasts, counts) {
+  # Example inputs you should have:
+  # cluster_mfi_list: a named list where each element is a matrix with rows = markers, cols = samples
+  #   e.g. cluster_mfi_list[["cluster1"]] is matrix (markers x samples)
+  # sample_info: data.frame with rownames = sample names, columns: group (factor), batch (optional), etc.
+
+  #function(expr_mat, sample_info, group_col = "group", covariates = NULL) {
+    # expr_mat: markers x samples (rows = features, cols = samples)
+    # sample_info: rownames must match colnames(expr_mat)
+    stopifnot(all(colnames(expr_mat) %in% rownames(sample_info)))
+  # give message here
+    sample_info <- sample_info[colnames(expr_mat), , drop=FALSE]
+
+    # 1) transform: asinh with cofactor 5 (or log2)
+    # If already transformed, skip or adapt
+    cofactor <- 5
+    y <- asinh(expr_mat / cofactor)   # features x samples
+
+    # 2) design matrix
+    sample_info[[group_col]] <- factor(sample_info[[group_col]])
+    if (!is.null(covariates)) {
+      # covariates is a character vector of column names in sample_info to include
+      design <- model.matrix(~ sample_info[[group_col]] + ., data = sample_info[, covariates, drop=FALSE])
+      # simpler to build manually:
+      # design <- model.matrix(as.formula(paste("~", group_col, "+", paste(covariates, collapse="+"))), data = sample_info)
+    } else {
+      design <- model.matrix(~ 0 + sample_info[[group_col]])
+      colnames(design) <- levels(sample_info[[group_col]])
+    }
+
+    # 3) fit limma
+    fit <- lmFit(y, design)
+
+    # 4) contrasts: compare second level vs first (adjust to your levels)
+    grp_levels <- levels(sample_info[[group_col]])
+    if(length(grp_levels) < 2) stop("Need at least 2 groups")
+    contrast <- paste0(grp_levels[2], " - ", grp_levels[1])
+    cm <- makeContrasts(contrasts = contrast, levels = design)
+    fit2 <- contrasts.fit(fit, cm)
+    fit2 <- eBayes(fit2)
+
+    # 5) results
+    top <- topTable(fit2, number = nrow(y), sort.by = "P")
+    return(list(fit = fit2, top = top))
+  }
+#
+#   # RUN for all clusters:
+#   results_by_cluster <- lapply(names(cluster_mfi_list), function(cl) {
+#     expr_mat <- cluster_mfi_list[[cl]]             # markers x samples
+#     run_limma_on_cluster(expr_mat, sample_info, group_col = "group")
+#   })
+#   names(results_by_cluster) <- names(cluster_mfi_list)
+#
+#   # Inspect top markers for a cluster:
+#   results_by_cluster[["cluster5"]]$top
+# }
 
 #' @keywords internal
 getSampleMetaclusterMFIsHelper <- function(input, sample_df, marker_of_interest,

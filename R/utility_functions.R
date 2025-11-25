@@ -154,6 +154,58 @@ transformTable <- function(input, transformation = NULL,
   return(transformed_input)
 }
 
+#' saveFlowSOMEmbedding
+#'
+#' Save essential parts of FlowSOM
+#'
+#' @param fsom The FlowSOM object whose mapping you would like to save
+#' @param file A filepath or filename to save the resulting object under
+#'
+#' @export
+saveFlowSOMEmbedding <- function(fsom, file) {
+  fsom_minimal <- list(
+    codes = fsom$map$codes,
+    colsUsed = fsom$map$colsUsed,
+    xdim = fsom$map$xdim,
+    ydim = fsom$map$ydim,
+    metaclustering = fsom$metaclustering
+  )
+  saveRDS(fsom_minimal, file)
+}
+
+
+#' loadFlowSOMEmbedding
+#'
+#' Load saved FlowSOM and apply to new data
+#'
+#' @param file A file path to the FlowSOM object whose clusters you would like `newData`
+#' to map to
+#' @param newData A flowFrame, flowSet, matrix with column names, or a list of
+#' paths for files or directories containing the data to be clustered
+#'
+#' @return A FlowSOM object
+#' @export
+loadFlowSOMEmbedding <- function(file, newData) {
+  fsom_minimal <- readRDS(file)
+
+  # Rebuild a FlowSOM-like object shell
+  fsom_shell <- FlowSOM::FlowSOM(
+    input = newData,
+    colsToUse = fsom_minimal$colsUsed,
+    xdim = fsom_minimal$xdim,
+    ydim = fsom_minimal$ydim
+  )
+  fsom_shell$codes <- fsom_minimal$codes
+
+  # Project onto saved codes
+  fsom_projected <- FlowSOM::NewData(fsom_shell, input = newData)
+
+  # Attach meta-clustering back
+  #fsom_projected$metaclustering <- fsom_minimal$metaclustering
+
+  return(fsom_projected)
+}
+
 
 #' getSampleMetaclusterMFIs
 #'

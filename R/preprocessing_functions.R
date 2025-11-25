@@ -1,3 +1,111 @@
+#' plotAllSamples
+#'
+#' Plot chosen gate for all samples
+#'
+#' @param gs A \code{GatingSet}
+#' @param xdim The channel to plot on the x-axis
+#' @param ydim The channel to plot on the y-axis
+#' @param subset The population whose cells should be displayed on the plot
+#' @param node The gate to be visualized
+#'
+#' @return A \code{ggplot} drawn with \code{ggcyto}
+#' @export
+plotAllSamples <- function(gs, xdim, ydim, subset, node) {
+  xdim <- enquo(xdim)
+  ydim <- enquo(ydim)
+  p <- ggcyto::ggcyto(gs, mapping = aes(x = !!xdim, y = !!ydim), subset = subset) +
+    geom_hex(bins = 50) +
+    geom_gate(node) +
+    theme(text = element_text(size = 4)) +
+    geom_stats(size = 1)
+
+  return(p)
+}
+
+#' editGateManual
+#'
+#' A function enabling the user to redraw gates for all or a subset of a
+#' \code{GatingSet}
+#'
+#' @param gs A \code{GatingSet} whose gates will be manually edited
+#' @param node A \code{character} string specifying which node to redraw
+#' @param dims A \code{character} vector indicating which channels to draw the new
+#' gate on. By default, it is set to the channels used in the original gate. If it
+#' is of length-1, a histogram will be displayed for the user to draw on. If
+#' length-2, a scatterplot will be displayed instead.
+#' @param ref_sample A \code{numeric} or \code{character}, specifying the index
+#' or name of the sample within the \code{GatingSet} that you would like to
+#' draw the new gate on. NOTE: if \code{sample_ids} is specified by the user,
+#' \code{ref_sample} should be found within the vector \code{sample_ids}.
+#'  (e.g. if I have a GatingSet
+#'  of length 10, and set \code{sample_ids = 6:10}, then \code{ref_sample} should
+#'  be a number between 6 and 10.)
+#' @param sample_ids Optional; if you would like to redraw this gate for only a subset
+#' of your samples, a vector of sample indices or names.
+#'
+#' @return A \code{GatingSet} whose gates have been redrawn according to user input.
+#' @export
+editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = NULL) {
+
+  # Subset GatingSet if sample_ids given
+  if (!is.null(sample_ids)) {
+    sn <- sampleNames(gs)
+    gs <- gs[sample_ids]
+
+    viable_ids <- match(sampleNames(gs), sn)
+
+    if (length(viable_ids == 1)) {
+      ref_sample <- 1
+    }
+    else if (!any(ref_sample %in% viable_ids)) {
+      warning(paste0("\n `ref_sample=", ref_sample,
+                     "` is not found in the given `sample_ids`, should be one of: ",
+                     paste(viable_ids, collapse=","), ". \n \n Using `ref_sample=",
+                     viable_ids[1], "` by default."),
+              immediate. = TRUE)
+
+      ref_sample <- 1
+    }
+    else {
+      ref_sample <- match(sn, sampleNames(gs))[ref_sample]
+    }
+  }
+
+  # Get default dimensions if none were given
+  if (is.null(dims)) {
+    dims <- flowWorkspace::gs_pop_get_gate(gs, node)[[1]]
+    dims <- names(slot(dims, "parameters"))
+  }
+
+
+  # Get immediate parent of node to be redrawn
+  node_parent <- flowWorkspace::gs_pop_get_parent(gs, node, path = "full")
+
+
+  # Open R Shiny window to redraw gate
+  flowGate::gs_gate_interactive(gs,
+                                filterId = "newGate",
+                                sample = ref_sample, # sample to draw the gate on
+                                subset = node_parent,
+                                dims = dims,
+                                regate = FALSE, # if true, redrawn gate and children are deleted
+                                overlayGates = node # overlay gate that is being redrawn
+  )
+
+  # Get new gate that was just drawn
+  gate <- flowWorkspace::gs_pop_get_gate(gs, "newGate")
+
+  # Set existing gate to the new one
+  flowWorkspace::gs_pop_set_gate(gs, node, gate)
+
+  # Recompute descendants of the redrawn gate
+  flowWorkspace::recompute(gs, node)
+
+  # Delete temporary gate
+  flowWorkspace::gs_pop_remove(gs, "newGate")
+}
+
+
 #' getMarker
 #'
 #' Helper for getting a flowFrame channel's corresponding marker.

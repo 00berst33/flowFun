@@ -1,0 +1,5 @@
+"","alias","pop","parent","dims","gating_method","gating_args","collapseDataForGating","groupBy","preprocessing_method","preprocessing_args"
+"1","nonMargins","+","root","FSC-A,SSC-A","boundary","min=c(0,0),max=c(262143,262143)",FALSE,6,NA,NA
+"2","nonDebris","+","nonMargins","FSC-A","gate_mindensity","gate_range=c(15000,80000)",FALSE,6,NA,NA
+"3","singlets","+","nonDebris","FSC-A,FSC-H","singletGate",NA,FALSE,6,NA,NA
+"4","live","-","singlets","BUV496-A","gate_mindensity","gate_range=c(1,2)",FALSE,6,NA,NA
