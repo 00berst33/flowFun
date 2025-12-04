@@ -1,0 +1,9 @@
+#name: Name
+#FCS_File: NA
+name	FCS_File
+sample_1.fcs	sample_1.fcs	sample_1.fcs
+sample_2.fcs	sample_2.fcs	sample_2.fcs
+sample_3.fcs	sample_3.fcs	sample_3.fcs
+sample_4.fcs	sample_4.fcs	sample_4.fcs
+sample_5.fcs	sample_5.fcs	sample_5.fcs
+sample_6.fcs	sample_6.fcs	sample_6.fcs
