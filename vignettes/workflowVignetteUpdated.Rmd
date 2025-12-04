@@ -20,6 +20,7 @@ knitr::opts_chunk$set(
 ```{r, eval = FALSE}
 install.packages("devtools", dependencies = TRUE, build_vignettes = TRUE)
 devtools::install_github("00berst33/flowFun")
+# possible libcurl error on windows
 ```
 
 # Reading in Data
@@ -38,28 +39,24 @@ By default, all cells are sampled from each .fcs file of interest, but the param
 library(flowCore)
 library(tidytable)
 library(flowFun)
+library(ggplot2)
 library(flowWorkspace)
 
 # Specify path to .fcs file
-# file <- system.file("extdata", "aggregate.fcs", package = "flowFun") # make gatingSet
-# Read in as tidytable
-# table <- getTableFromFCS(file, num_cells = 1000)
+dir <- system.file("extdata", "samples", package = "flowFun")
 
-# Specify path to .fcs file
-file <- system.file("extdata", "raw_flowset.rds", package="flowFun")
-fs <- readRDS(file)
-gs1 <- GatingSet(fs)
-# Load gs on disk
-# NOTE: if you would like to discard the edits you have made to the current
-# GatingSet object, reload the backup from disk an make another deep copy, then
-# proceed.
-# gs1 <- flowWorkspace::load_gs(dir)
-# gs1 <- flowWorkspace::gs_clone(gs1)
+# Load cytoset from .fcs files
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
+
+# Make GatingSet
+gs <- flowWorkspace::GatingSet(cs)
+
+# Make clone that may be freely edited
+gs1 <- flowWorkspace::gs_clone(gs)
 
 gs1
 ```
 
-The following is a snippet of the resulting table:
 
 ```{r print-table, fig.align='center', echo=FALSE, include=FALSE, eval=FALSE} 
 table$.id <- basename(table$.id)
@@ -101,18 +98,31 @@ library(openCyto)
 # Specify L/D stain
 ld_stain <- "BUV496-A"
 
-# Gating template csv
-# Try editing the CSV yourself if you would like to add more gates.
+# Gating template
+# Try editing the data.table yourself if you would like to add more gates.
 # For explanations on how to do this, try running each command in the R console:
 #   `vignette(package="openCyto", "openCytoVignette")`
 #   `vignette(package="openCyto", "HowToAutoGating")`
 # They each will take you to page that shows you how this file should look, and
 # what it can be used for.
-file <- system.file("extdata", "gating_template.csv", package = "flowFun")
-gt <- gatingTemplate(file)
 
-# Print template .csv
-read.csv(file)[-1]
+num_samples <- length(gs1)
+ld_stain <- "BUV496-A"
+
+gt_table <- data.table(alias = c("nonMargins", "nonDebris", "singlets", "live"),
+                       pop = c("+", "+", "+", "-"),
+                       parent = c("root", "nonMargins", "nonDebris", "singlets"),
+                       dims = c("FSC-A,SSC-A", "FSC-A", "FSC-A,FSC-H", ld_stain),
+                       gating_method = c("boundary", "gate_mindensity", "singletGate", "gate_mindensity"),
+                       gating_args = c("min=c(0,0),max=c(262143,262143)", "gate_range=c(15000,80000)", NA, "gate_range=c(1,2)"),
+                       collapseDataForGating = c(TRUE, TRUE, TRUE, TRUE),
+                       groupBy = rep(num_samples, 4),
+                       preprocessing_method = c(NA, NA, NA, NA),
+                       preprocessing_args = c(NA, NA, NA, NA))
+gt <- openCyto::gatingTemplate(gt_table)
+
+# Visualize gating template
+plot(gt)
 ```
 
 The first notable item in this file that a user may want to edit is `groupBy`; to apply the same gate to all samples, this value should be equivalent to the number of samples in your experiment. In this example, we have 6 samples. 
@@ -124,13 +134,14 @@ Also, if the user does not have a live/dead stain, the fourth row with alias `li
 Below, the compensation matrix is read in, the transformation applied, and the automated gating applied and visualized.
 
 ```{r preprocessing, fig.height=5, fig.width=7}
+detach("package:tidytable", unload = TRUE)
+library(ggcyto)
+
 # Compensation matrix csv
 comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFun")
 comp_mat <- read.csv(comp_mat, check.names = FALSE)
 
-
-# Visualize current gating scheme
-plot(gt)
+# !!! func to edit colnames automatically
 
 # Compensate
 # !!! Note: The column names of your compensation matrix must match those
@@ -150,6 +161,7 @@ flowCore::transform(gs1, trans)
 # Apply gating scheme
 gt_gating(gt, gs1)
 
+library(tidytable)
 
 ## Check one gate for each sample
 # nonDebris gate
@@ -159,47 +171,48 @@ plotAllSamples(gs1, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
 plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
 
 # live cell gate
-plotAllSamples(gs1, "BUV496-A", "FSC-A", "singlets", "live")
+plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 ```
 
 Here we see that the gates for dead cells and doublets are a bit loose for this sample. As an easy fix, we may adjust and draw a simple manual gate. This can be done by calling the function `editGateManual()`, which brings up an R Shiny window where the user may draw a new boundary, rectangle, ellipsoid, or polygon gate on the sample of interest. The data in the underlying `GatingSet` is edited accordingly. 
 
-```{r manual-fix, fig.height=5, fig.width=7, fig.align='default'} 
+```{r manual-fix, fig.height=5, fig.width=7, fig.align='default', message=FALSE, eval=FALSE} 
 ##### Redraw gates manually, if desired
-### For one sample
-# Check gate before
-autoplot(gs1[[7]])
+### Edit gate for one sample:
+# Check gate before:
+autoplot(gs1[[4]])
 
 # Redraw gate
 editGateManual(gs1,
                node = "nonDebris",
                dims = c("FSC-A", "SSC-A"),
-               sample_ids = 7)
+               sample_ids = 4)
 
-# Check gate after
-autoplot(gs1[[7]])
+# Check gate after:
+autoplot(gs1[[4]])
 
-### For a subset of samples
+### Edit a gate for a subset of samples:
 # Redraw gate
 editGateManual(gs1,
                node = "singlets",
                # dims = c("FSC-A", "FSC-H"), # if `dims` isn't specified, the dimensions used in original gate are used
-               ref_sample = 25,
-               sample_ids = 23:46) # sample_ids may also be a vector of sample indices/names to apply the new gate to
+               ref_sample = 1,
+               sample_ids = 1:3) # sample_ids may also be a vector of sample indices/names to apply the new gate to
 
-# singlets gate after
+# Plot singlets gate after:
 plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
-# may also plot a subset of the GatingSet, for example:
-plotAllSamples(gs1[23:46], "FSC-A", "FSC-H", "nonDebris", "singlets")
 
-### For all samples
+# May also plot a subset of the GatingSet, for example:
+plotAllSamples(gs1[1:3], "FSC-A", "FSC-H", "nonDebris", "singlets")
+
+### Edit a gate for all samples:
 editGateManual(gs1,
                node = "live",
                dims = c("BUV496-A", "FSC-A"),
-               ref_sample = 42) # sample to draw gate on; applied to all other samples when no `sample_ids` given
+               ref_sample = 3) # sample to draw gate on; applied to all other samples when no `sample_ids` given
 
-# live cell gate after
-plotAllSamples(gs1, "BUV496-A", "FSC-A", "singlets", "live")
+# Plot live cell gate after:
+plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 
 ```
 
@@ -216,6 +229,8 @@ It is also necessary for the user to specify which markers are to be used for cl
 Below, the preprocessed data from earlier is clustered using the FlowSOM algorithm via the function `flowSOMWrapper()`. This outputs the same table that is given to it, but with the columns `Metacluster` and `Cluster` joined to the right, giving the results of the clustering. Specifying a seed is optional, but strongly recommended for the sake of reproducibility.
 
 ``` {r flowsom-clustering}
+library(tidytable)
+
 # Read in table
 prepr_table <- system.file("extdata", "prep_table.rds", package = "flowFun")
 prepr_table <- readRDS(prepr_table)
@@ -479,20 +494,6 @@ plotMetaclusterMFIs(fsom_sub, cols_of_interest)
 plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
 ```
 
-## Plots
-
-Various plotting functions that are not essential to the workflow, but potentially still of interest, have been included in this package. 
-
-``` {r sample-proportions, fig.height=5, fig.width=6, fig.align='center'}
-plotSampleProportions(fsom_dt)
-```
-
-- searchByExpression()
-- plotLabeled2DScatter()
-- plotClusterGroupProportions()
-- plotClusterFileProportions()
-
-
 # Differential Analysis
 
 The final analysis step in this workflow is differential analysis. Differential marker expression is implemented using limma, and differential count analysis using edgeR, both R packages found on Bioconductor. 
@@ -585,7 +586,6 @@ da_results <- doDAAnalysis(design = design,
                            contrasts = contrasts,
                            sample_df = sample_info, 
                            norm_method = "TMM")
-# for GS: flowWorkspace::gs_pop_get_counts()
 ```
 
 The resulting individual tables may be accessed with either double brackets `[[]]` or `$`, e.g. `da_results[[1]]` or `da_results$MIBC_NAC__vs__MIBC_No.NAC`. In this example, two comparisons were tested, so the resulting list contains two tables:
@@ -612,8 +612,13 @@ da_results[[2]] %>%
 
 To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
 
-```{r de-analysis, include=FALSE, eval=FALSE}
+```{r de-analysis, include=TRUE, eval=TRUE}
 # Perform differential expression analysis
+fsom_dt[, File := as.integer(factor(.id))]
+fsom_dt[, .id := NULL] # remove the old column
+
+# Define channels of interest
+marker_cols <- c("FITC-A", "BV711-A")
 
 # Find expression matrix: metacluster.marker by sample
 collapsed <- getExprMatDE(fsom_dt, marker_cols)
