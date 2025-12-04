@@ -674,11 +674,11 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 
   # Get all label coordinates
   if (length(all_clust) == 1) {
-    clust_mfis <- as.matrix(getClusterMFIs(input)[all_clust, channelpair],
+    clust_mfis <- as.matrix(getClusterMFIs(input, cols_to_use = channelpair)[all_clust, ],
                             nrow = 1,
                             dimnames = list(all_clust, channelpair))
   } else {
-    clust_mfis <- getClusterMFIs(input)[all_clust, channelpair]
+    clust_mfis <- getClusterMFIs(input, cols_to_use = channelpair)[all_clust, ]
   }
 
   # Create data frame for labels
