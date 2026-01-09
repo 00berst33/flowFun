@@ -16,6 +16,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+```{r requirements, echo=FALSE}
+if (!require(flowFunData)) {
+  stop("Cannot build the vignettes without 'flowFunData'")
+}
+```
+
 # Installation
 ```{r, eval = FALSE}
 install.packages("devtools", dependencies = TRUE, build_vignettes = TRUE)
@@ -41,9 +48,9 @@ library(tidytable)
 library(flowFun)
 library(ggplot2)
 library(flowWorkspace)
-
 # Specify path to .fcs file
-dir <- system.file("extdata", "samples", package = "flowFun")
+dir <- system.file("extdata", "samples", package = "flowFunData") 
+#dir <- system.file("extdata", "samples", package = "flowFun")
 
 # Load cytoset from .fcs files
 cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
@@ -138,7 +145,7 @@ detach("package:tidytable", unload = TRUE)
 library(ggcyto)
 
 # Compensation matrix csv
-comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFun")
+comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFunData")
 comp_mat <- read.csv(comp_mat, check.names = FALSE)
 
 # !!! func to edit colnames automatically
@@ -162,6 +169,7 @@ flowCore::transform(gs1, trans)
 gt_gating(gt, gs1)
 
 library(tidytable)
+
 
 ## Check one gate for each sample
 # nonDebris gate
@@ -232,7 +240,7 @@ Below, the preprocessed data from earlier is clustered using the FlowSOM algorit
 library(tidytable)
 
 # Read in table
-prepr_table <- system.file("extdata", "prep_table.rds", package = "flowFun")
+prepr_table <- system.file("extdata", "prep_table.rds", package = "flowFunData")
 prepr_table <- readRDS(prepr_table)
 
 # Define markers/columns to use for clustering
@@ -502,7 +510,7 @@ Some preparation is necessary before any tests can be performed. First, it is ne
 
 ```{r sample-info, echo=FALSE} 
 # Get filepath
-file <- system.file("extdata", "sample_info.csv", package = "flowFun")
+file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
 table <- read.csv(file)
 
 table %>%
@@ -528,7 +536,7 @@ Once these two items have been specified, the remainder of analysis is rather st
 
 ```{r prep-sample-info}
 # Get filepath
-file <- system.file("extdata", "sample_info.csv", package = "flowFun")
+file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
 
 # Prepare metadata for further analysis
 sample_info <- prepareSampleInfo(file, 

@@ -23,6 +23,7 @@ gs <- flowWorkspace::GatingSet(cs)
 # Note: to clear, flowWorkspace::cs_cleanup_temp() and flowWorkspace::gs_cleanup_temp()
 
 # Save resulting GatingSet to disk so that we have a backup
+dir.create(file.path(work_dir, "backup_gs"))
 flowWorkspace::save_gs(gs, path = file.path(work_dir, "backup_gs"))
 
 # NOTE: if you would like to discard the edits you have made to the current
@@ -153,7 +154,8 @@ gs_add_gating_method(gs1,
                      gating_method = "boundary",
                      gating_args = "min=c(0,0),max=c(262143,262143)",
                      collapseDataForGating = TRUE,
-                     groupBy = num_samples) # find one gate for all samples
+                     groupBy = 1
+                     ) # find one gate for all samples
 
 
 # nonDebris
@@ -163,15 +165,15 @@ gs_add_gating_method(gs1,
                      parent = "nonMargins",
                      dims = "FSC-A",
                      gating_method = "gate_mindensity",
-                     gating_args = "gate_range=c(10000,80000)",
+                     #gating_args = "gate_range=c(10000,80000)",
                      collapseDataForGating = TRUE,
-                     groupBy = num_samples
+                     groupBy = 1
                      )
 
 # Plot debris gate
 ggcyto::ggcyto(gs1, mapping = aes(x = `FSC-A`, y = `SSC-A`), subset = "nonMargins") + #add subset attribute before here?
   geom_hex(bins = 50) +
-  geom_gate("nonDebris") +
+  geom_gate("nonMargins") +
   theme(text = element_text(size = 4)) +
   geom_stats(size = 1)
 

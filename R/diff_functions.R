@@ -1203,6 +1203,7 @@ doDE <- function(input, sample_df, design, contrasts, #counts,
 # once you have final flowSOM object, add resulting clusters as column to GatingSet object.
 #' @keywords internal
 doIndividualDEAnalysis <- function(expr_mat, sample_info, design, contrasts, counts) {
+  group_col <- covariates <- NULL
   # Example inputs you should have:
   # cluster_mfi_list: a named list where each element is a matrix with rows = markers, cols = samples
   #   e.g. cluster_mfi_list[["cluster1"]] is matrix (markers x samples)
@@ -1224,27 +1225,27 @@ doIndividualDEAnalysis <- function(expr_mat, sample_info, design, contrasts, cou
     sample_info[[group_col]] <- factor(sample_info[[group_col]])
     if (!is.null(covariates)) {
       # covariates is a character vector of column names in sample_info to include
-      design <- model.matrix(~ sample_info[[group_col]] + ., data = sample_info[, covariates, drop=FALSE])
+      design <- stats::model.matrix(~ sample_info[[group_col]] + ., data = sample_info[, covariates, drop=FALSE])
       # simpler to build manually:
       # design <- model.matrix(as.formula(paste("~", group_col, "+", paste(covariates, collapse="+"))), data = sample_info)
     } else {
-      design <- model.matrix(~ 0 + sample_info[[group_col]])
+      design <- stats::model.matrix(~ 0 + sample_info[[group_col]])
       colnames(design) <- levels(sample_info[[group_col]])
     }
 
     # 3) fit limma
-    fit <- lmFit(y, design)
+    fit <- limma::lmFit(y, design)
 
     # 4) contrasts: compare second level vs first (adjust to your levels)
     grp_levels <- levels(sample_info[[group_col]])
     if(length(grp_levels) < 2) stop("Need at least 2 groups")
     contrast <- paste0(grp_levels[2], " - ", grp_levels[1])
-    cm <- makeContrasts(contrasts = contrast, levels = design)
-    fit2 <- contrasts.fit(fit, cm)
-    fit2 <- eBayes(fit2)
+    cm <- limma::makeContrasts(contrasts = contrast, levels = design)
+    fit2 <- limma::contrasts.fit(fit, cm)
+    fit2 <- limma::eBayes(fit2)
 
     # 5) results
-    top <- topTable(fit2, number = nrow(y), sort.by = "P")
+    top <- limma::topTable(fit2, number = nrow(y), sort.by = "P")
     return(list(fit = fit2, top = top))
   }
 #

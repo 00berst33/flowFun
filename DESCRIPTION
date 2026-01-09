@@ -7,8 +7,9 @@ Description: What the package does (one paragraph).
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Suggests: 
+    flowFunData,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
@@ -21,14 +22,12 @@ Imports:
     dplyr,
     edgeR,
     flowCore,
-    flowCut,
     flowDensity,
     flowGate,
     FlowSOM,
-    flowStats,
+    flowWorkspace,
     ggcyto,
     ggplot2,
-    ggpubr,
     grDevices,
     grid,
     gridExtra,
@@ -38,7 +37,6 @@ Imports:
     methods,
     openCyto,
     patchwork,
-    PeacoQC,
     Rtsne,
     scattermore,
     stats,

@@ -11,13 +11,13 @@
 #' @return A \code{ggplot} drawn with \code{ggcyto}
 #' @export
 plotAllSamples <- function(gs, xdim, ydim, subset, node) {
-  xdim <- enquo(xdim)
-  ydim <- enquo(ydim)
-  p <- ggcyto::ggcyto(gs, mapping = aes(x = !!xdim, y = !!ydim), subset = subset) +
-    geom_hex(bins = 50) +
-    geom_gate(node) +
-    theme(text = element_text(size = 4)) +
-    geom_stats(size = 1)
+  xdim <- rlang::enquo(xdim)
+  ydim <- rlang::enquo(ydim)
+  p <- ggcyto::ggcyto(gs, mapping = ggplot2::aes(x = !!xdim, y = !!ydim), subset = subset) +
+    ggplot2::geom_hex(bins = 50) +
+    ggcyto::geom_gate(node) +
+    ggplot2::theme(text = ggplot2::element_text(size = 4)) +
+    ggcyto::geom_stats(size = 1)
 
   return(p)
 }
@@ -49,10 +49,10 @@ editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = N
 
   # Subset GatingSet if sample_ids given
   if (!is.null(sample_ids)) {
-    sn <- sampleNames(gs)
+    sn <- flowWorkspace::sampleNames(gs)
     gs <- gs[sample_ids]
 
-    viable_ids <- match(sampleNames(gs), sn)
+    viable_ids <- match(flowWorkspace::sampleNames(gs), sn)
 
     if (length(viable_ids == 1)) {
       ref_sample <- 1
@@ -67,14 +67,14 @@ editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = N
       ref_sample <- 1
     }
     else {
-      ref_sample <- match(sn, sampleNames(gs))[ref_sample]
+      ref_sample <- match(sn, flowWorkspace::sampleNames(gs))[ref_sample]
     }
   }
 
   # Get default dimensions if none were given
   if (is.null(dims)) {
     dims <- flowWorkspace::gs_pop_get_gate(gs, node)[[1]]
-    dims <- names(slot(dims, "parameters"))
+    dims <- names(methods::slot(dims, "parameters"))
   }
 
 
@@ -154,7 +154,6 @@ getChannel <- function(ff, marker) {
 #' @return A plot where cells that were removed are highlighted in red, and cells
 #' that were kept are highlighted in blue.
 #'
-#' @export
 plotBeforeAfter <- function(ff1, ff2, channel1, channel2, ncells) {
   x <- y <- NULL
 
@@ -376,7 +375,6 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #' [flowCore::arcsinhTransform()], [flowCore::biexponentialTransform()],
 #' [flowDensity::deGate()], [flowCut::flowCut()]
 #'
-#' @export
 doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, transformation = NULL,
                             transformation_type = c("logicle", "arcsinh", "other", "none"),
                             debris_gate = NULL, ld_channel = NULL, live_gate = NULL, nmad = 4,
@@ -668,7 +666,6 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
 #' to detect live/dead cells
 #'
 #' @return No return value, the input GatingSet is edited
-#' @export
 doPreprocessing.GatingSet <- function(input,
                                       compensation = NULL,
                                       transformation = c("logicle", "arcsinh", "linear"),
@@ -795,7 +792,6 @@ prepareGateParams <- function(gate) {
 #' @inheritParams doPreprocessing
 #' @param input A filepath or flowFrame.
 #'
-#' @export
 previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, transformation = NULL,
                                  transformation_type = c("logicle", "arcsinh", "other", "none"),
                                  debris_gate = NULL, live_gate = NULL, nmad = 4) {
@@ -927,10 +923,8 @@ previewPreprocessing <- function(input, ld_channel = NULL, compensation = NULL, 
 #' default is \code{1}
 #'
 #' @importFrom patchwork wrap_plots
-#' @importFrom flowStats gate_singlet
 #'
 #' @return A plot
-#' @export
 previewPreprocessing.GatingSet <- function(input,
                                            sample_ind = 1,
                                            compensation = NULL,

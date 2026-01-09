@@ -32,7 +32,7 @@ library(flowFun)
 library(flowCore)
 library(flowWorkspace)
 library(openCyto)
-library(CytoML)
+#library(CytoML)
 library(ggcyto)
 library(ggplot2)
 
@@ -153,6 +153,7 @@ gs1 <- flowWorkspace::gs_clone(gs1)
 #   `vignette(package="openCyto", "openCytoVignette")`
 #   `vignette(package="openCyto", "HowToAutoGating")`
 # will take you to page that shows you how this file should look and how to edit it appropriately.
+gt_file <- "C:/Users/00ber/Downloads/gtfile_basic.csv"
 gt <- openCyto::gatingTemplate("C:/Users/00ber/Downloads/gtfile_basic.csv")
 
 # Compensation matrix csv
@@ -304,9 +305,7 @@ agg <- FlowSOM::AggregateFlowFrames(ex_fs, cTotal=50000, writeOutput=FALSE)
 fsom <- FlowSOM::FlowSOM(agg,
                          xdim = 10,
                          ydim = 10,
-                         nClus = 10,
-                         transform = FALSE,
-                         transformFunction = trans)
+                         nClus = 10)
 saveFlowSOMEmbedding(fsom, "fsom_minimal.rds")
 
 # for controls
@@ -351,7 +350,7 @@ comparisons <- list(
 # Prepare metadata for further analysis
 sample_info <- prepareSampleInfo(file,
                                  name_col = "Sample.Name",
-                                 filename_col = "File.Name",
+                                 filename_col = "X...File.Name",
                                  comparisons = comparisons)
 
 # Generate design matrix
@@ -361,11 +360,10 @@ design <- makeDesignMatrix(sample_info)
 contrasts <- makeContrastsMatrix(sample_info, comparisons)
 
 # Generate matrix of sample/metacluster cell counts
-counts <- makeCountMatrix(fsom,
+counts <- makeCountMatrix(fsom_dt,
                           #meta_names = meta_of_interest,
                           min_cells = 3,
-                          min_samples = 4,
-                          sample_info)
+                          min_samples = 4)
 
 #
 ### Perform differential abundance analysis
@@ -383,6 +381,9 @@ da_results <- doDAAnalysis(design = design,
 # Change scale and apply controls here, if desired
 # ...
 
+# Set markers of interest
+marker_cols <- c("BV711-A", "FITC-A")
+
 # Find expression matrix: metacluster.marker by sample
 collapsed <- getExprMatDE(fsom_dt, marker_cols)
 
@@ -396,7 +397,7 @@ contrasts_fit <- limma::contrasts.fit(lm_model, contrasts)
 limma_ebayes <- limma::eBayes(contrasts_fit, trend = TRUE)
 
 # View results
-limma::topTable(limma_ebayes)
+tt = limma::topTable(limma_ebayes)
 
 
 
