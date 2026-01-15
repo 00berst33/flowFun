@@ -1,21 +1,11 @@
 # flowFun
-R package containing functions for analysis of flow cytometry data. This package can be installed from the Rstuio console as follows: 
+R package containing functions for analysis of cytometry data. This package can be installed from the Rstudio console as follows: 
 ```{r, eval = FALSE}
 install.packages("BiocManager")
 install.packages("devtools")
 
+# Install with vignettes
 devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = TRUE)
+# Install without vignettes (faster)
+devtools::install_github("00berst33/flowFun")
 ```
-
-Priority:
-- change plotBeforeAfter() to draw gates on flowDensity plots instead of 
-highlighting cells
-- normalization
-- improve automated gating of preprocessing, and allow for more gating schemes
-- allow for a single sample's gates to be redrawn manually after failed automated attempt
-- relational database for data management?
-- make output of doDEAnalysis() more user friendly, particularly the `data` component
-- reincorporate weights
-- plotGroupUMAPs() and plotLabeled2DScatter() each have a case that still needs
-  to be accounted for
-- time permitting, make all plotting functions unspecific to FlowSOM
