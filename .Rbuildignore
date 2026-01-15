@@ -7,3 +7,5 @@
 ^\.Rproj\.user$
 ^LICENSE.md$
 >>>>>>> e133bf64576393db4c88e63ed78f0b6e7e94ab6d
+^doc$
+^Meta$
