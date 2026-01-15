@@ -46,6 +46,8 @@ Imports:
     utils,
     viridis,
     viridisLite
+Remotes: 
+    00berst33/flowFunData
 VignetteBuilder: knitr
 LinkingTo: 
     cytolib
