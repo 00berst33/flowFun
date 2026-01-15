@@ -290,7 +290,7 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #' @param ld_channel Name of the channel corresponding to the marker for live/dead
 #' cells. This should appear the same as it does in the .fcs files.
 #' @param nmad Parameter to determine strictness of doublet removal. See
-#' [PeacoQC::RemoveDoublets()] for details.
+#' PeacoQC::RemoveDoublets() for details.
 #' @param pctg_live Minimum proportion of live cells a sample should have remaining
 #' after gating out dead cells. The sample will be excluded if this number isn't met.
 #' @param pctg_qc Minimum proportion of cells a sample should have remaining
@@ -303,7 +303,7 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #' @param pdf_name Name of the PDF containing diagnostic plots for preprocessing
 #' results. Default is \code{"preprocessing_results.pdf"}.
 #' @param flowcut_dir The name of the directory containing QC results. The plots
-#' for any flagged files will be saved here. Default is \code{"flowCut"}.
+#' for any flagged files will be saved here.
 #'
 #' @details
 #' The steps taken by this function, in order, are:
@@ -322,7 +322,7 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #' a PDF highlighting the cells that were removed in each .fcs file, whose name is
 #' specified by \code{pdf_name}. The others are plots for any files that were
 #' flagged during quality control, written in the directory specified by
-#' \code{flowCut}. Each channel is plotted against time and removed events are marked.
+#' flowCut. Each channel is plotted against time and removed events are marked.
 #'
 #' The user may define their own transformation to apply to the data, if
 #' desired. This may be done by creating an object of type
@@ -370,10 +370,10 @@ getTableFromFCS <- function(input, num_cells = NULL) {
 #'
 #' @return A data.table containing preprocessed data.
 #'
-#' @seealso [PeacoQC::RemoveMargins()], [PeacoQC::RemoveDoublets()], [flowCore::compensate()],
+#' @seealso [flowCore::compensate()],
 #' [flowCore::transform()], [flowCore::estimateLogicle()], [flowCore::logicleTransform()],
 #' [flowCore::arcsinhTransform()], [flowCore::biexponentialTransform()],
-#' [flowDensity::deGate()], [flowCut::flowCut()]
+#' [flowDensity::deGate()]
 #'
 doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, transformation = NULL,
                             transformation_type = c("logicle", "arcsinh", "other", "none"),
@@ -544,13 +544,13 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
     grobs[[j+2]] <- ggplot2::ggplotGrob(p3)
 
     # Perform quality control via flowCut package
-    fc <- flowCut::flowCut(f = ff_l,
-                          FileID = make.names(file),
-                          Plot = "All",
-                          Directory = file.path(#"Preprocessing Results",
-                                                "flowCut"),
-                          Verbose = TRUE)
-    ff_fc <- fc$frame
+    # fc <- flowCut::flowCut(f = ff_l,
+    #                       FileID = make.names(file),
+    #                       Plot = "All",
+    #                       Directory = file.path(#"Preprocessing Results",
+    #                                             "flowCut"),
+    #                       Verbose = TRUE)
+    # ff_fc <- fc$frame
 
     remove <- FALSE
 
@@ -561,15 +561,15 @@ doPreprocessing <- function(input, num_cells = 50000, compensation = NULL, trans
       remove <- TRUE
     }
     # Print a warning for any files that had more than the given proportion of events removed by QC.
-    if (nrow(ff_fc)/nrow(ff_l) < pctg_qc) {
-      warning(paste0(file, " had ", 1 - round(nrow(ff_fc)/nrow(ff_l)*100, 2),
-                     "% of its events removed by flowCut."))
-      remove <- TRUE
-    }
+    # if (nrow(ff_fc)/nrow(ff_l) < pctg_qc) {
+    #   warning(paste0(file, " had ", 1 - round(nrow(ff_fc)/nrow(ff_l)*100, 2),
+    #                  "% of its events removed by flowCut."))
+    #   remove <- TRUE
+    # }
 
     # If it is high enough quality, bind sample to greater data table and save
     if (!remove) {
-      dt <- data.table::data.table(flowCore::exprs(ff_fc))
+      dt <- data.table::data.table(flowCore::exprs(ff_l))
       ids <- sample.int(nrow(dt), size = min(num_cells, nrow(dt))) # sample if needed
       dt <- dt[ids, ]
       prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)

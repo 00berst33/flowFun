@@ -7,7 +7,9 @@
 tableToFlowSet(table, id_col = .id)
 }
 \arguments{
-\item{table}{}
+\item{table}{The data table to convert to a flowSet}
+
+\item{id_col}{The column containing sample IDs for the experiment}
 }
 \value{
 A flowSet

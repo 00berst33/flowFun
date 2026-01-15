@@ -38,7 +38,7 @@ gate is automatically selected with \code{\link[flowDensity:flowDensity-methods]
 gate is automatically selected.}
 
 \item{nmad}{Parameter to determine strictness of doublet removal. See
-\code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}} for details.}
+PeacoQC::RemoveDoublets() for details.}
 }
 \description{
 Preview preprocessing settings for a single file before applying it to all data.

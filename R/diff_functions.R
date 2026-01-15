@@ -451,8 +451,7 @@ makeCountMatrix.data.frame <- function(input, meta_names = NULL,
 #'
 #' @export
 doDAAnalysis <- function(design, counts, contrasts, sample_df,
-                         norm_method = c("TMM", "TMMwsp", "RLE", "upperquartile", "none"),
-                         dir_tables = NULL) {
+                         norm_method = c("TMM", "TMMwsp", "RLE", "upperquartile", "none")) {
 
   # Get sample info from sample_df object
   #sample_info <- sample_df[, -c(1, ncol(sample_df))] # remove?
@@ -480,16 +479,16 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
   # Fit GLM models
   glm_fit <- edgeR::glmFit(disp, design = design)
 
-  if (!is.null(dir_tables)) { # save to user specified subdirectory
-    dir_write <- file.path(dir_edger(), dir_tables)
-  } else { # save directly to edgeR directory
-    dir_write <- dir_edger()
-  }
+  # if (!is.null(dir_tables)) { # save to user specified subdirectory
+  #   dir_write <- file.path(dir_edger(), dir_tables)
+  # } else { # save directly to edgeR directory
+  #   dir_write <- dir_edger()
+  # }
 
   # Check if directory exists and create if not
-  if (!dir.exists(dir_write)) {
-    dir.create(dir_write, recursive = TRUE)
-  }
+  # if (!dir.exists(dir_write)) {
+  #   dir.create(dir_write, recursive = TRUE)
+  # }
 
   pval_dfs <- lapply(1:ncol(contrasts), function(i) {data.frame()})
 
@@ -502,9 +501,9 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
     glm_lrt <- edgeR::glmLRT(glm_fit, contrast = contrasts[, i])
     top <- edgeR::topTags(glm_lrt, adjust.method = "BH", sort.by = "PValue")
 
-    utils::write.csv(top, file = file.path(dir_write,
-                                           paste0(colnames(contrasts)[i],
-                                                  "_", dir_tables, "_edger.csv")))
+    # utils::write.csv(top, file = file.path(dir_write,
+    #                                        paste0(colnames(contrasts)[i],
+    #                                               "_", dir_tables, "_edger.csv")))
 
     pval_dfs[[i]] <- top$table
   }
@@ -528,7 +527,8 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
 #' @return A data.table where columns are samples and rows are metacluster/marker groups
 #' @export
 getExprMatDE <- function(fsom_dt, marker_cols) {
-  vars <- enquo(marker_cols)
+  marker <- median_expr <- feature <- NULL
+  vars <- rlang::enquo(marker_cols)
 
   collapsed <- fsom_dt %>%
     dplyr::group_by(File, Metacluster) %>%
@@ -813,7 +813,7 @@ getSampleMFIs.data.frame <- function(input) {
 #' @return A matrix, where each column is a metacluster and each row is a sample.
 #' The entries may be median expression on either a linear or logicle-transformed
 #' scale.
-getSampleMetaclusterMFIs = function(df_full, col_to_use) {
+getSampleMetaclusterMFIsOld = function(df_full, col_to_use) {
   cell_type <- NULL
 
   if (is.numeric(col_to_use)) {
@@ -1941,6 +1941,8 @@ getDensity <- function(x, y, ...) {
 # Get list of groups by file
 plotGroupUMAPs <- function(fsom, sample_df, comparison, umap = NULL,
                            color_by = "density", num_cells = 5000, seed = NULL) {
+  Group <- NULL
+
   # Set seed if desired
   if (!is.null(seed)) {
     set.seed(seed)

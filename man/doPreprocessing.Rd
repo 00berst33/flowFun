@@ -47,7 +47,7 @@ cells. This should appear the same as it does in the .fcs files.}
 gate is automatically selected.}
 
 \item{nmad}{Parameter to determine strictness of doublet removal. See
-\code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}} for details.}
+PeacoQC::RemoveDoublets() for details.}
 
 \item{pctg_live}{Minimum proportion of live cells a sample should have remaining
 after gating out dead cells. The sample will be excluded if this number isn't met.}
@@ -66,7 +66,7 @@ Default is \code{FALSE}.}
 results. Default is \code{"preprocessing_results.pdf"}.}
 
 \item{flowcut_dir}{The name of the directory containing QC results. The plots
-for any flagged files will be saved here. Default is \code{"flowCut"}.}
+for any flagged files will be saved here.}
 }
 \value{
 A data.table containing preprocessed data.
@@ -94,7 +94,7 @@ The script will output a few files to check for any mistakes. The first is
 a PDF highlighting the cells that were removed in each .fcs file, whose name is
 specified by \code{pdf_name}. The others are plots for any files that were
 flagged during quality control, written in the directory specified by
-\code{flowCut}. Each channel is plotted against time and removed events are marked.
+flowCut. Each channel is plotted against time and removed events are marked.
 
 The user may define their own transformation to apply to the data, if
 desired. This may be done by creating an object of type
@@ -141,8 +141,8 @@ if it is preferred for no samples to be removed, setting both parameters to \cod
 will result in all samples being included in the returned table, regardless of quality.
 }
 \seealso{
-\code{\link[PeacoQC:RemoveMargins]{PeacoQC::RemoveMargins()}}, \code{\link[PeacoQC:RemoveDoublets]{PeacoQC::RemoveDoublets()}}, \code{\link[flowCore:compensation-class]{flowCore::compensate()}},
+\code{\link[flowCore:compensation-class]{flowCore::compensate()}},
 \code{\link[flowCore:transform]{flowCore::transform()}}, \code{\link[flowCore:logicleTransform]{flowCore::estimateLogicle()}}, \code{\link[flowCore:logicleTransform]{flowCore::logicleTransform()}},
 \code{\link[flowCore:arcsinhTransform]{flowCore::arcsinhTransform()}}, \code{\link[flowCore:biexponentialTransform]{flowCore::biexponentialTransform()}},
-\code{\link[flowDensity:deGate]{flowDensity::deGate()}}, \code{\link[flowCut:flowCut]{flowCut::flowCut()}}
+\code{\link[flowDensity:deGate]{flowDensity::deGate()}}
 }

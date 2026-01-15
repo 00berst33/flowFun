@@ -26,7 +26,8 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
 #' Convert a table of single-cell data
 #' !!! from here, add function to save .fcs files
 #'
-#' @param table
+#' @param table The data table to convert to a flowSet
+#' @param id_col The column containing sample IDs for the experiment
 #'
 #' @return A flowSet
 #' @export

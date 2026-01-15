@@ -9,8 +9,7 @@ doDAAnalysis(
   counts,
   contrasts,
   sample_df,
-  norm_method = c("TMM", "TMMwsp", "RLE", "upperquartile", "none"),
-  dir_tables = NULL
+  norm_method = c("TMM", "TMMwsp", "RLE", "upperquartile", "none")
 )
 }
 \arguments{
