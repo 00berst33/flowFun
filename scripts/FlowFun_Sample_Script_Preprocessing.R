@@ -15,13 +15,27 @@ library(flowDensity) #from workflowVignetteUpdated
 ############
 ## This part of the code takes you from raw fcs files to compensated data with only live cells included (or whatever first gating sets you are interested in)
 
+
 # Set the directory you would like to store analysis results in.
-work_dir <- file.path("...") ##ADD IN YOUR PATHNAME
+# work_dir <- file.path("...") ##ADD IN YOUR PATHNAME
+
+
+# Specify path to .fcs file
+dir <- system.file("extdata", "samples", package = "flowFun")
+
+# Load cytoset from .fcs files
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
+
+# Make GatingSet
+gs <- flowWorkspace::GatingSet(cs)
+
+# Make clone that may be freely edited
+gs1 <- flowWorkspace::gs_clone(gs)
 
 #####
 ## Load in raw data for first time
 # The name of the directory containing the .fcs files to analyze
-data_dir <- "..." ##ADD IN YOUR PATHNAME
+data_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw")##ADD IN YOUR PATHNAME
 
 # Get all filenames and create GatingSet
 files <- list.files(data_dir, full.names = TRUE)
@@ -31,13 +45,16 @@ gs <- flowWorkspace::GatingSet(cs)
 # Note: to clear, flowWorkspace::cs_cleanup_temp() and flowWorkspace::gs_cleanup_temp() ### MR: What is this?
 
 # Save resulting GatingSet to disk so that we have a backup ### MR: Did we decide to remove this? I took this from
-flowWorkspace::save_gs(gs, path = file.path(work_dir, "backup_gs"))
+#dir.create(file.path(work_dir, "example_ff"))
+flowWorkspace::save_gs(gs, path = file.path(work_dir, "example_ff"))
 
 # NOTE: if you would like to discard the edits you have made to the current
 # GatingSet object, reload the backup from disk an make another deep copy, then
 # proceed.
-gs1 <- flowWorkspace::load_gs(file.path(work_dir, "backup_gs"))
+gs1 <- flowWorkspace::load_gs(file.path(work_dir, "example_ff"))
 gs1 <- flowWorkspace::gs_clone(gs1)
+
+# !!! add warnings when source changed
 
 # Specify viability stain
 ld_stain <- "BUV496-A"
@@ -79,7 +96,7 @@ plot(gt)
 #   Check that that is the case here:
 colnames(comp_mat)
 colnames(gs1)
-
+## default colnames more helpful as marker rather than channel
 compensate(gs1, comp_mat)
 
 # Transform
