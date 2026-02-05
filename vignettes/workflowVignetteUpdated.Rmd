@@ -49,8 +49,8 @@ library(flowFun)
 library(ggplot2)
 library(flowWorkspace)
 # Specify path to .fcs file
-dir <- system.file("extdata", "samples", package = "flowFunData") 
-#dir <- system.file("extdata", "samples", package = "flowFun")
+#dir <- system.file("extdata", "samples", package = "HDCytoData") 
+dir <- system.file("extdata", "samples", package = "flowFunData")
 
 # Load cytoset from .fcs files
 cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")

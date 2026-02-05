@@ -71,6 +71,33 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 }
 
 
+
+#' overwriteMetaclusterNames
+#'
+#' @param fsom_dt Table with all cells of interest
+#' @param fsom_sub Subset of table used for reclustering
+#'
+#' Both tables should have a `cell_id` and `Metacluster` column.
+#'
+#' @return A table with updated metacluster names from the reclustering.
+#' @export
+overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
+  # Select cell ID and metacluster column from subset
+  fsom_sub <- fsom_sub %>%
+    dplyr::select(cell_id, Metacluster) %>%
+    dplyr::mutate(Metacluster = as.character(Metacluster)) ### edit
+
+  fsom_dt <- fsom_dt %>%
+    dplyr::mutate(Metacluster = as.character(Metacluster)) ### edit
+
+  # Update rows in original table
+  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id") %>%
+    dplyr::mutate(Metacluster = as.factor(Metacluster)) ### edit
+
+  return(new_fsom)
+  # metacluster should not be a factor, change this; or add levels to fsom_dt column
+}
+
 #' editTableMetaclusters
 #'
 #' Merge or relabel metaclusters, and reassign clusters.
