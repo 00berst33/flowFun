@@ -38,7 +38,8 @@ These data structures are also advantageous because they may easily be converted
 
 The code below demonstrates how data may be loaded in as the appropriate format. 
 
-`getTableFromFCS()` allows the user to read .fcs files directly into a data table, either by specifying a list of directories containing relevant files, or by providing a list with the relative or absolute filepaths of each file of interest. The expression data for each sample are joined by row, and two columns are joined to the left of the table: `.id` and `cell_id`.
+`load_cytoset_from_fcs()` allows the user to quickly read .fcs files into R. ... 
+#more about C stuff here
 
 By default, all cells are sampled from each .fcs file of interest, but the parameter `num_cells` may be specified to select 
 
@@ -48,8 +49,8 @@ library(tidytable)
 library(flowFun)
 library(ggplot2)
 library(flowWorkspace)
+
 # Specify path to .fcs file
-#dir <- system.file("extdata", "samples", package = "HDCytoData") 
 dir <- system.file("extdata", "samples", package = "flowFunData")
 
 # Load cytoset from .fcs files

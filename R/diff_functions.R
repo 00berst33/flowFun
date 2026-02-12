@@ -516,13 +516,17 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
 
 #' getExprMatDE
 #'
-#' Find expression matrix: metacluster.marker by sample
+#' Find expression matrix, where rows are a metacluster/marker pair, and columns
+#' are samples.
 #'
-#' @param fsom_dt A data.table which columns for markers/channels, a column `File`
+#' @param fsom_dt A data.table with columns for markers/channels, a column `File`
 #' denoting the sample a cell is from, and a column `Metacluster` denoting the
 #' metacluster a cell belongs to
 #' @param marker_cols A character vector of markers/channels of interest; these
 #' should be column names of `fsom_dt`
+#'
+#' The resulting table is passed onto [limma::lmFit()] in this package's typical
+#' workflow, but it may also serve as a helpful summary of the data.
 #'
 #' @return A data.table where columns are samples and rows are metacluster/marker groups
 #' @export

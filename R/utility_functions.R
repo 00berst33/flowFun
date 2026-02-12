@@ -21,6 +21,62 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
   # set working directory accordingly
 }
 
+
+#' addMetadataToTable
+#'
+#' @param table Table containing expression data for all samples
+#' @param sample_dt Table containing sample info
+#' @param join_col Column on which to join the two tables described above
+#'
+#'
+#'
+#' @return
+#' @export
+addMetaToTable <- function(table, sample_dt, join_col) {
+  if (join_col %in% colnames(table) && join_col %in% colnames(sample_dt)) {
+    new_table <- dplyr::left_join(table, sample_dt, by = join_col)
+    return(new_table)
+    }
+  else {
+    stop(paste0("The given column name `join_col` = ", join_col, " is not present in both tables."))
+  }
+}
+
+#' gatingSetToTable
+#'
+#' @param gs Preprocessed GatingSet to convert
+#' @param population A string giving the name of the gated population to use for
+#' table creation
+#'
+#' @return A data.table, created from the given GatingSet
+#' @export
+gatingSetToTable <- function(gs, population) {
+  # Get cytoset with desired gated population
+  cs <- flowWorkspace::gs_pop_get_data(gs, population)
+  # Get sample names from GatingSet
+  sn <- flowWorkspace::sampleNames(gs)
+
+  # Get list of expression matrices for each cytoframe
+  gs_list <- flowWorkspace::lapply(cs, function(gh) {flowCore::exprs(gh) %>% data.table::as.data.table()})
+  # Set names of list items, so that we may create an id column when combining tables
+  names(gs_list) <- sn
+
+
+  # check for column name mismatches here? or GatingSet may already take care of this
+  # !!! instead of requiring tidytable, maybe move the dependency to Suggests, and load it
+  #   if the user has it installed
+
+
+  # Bind all tables into one, by row
+  table <- tidytable::bind_rows(gs_list, .id = "File")
+  # Create cell id column
+  table <- table %>%
+    tidytable::mutate(cell_id = seq(1, nrow(table)),
+                      .after = 1)
+
+  return(table)
+}
+
 #' tableToFlowSet
 #'
 #' Convert a table of single-cell data
@@ -32,20 +88,20 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
 #' @return A flowSet
 #' @export
 tableToFlowSet <- function(table, id_col = .id) {
-  id_col <- enquo(id_col)
+  id_col <- rlang::enquo(id_col)
 
   # Get (file)names of all samples in the table
   sample_names <- table %>%
-    pull(!!id_col) %>%
+    dplyr::pull(!!id_col) %>%
     unique()
 
   # Make a flowFrame for each sample and put it in a list
   fs <- lapply(sample_names, function(i) {
     table %>%
-      filter(!!id_col == i) %>%
+      dplyr::filter(!!id_col == i) %>%
       #select(where(is.double)) %>%
-      mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
-      select(where(is.numeric)) %>%
+      dplyr::mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
+      dplyr::select(dplyr::where(is.numeric)) %>%
       as.matrix() %>%
       flowCore::flowFrame()})
   names(fs) <- sample_names
@@ -109,7 +165,7 @@ getChannelMarkerPairs <- function(ff, save_res = TRUE) {
 
   # Save resulting table if desired
   if (save_res) {
-    write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
+    utils::write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
   }
 
   return(tab)
@@ -227,6 +283,8 @@ getSampleMetaclusterMFIs <- function(input, col, csv_name = NULL) {
 #' @keywords internal
 #' @export
 getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, csv_name = NULL) {
+  Metacluster <- File <- NULL
+
   var <- rlang::enquo(col)
 
   # Get metacluster labels
@@ -245,7 +303,7 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, csv_name = N
   rownames(table) <- sample_df[match(table$File, rownames(sample_df)), "File.Name"]
 
   if(!is.null(csv_name)) {
-    write.csv(table, csv_name)
+    utils::write.csv(table, csv_name)
   }
 
   table <- table %>%
