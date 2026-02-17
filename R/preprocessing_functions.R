@@ -16,8 +16,8 @@ plotAllSamples <- function(gs, xdim, ydim, subset, node) {
   p <- ggcyto::ggcyto(gs, mapping = ggplot2::aes(x = !!xdim, y = !!ydim), subset = subset) +
     ggplot2::geom_hex(bins = 50) +
     ggcyto::geom_gate(node) +
-    ggplot2::theme(text = ggplot2::element_text(size = 4)) +
-    ggcyto::geom_stats(size = 1)
+    ggplot2::theme(text = ggplot2::element_text(size = 10)) +
+    ggcyto::geom_stats(size = 4)
 
   return(p)
 }

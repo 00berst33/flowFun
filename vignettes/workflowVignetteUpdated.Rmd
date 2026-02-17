@@ -64,7 +64,31 @@ gs1 <- flowWorkspace::gs_clone(gs)
 
 gs1
 ```
+```{r add-metadata, eval=FALSE, include=FALSE}
+# Get data.frame with sample info
+file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
+samples_df <- read.csv(file)
 
+
+# pick columns to keep 
+
+
+# Add metadata to GatingSet
+pd <- flowWorkspace::pData(gs1)
+flowWorkspace::pData(gs1) <- cbind(pd, samples_df)
+
+# look at phenoData for cytoset
+
+# Check for and remove duplicate columns
+gs1_pd <- flowWorkspace::pData(gs1)
+dupes <- t(gs1_pd) %>% 
+  duplicated()
+dupes <- dupes[dupes == TRUE] %>%
+  names()
+
+gs1_pd <- gs1_pd %>%
+  dplyr::select(!names)
+```
 
 ```{r print-table, fig.align='center', echo=FALSE, include=FALSE, eval=FALSE} 
 table$.id <- basename(table$.id)
@@ -131,6 +155,7 @@ gt <- openCyto::gatingTemplate(gt_table)
 
 # Visualize gating template
 plot(gt)
+gt_table
 ```
 
 The first notable item in this file that a user may want to edit is `groupBy`; to apply the same gate to all samples, this value should be equivalent to the number of samples in your experiment. In this example, we have 6 samples. 
@@ -257,6 +282,21 @@ fsom_dt <- flowSOMWrapper(prepr_table,
 
 ```
 
+```{r alternate-clustering, eval=FALSE, include=FALSE}
+prepr_df <- prepr_table %>%
+  as.data.frame()
+col_names <- colnames(prepr_df)[cols_to_cluster]
+
+fmeans <- flowMeans(prepr_df, 
+                    varNames = col_names, 
+                    MaxN = 20, 
+                    Standardize = FALSE, 
+                    addNoise = FALSE)
+meta_vector <- fmeans@Label
+# PhenoGraph, from cytofkit?
+
+```
+
 ```{r print-fsom-table, echo=FALSE} 
 fsom_dt %>% 
   tidytable::select(tidytable::all_of(c("cell_id", "Metacluster", "Cluster"))) %>%
@@ -284,10 +324,14 @@ Finally, if a metacluster does not represent any particular cell type of interes
 
 To further aid the decision making process, a UMAP colored by metacluster is generated below. 
 
-```{r umap, fig.height=5, fig.width=6, fig.align='center'}
+```{r umap, eval=FALSE}
 # Generate UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
 
+```
+
+```{r umap-print, echo=FALSE, out.width = '80%', fig.align='center'}
+knitr::include_graphics("images/workflow_basic/umap_1.png")
 ```
 
 This plot is most useful to check metaclusters' relative sizes, and how similar they are to one another. The closer clusters (and cells) are to each other, the more similar they are to each other. However, the opposite is not necessarily true.
@@ -396,12 +440,18 @@ fsom <- FlowSOM::UpdateMetaclusters(fsom,
 
 Again, new plots are generated.
 
-```{r second-merge-plots, fig.height=5, fig.width=6, fig.align='center'}
+```{r second-merge-plots, eval=FALSE}
 # New heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
 # New UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
+```
+
+```{r print-second-merge-plots, echo=FALSE, out.width='80%', fig.align='center'}
+knitr::include_graphics("images/workflow_basic/final_mfi_heatmap.png")
+
+knitr::include_graphics("images/workflow_basic/umap_2.png")
 ```
 
 Finally, once the clustering is complete, the remaining metaclusters may be labelled by setting each of them equal to the desired name, instead of another metacluster to be merged into.
@@ -492,7 +542,7 @@ fsom_sub <- clusterSubsetWithPCA(new_table,
 
 Note that the plot functions demonstrated earlier function the same for any subsets created. Since the current cells of interest are CD8 T cells, it is appropriate to define a new subset of markers to create the heatmap.
 
-```{r reclustering-plots, fig.height=6, fig.width=5, fig.align='center'}
+```{r reclustering-plots, eval=FALSE}
 # Define new columns to use
 cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
 
@@ -501,6 +551,14 @@ plotMetaclusterMFIs(fsom_sub, cols_of_interest)
 
 # Likewise, generate UMAP
 plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
+```
+
+```{r print-reclustering, echo=FALSE, out.width='80%', fig.align='center'}
+# Restate since last chunk wasn't evaluated
+cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+
+knitr::include_graphics("images/workflow_basic/reclustered_heatmap.png")
+knitr::include_graphics("images/workflow_basic/reclustered_umap.png")
 ```
 
 # Differential Analysis
