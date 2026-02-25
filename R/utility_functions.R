@@ -22,7 +22,7 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
 }
 
 
-#' addMetadataToTable
+#' addMetaToTable
 #'
 #' @param table Table containing expression data for all samples
 #' @param sample_dt Table containing sample info
@@ -30,7 +30,8 @@ startProject <- function(dir_name = "Cytometry_Analysis") {
 #'
 #'
 #'
-#' @return
+#' @return The data.table provided as input, with columns for sample information
+#' added.
 #' @export
 addMetaToTable <- function(table, sample_dt, join_col) {
   if (join_col %in% colnames(table) && join_col %in% colnames(sample_dt)) {
@@ -50,7 +51,7 @@ addMetaToTable <- function(table, sample_dt, join_col) {
 #'
 #' @return A data.table, created from the given GatingSet
 #' @export
-gatingSetToTable <- function(gs, population) {
+gatingSetToTable <- function(gs, population = "root") {
   # Get cytoset with desired gated population
   cs <- flowWorkspace::gs_pop_get_data(gs, population)
   # Get sample names from GatingSet
@@ -65,6 +66,8 @@ gatingSetToTable <- function(gs, population) {
   # check for column name mismatches here? or GatingSet may already take care of this
   # !!! instead of requiring tidytable, maybe move the dependency to Suggests, and load it
   #   if the user has it installed
+
+  # add metadata here using pData()
 
 
   # Bind all tables into one, by row
@@ -159,9 +162,9 @@ getChannelMarkerPairs <- function(ff, save_res = TRUE) {
 
   tab <- Biobase::pData(flowCore::parameters(ff)) %>%
     # select columns with marker and channel names
-    select(name, desc) %>%
+    dplyr::select(name, desc) %>%
     # remove channels that have no corresponding marker
-    filter(!is.na(desc))
+    dplyr::filter(!is.na(desc))
 
   # Save resulting table if desired
   if (save_res) {
@@ -270,12 +273,14 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #'
 #' @param input description
 #' @param col The channel to find sample-metacluster MFIs for.
+#' @param sample_df If \code{input} is a FlowSOM object, a data frame from
+#' [prepareSampleInfo()].
 #' @param csv_name Optional. If you would like the resulting table to be saved
 #' to a .csv file, define the desired filename here.
 #'
 #' @return A table, where rows are samples and columns are metaclusters.
 #' @export
-getSampleMetaclusterMFIs <- function(input, col, csv_name = NULL) {
+getSampleMetaclusterMFIs <- function(input, col, sample_df, csv_name = NULL) {
   result <- UseMethod("getSampleMetaclusterMFIs")
   return(result)
 }
@@ -312,194 +317,129 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, csv_name = N
   return(table)
 }
 
-# returns list of tables for data table
-getSampleMetaclusterMFIsNew <- function(input, sample_df, cols_to_use,
-                                        linear = FALSE, meta_names = NULL,
-                                        ctrl_input = NULL, subsetted_meta = NULL) {
-  Metacluster <- .id <- NULL
 
-  # Set a seed for reproducibility
-  set.seed(42)
+#' flagMarkerNames
+#'
+#' Checks for typos/discrepancies between a flowSet or cytoset's marker names
+#' between samples
+#'
+#' @param input A flowSet or cytoset
+#'
+#' @return A list. For each sample, contains a matrix of channel/marker pairs
+#' that were inconsistent, i.e. not found in all samples
+#' @export
+flagMarkerNames <- function(input) {
+  # Get channel/marker pairs for each sample as a list
+  cm_list <- lapply(seq_len(length(input)), function(i) {cf <- input[[i]] %>% flowCore::parameters() %>%
+    Biobase::pData() %>%
+    dplyr::select(name, desc) %>%
+    dplyr::mutate(sample_num = i)
+  rownames(cf) <- NULL
+  return(cf)})
 
-  # Get metacluster names if none were given, and filter out those not of interest
-  if (!is.null(meta_names)) {
-    input <- input %>%
-      tidytable::filter(Metacluster %in% meta_names)
-  } else {
-    meta_names <- input %>%
-      tidytable::pull(Metacluster) %>%
-      unique()
-  }
+  # Bind data.frames in list by row
+  cm <- dplyr::bind_rows(cm_list)
 
-  # Get all file names
-  filenames <- input %>%
-    tidytable::pull(.id) %>%
-    unique() %>%
-    basename()
+  # Make table counting each time a marker name appears
+  discp <- cm %>%
+    dplyr::group_by(desc) %>%
+    dplyr::summarise(count = dplyr::n()) %>%
+    dplyr::mutate(flag = ifelse((count > num_samples | count <= 2) & !is.na(desc), 1, 0)) # add column flagging suspicious marker names
 
-  # Determine samples excluded from analysis, if any
-  removed_samples <- which(!(filenames %in% sample_df[, 2]))
+  # Get flagged marker names only
+  flagged <- discp %>%
+    dplyr::filter(flag == 1) %>%
+    dplyr::pull(desc)
 
-  # Master data frame that will contain data about all metaclusters.
-  df_full <- data.frame()
+  # For each sample, subset channel/marker pairs to flagged only
+  discp_list <- lapply(cm_list, function(cm) {cm <- dplyr::filter(desc %in% flagged)})
 
-  # Get the channel corresponding to the current control
-  channels <- NULL
-  fcs_cols <- attr(input, "cols_from_fcs")
-
-  for (i in seq_along(fcs_cols)) {
-    col <- fcs_cols[i]
-
-    if (col %in% cols_to_use) {
-      channels <- c(channels, col)
-    } else {
-      if (!is.null(attr(input[[col]], "marker"))) {
-        if (!is.na(attr(input[[col]], "marker")))
-          if (attr(input[[col]], "marker") %in% cols_to_use) {
-            channels <- c(channels, col)
-          }
-      }
-    }
-
-  }
-  if (is.null(channels)) {
-    stop(paste0("No corresponding channels were found for ", cols_to_use,
-                " check parameter `cols_to_use` for typos."))
-  }
-
-  # Transform data back to linear scale if desired, or if applying controls
-  if (linear & !is.null(attr(input, "transformation"))) {
-    input <- transformTable(input, find_inverse = TRUE)
-  }
-
-  # Get sample/metacluster MFIs for each channel in main input
-  input <- input %>%
-    tidytable::mutate(.id = basename(.id)) %>%
-    tidytable::rename(file = .id) %>%
-    tidytable::summarise(tidytable::across(.cols = fcs_cols,
-                                           .fns = stats::median,
-                                           .drop = "keep"),
-                         .by = c(file, Metacluster))
-
-  ### DEALING WITH CTRL
-  # assume `ctrl_input` is clustered data table
-  # double check conditionals here and when re-assigning `input`
-
-  # for (col in cols_to_use) {
-  #   # If channel of interest has a corresponding control given
-  #   if (!is.null(ctrl_input)) { # check if it has a control
-  #     # Transform to linear scale
-  #     ctrl_input <- transformTable(ctrl_input, find_inverse = TRUE)
-  #
-  #     # Get sample/metacluster MFIs for current marker/channel of interest
-  #     ctrl_input <- ctrl_input %>%
-  #       tidytable::filter(Metacluster %in% meta_names) %>%
-  #       tidytable::mutate(.id = basename(.id)) %>%
-  #       tidytable::rename(file = .id) %>%
-  #       tidytable::summarise(tidytable::across(.cols = channel,
-  #                                              .fns = stats::median,
-  #                                              .drop = "keep"),
-  #                            .by = c(file, Metacluster)) %>%
-  #       tidytable::pivot_wider(names_from = Metacluster, values_from = channel)
-  #   } # then subtract these values from corresponding sample/metacluster pairs
-  # }
-
-  # Get sample/metacluster MFIs for marker/channels of interest
-  tables <- lapply(channels, function(channel) {
-    input %>%
-      tidytable::select(c(file, Metacluster, channel)) %>%
-      tidytable::pivot_wider(names_from = Metacluster, values_from = channel)})
-
-  # Bind tables together, and add a row for marker/channel
-  tables <- tidytable::bind_rows(tables, .id = TRUE) %>%
-    tidytable::mutate(channel = channels[.id],
-                      .keep = "unused",
-                      .after = 2)
-
-  ##### bits from original function
-  # Checks for samples with too few cells
-  # missing_samples <- which(!(rownames(sample_df) %in% input))
-
-  return(tables)
+  return(discp_list)
 }
 
-doDEAnalysisNew <- function(input, sample_df, design, contrasts, cols_to_use,
-                            meta_names = NULL, ctrl_input = NULL, subsetted_meta = NULL,
-                            save_csv = FALSE, dir_tables = NULL) {
-  value <- channel <- NULL
 
-  # Create empty data frames for each comparison that will be made
-  pval_dfs <- lapply(1:ncol(contrasts), function(i) {data.frame()})
+#' flagChannelNames
+#'
+#' Checks for typos/discrepancies between a flowSet or cytoset's channel names
+#' between samples
+#'
+#' @param input A flowSet or cytoset
+#'
+#' @return A list. For each sample, contains a matrix of channel/marker pairs
+#' that were inconsistent, i.e. not found in all samples
+#' @export
+flagChannelNames <- function(input) {
+  # Get channel/marker pairs for each sample as a list
+  cm_list <- lapply(seq_len(length(input)), function(i) {cf <- input[[i]] %>% flowCore::parameters() %>%
+    Biobase::pData() %>%
+    dplyr::select(name, desc) %>%
+    dplyr::mutate(sample_num = i)
+  rownames(cf) <- NULL
+  return(cf)})
 
-  # Create expression matrix for testing, if it wasn't given
-  if (!all(c("file", "channel") %in% colnames(input))) {
-    input <- getSampleMetaclusterMFIsNew(input, sample_df, cols_to_use, meta_names = meta_names)
-  }
-  expr_matrix <- input %>%
-    tidytable::pivot_longer(cols = tidytable::where(is.numeric),
-                            names_to = "Metacluster",
-                            values_to = "value") %>%
-    tidytable::pivot_wider(names_from = file,
-                           values_from = value)
+  # Bind data.frames in list by row
+  cm <- dplyr::bind_rows(cm_list)
 
-  channel_order <- expr_matrix %>%
-    tidytable::pull(channel) %>%
-    unique()
+  # Make table counting each time a channel name appears
+  discp <- cm %>%
+    dplyr::group_by(name) %>%
+    dplyr::summarise(count = dplyr::n()) %>%
+    dplyr::mutate(flag = ifelse(count > num_samples | count <= 2, 1, 0)) # add column flagging suspicious channel names
 
-  # Turn input into a matrix
-  expr_matrix <- expr_matrix %>%
-    tidytable::select(-1) %>%
-    as.matrix(rownames = "Metacluster")
+  # Get flagged channel names only
+  flagged <- discp %>%
+    dplyr::filter(flag == 1) %>%
+    dplyr::pull(name)
 
-  # Create linear models.
-  # NOTE: weights and logic questionable !!!
-  lm_model <- limma::lmFit(object = expr_matrix,
-                           design = design)
+  # For each sample, subset channel/marker pairs to flagged only
+  discp_list <- lapply(cm_list, function(cm) {cm <- dplyr::filter(name %in% flagged)})
 
-  # Perform statistical tests.
-  contrasts_fit <- limma::contrasts.fit(lm_model, contrasts)
-  limma_ebayes <- limma::eBayes(contrasts_fit, trend = TRUE)
+  return(discp_list)
+}
 
-  # If a directory to write tables in wasn't given
-  if (is.null(dir_tables)) {
-    dir_tables <- dir_limma()
-  }
 
-  # Create tables containing results of our statistical tests, and add them
-  # to the data frame corresponding to the relevant comparison.
-  for (i in seq_len(ncol(contrasts))) {
-    table <- limma::topTable(limma_ebayes,
-                             coef = colnames(contrasts)[i],
-                             sort.by = "p",
-                             number = Inf,
-                             adjust.method = "BH")
 
-    # Add column for marker ID
-    if (nrow(table) != 0) {
-      table$marker <- rep(cols_to_use[1], nrow(table))
+checkMarkerNames <- function(cm) {
+  # Get channel/marker pairs for each sample as a list
+  cm_list <- lapply(seq_len(length(input)), function(i) {cf <- input[[i]] %>% flowCore::parameters() %>%
+    Biobase::pData() %>%
+    dplyr::select(name, desc) %>%
+    dplyr::mutate(position = i)
+  rownames(cf) <- NULL
+  return(cf)})
 
-      if (length(cols_to_use) > 1) { # if more than one marker is being tested
-        for (j in 1:nrow(table)) {
-          curr <- rownames(table)[j]
-          ix <- ceiling(as.integer(curr)/length(meta_names))
-          table$marker[j] <- channel_order[ix]
-        }
-        rownames(table) <- NULL
-      }
+  # Bind data.frames in list by row
+  cm <- dplyr::bind_rows(cm_list)
 
-      # Append table of results to returned list
-      temp_ind <- nrow(pval_dfs[[i]]) + 1
-      pval_dfs[[i]] <- rbind(pval_dfs[[i]], table)
-    }
+  # Check for typos in markers
+  # probably easiest to only check for markers that don't exist; i.e.
+  # CD14 may be a typo for CD16, but also is a real marker
+  num_samples <- length(input)
 
-    # Save table, if desired
-    if (save_csv) {
-      utils::write.csv(pval_dfs[[i]], file = file.path(dir_limma(),
-                                                       dir_tables,
-                                                       paste0(colnames(contrasts)[i],
-                                                              "_", dir_tables, "_limma.csv")))
-    }
-  }
+  discp <- cm %>%
+    dplyr::group_by(desc) %>%
+    dplyr::summarise(count = dplyr::n()) %>%
+    dplyr::filter(count < num_samples)
 
-  return(pval_dfs)
+  likely_typo <- discp %>%
+    dplyr::filter(count <= 2) %>%
+    dplyr::pull(desc)
+  print(likely_typo)
+
+  likely_match <- discp %>%
+    dplyr::filter(count > 2) %>%
+    dplyr::pull(desc)
+
+  distances <- adist(likely_typo, likely_match)
+  colnames(distances) <- likely_match
+
+  # for each row, find similar marker names that are most likely to be a match
+  closest_match <- lapply(seq_len(nrow(distances)), function(i) {
+    row <- distances[i,]
+    min_dist <- min(row)
+    closest_match <- names(row[row==min_dist])
+    return(closest_match)})
+  names(closest_match) <- likely_typo
+
+  return(closest_match)
 }

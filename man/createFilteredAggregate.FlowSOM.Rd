@@ -9,7 +9,6 @@
   num_cells,
   clusters = NULL,
   metaclusters = NULL,
-  agg_name = "filtered_aggregate.fcs",
   dir_save = NULL
 )
 }

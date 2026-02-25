@@ -368,7 +368,7 @@ annotateMFIHeatmap.FlowSOM <- function(merged_input, original_input, cols_to_use
 
 #' @keywords internal
 #' @export
-annotateMFIHeatmap.data.frame <- function(merged_input, cols_to_use = NULL, ...) {
+annotateMFIHeatmap.data.frame <- function(merged_input, original_input = NULL, cols_to_use = NULL, ...) {
   Meta_original <- NULL
 
   # Get columns to use if necessary

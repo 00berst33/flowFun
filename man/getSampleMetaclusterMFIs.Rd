@@ -4,12 +4,15 @@
 \alias{getSampleMetaclusterMFIs}
 \title{getSampleMetaclusterMFIs}
 \usage{
-getSampleMetaclusterMFIs(input, col, csv_name = NULL)
+getSampleMetaclusterMFIs(input, col, sample_df, csv_name = NULL)
 }
 \arguments{
 \item{input}{description}
 
 \item{col}{The channel to find sample-metacluster MFIs for.}
+
+\item{sample_df}{If \code{input} is a FlowSOM object, a data frame from
+\code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
 \item{csv_name}{Optional. If you would like the resulting table to be saved
 to a .csv file, define the desired filename here.}

@@ -11,6 +11,7 @@ RoxygenNote: 7.3.3
 Suggests: 
     flowFunData,
     knitr,
+    openCyto,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
@@ -22,7 +23,6 @@ Imports:
     dplyr,
     edgeR,
     flowCore,
-    flowDensity,
     flowGate,
     FlowSOM,
     flowWorkspace,
@@ -32,8 +32,6 @@ Imports:
     magrittr,
     MASS,
     methods,
-    openCyto,
-    patchwork,
     Rtsne,
     scattermore,
     stats,

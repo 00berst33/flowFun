@@ -55,6 +55,7 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 
   # Add attribute specifying the columns used for clustering
   attr(table, "clustered") <- cols_to_cluster
+  # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
@@ -251,7 +252,6 @@ filterData.flowFrame <- function(input, clusters = NULL, metaclusters = NULL) {
 #' @param num_cells The total number of cells to include in the aggregate file.
 #' @param clusters A numeric vector listing the clusters of interest.
 #' @param metaclusters A character vector listing the metaclusters of interest.
-#' @param agg_name An .fcs filename. Default is "filtered_aggregate.fcs".
 #' @param dir_save If a directory path is given, then the filtered .fcs
 #' files used to create the aggregate file will be saved there. If \code{NULL}
 #' (default), then they will be discarded.
@@ -273,8 +273,7 @@ filterData.flowFrame <- function(input, clusters = NULL, metaclusters = NULL) {
 #'
 #' @export
 createFilteredAggregate <- function(input, num_cells, clusters = NULL,
-                                    metaclusters = NULL, agg_name = "aggregate.fcs",
-                                    dir_save = NULL) {
+                                    metaclusters = NULL, dir_save = NULL) {
   result <- UseMethod("createFilteredAggregate")
   return(result)
 }
@@ -287,7 +286,6 @@ createFilteredAggregate <- function(input, num_cells, clusters = NULL,
 #' @export
 createFilteredAggregate.FlowSOM <- function(input, num_cells, clusters = NULL,
                                             metaclusters = NULL,
-                                            agg_name = "filtered_aggregate.fcs",
                                             dir_save = NULL) {
   if (!inherits(input, "FlowSOM")) {
     stop("The object is not a FlowSOM object")
@@ -315,9 +313,7 @@ createFilteredAggregate.FlowSOM <- function(input, num_cells, clusters = NULL,
   # Create and save new aggregated .fcs file
   filtered_fs <- methods::as(filtered_frames, "flowSet")
   agg <- FlowSOM::AggregateFlowFrames(filtered_fs,
-                                      cTotal = num_cells,
-                                      writeOutput = TRUE,
-                                      outputFile = agg_name)
+                                      cTotal = num_cells)
   return(agg)
 }
 

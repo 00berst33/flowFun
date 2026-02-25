@@ -21,6 +21,9 @@ knitr::opts_chunk$set(
 if (!require(flowFunData)) {
   stop("Cannot build the vignettes without 'flowFunData'")
 }
+if (!require(openCyto)) {
+  stop("Cannot build the vignettes without 'openCyto'")
+}
 ```
 
 # Installation
@@ -124,7 +127,6 @@ However, the user will have to supply a compensation matrix and choose whatever 
 The code below reads in the default .csv file and prints its contents, then creates a corresponding `gatingTemplate`.
 
 ```{r gating-template}
-library(flowDensity)
 library(openCyto)
 
 # Specify L/D stain

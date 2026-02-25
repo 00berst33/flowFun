@@ -6,14 +6,17 @@
 \usage{
 makeCountMatrix(
   input,
+  sample_df = NULL,
   meta_names = NULL,
   min_cells = 3,
-  min_samples = NULL,
-  ...
+  min_samples = NULL
 )
 }
 \arguments{
 \item{input}{A FlowSOM object or data frame.}
+
+\item{sample_df}{If \code{input} is a FlowSOM object, a data frame from
+\code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
 \item{meta_names}{A vector of metacluster names of interest. By default, all
 metacluster names are used.}
@@ -24,11 +27,6 @@ have in a specified number of samples to be included in the analysis.}
 \item{min_samples}{An integer, the minimum number of samples a metacluster
 should have at least \code{min_cells} events in to be included in the analysis.
 By default, this is half the total number of samples.}
-
-\item{...}{other arguments:
-
-\code{sample_df}: If \code{input} is a FlowSOM object, a data frame from
-\code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 }
 \value{
 A matrix, where each column represents a sample, and each row

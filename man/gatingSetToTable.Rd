@@ -4,7 +4,7 @@
 \alias{gatingSetToTable}
 \title{gatingSetToTable}
 \usage{
-gatingSetToTable(gs, population)
+gatingSetToTable(gs, population = "root")
 }
 \arguments{
 \item{gs}{Preprocessed GatingSet to convert}
