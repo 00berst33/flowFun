@@ -27,31 +27,51 @@ if (!require(openCyto)) {
 ```
 
 # Installation
-```{r, eval = FALSE}
-install.packages("devtools", dependencies = TRUE, build_vignettes = TRUE)
-devtools::install_github("00berst33/flowFun")
-# possible libcurl error on windows
+
+Data used for this vignette is kept in a separate R package, `flowFunData`. To install
+`flowFun` with built vignettes, users should run the following code. 
+
+```{r, eval=FALSE}
+install.packages("devtools")
+
+# Install with vignettes
+#   The package 'flowFunData' must first be installed
+devtools::install_github("00berst33/flowFunData")
+#   Then install flowFun
+devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
-# Reading in Data
+Otherwise, to get started with the package more swiftly, the user may install `flowFun`
+without its vignettes. 
 
-Blob Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package implements the `cytoset` and `cytoframe` data structures from the `flowWorkspace` package. These are analogous to the more well known `flowSet` and `flowFrame` structures, but store the data in a more compact format that is easier for a computer to handle. To learn more, try seeing the documentation for `flowWorkspace`, or entering `vignette(package="flowWorkspace", "flowWorkspace-Introduction")` into the RStudio console. 
+```{r, eval=FALSE}
+install.packages("devtools")
 
-These data structures are also advantageous because they may easily be converted back to a `flowFrame` or `flowSet`, which are used in many other useful packages in Bioconductor. This also makes the package more flexible, as although it focuses on the use of the FlowSOM package for clustering, the package could easily be expanded to work with any other clustering algorithm the user may prefer.
+# Install without vignettes
+#   No installation of 'flowFunData', set argument `build_vignettes` to FALSE
+devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = FALSE)
+```
 
-The code below demonstrates how data may be loaded in as the appropriate format. 
+# Data Import
 
-`load_cytoset_from_fcs()` allows the user to quickly read .fcs files into R. ... 
-#more about C stuff here
+Blob Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package implements data structures from the `flowWorkspace` package; particularly the `cytoframe`, `cytoset`, `GatingHierarchy`, and `GatingSet`. 
 
-By default, all cells are sampled from each .fcs file of interest, but the parameter `num_cells` may be specified to select 
+The `cytoframe` and `cytoset` are analogous to the more well known `flowSet` and `flowFrame` structures, but instead of storing data in memory they store only a pointer to the underlying data (i.e. they are reference classes). The size of this pointer is negligible compared to the size of cytometry datasets, making operations with `cytosets` and `cytoframes` far more memory efficient. 
 
-```{r load-data}
-library(flowCore)
-library(tidytable)
-library(flowFun)
-library(ggplot2)
+The `GatingHierarchy` and `GatingSet` build upon the `cytoset` and `cytoframe`. They store not just the single cell data, but also samples, groups, transformations, compensation matrices, and gates, conveniently all in one object. Other advantages are that they facilitate automatic gating in R, and the importing of workspaces from external software like FlowJo and Cytobank. These capabilities will be discussed further below.
+
+Understanding these data structures in detail is not absolutely required to use this pipeline, but for those that would like to learn more, see the relevant documentation in `flowWorkspace`. An introductory vignette explaining the basics of these objects may be brought up in RStudio by entering `vignette(package="flowWorkspace", "flowWorkspace-Introduction")` into the console. 
+
+Below, we demonstrate how data may be imported into R from two possible sources: a set of FCS files, or a FlowJo/Diva/Cytobank workspace. 
+
+### Reading in FCS files
+
+Most often, a user has a directory or set of directories containing FCS files that they would like to import into R. The chunk below demonstrates how to prepare a set of FCS files as a `GatingSet`. 
+
+```{r load-data-flowworkspace}
 library(flowWorkspace)
+library(flowFun)
+library(tidytable)
 
 # Specify path to .fcs file
 dir <- system.file("extdata", "samples", package = "flowFunData")
@@ -61,12 +81,45 @@ cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
 
 # Make GatingSet
 gs <- flowWorkspace::GatingSet(cs)
-
-# Make clone that may be freely edited
-gs1 <- flowWorkspace::gs_clone(gs)
-
-gs1
 ```
+
+First the user specifies the name of the folder containing their FCS files, which are then loaded into a `cytoset` with the function `load_cytoset_from_fcs()`. This `cytoset` is then used to construct a corresponding `GatingSet`; note that both objects point to the same underlying data. 
+
+Due to its nature as a reference class, working with data in a `GatingSet` requires slightly more consideration. The fact that the objects `gs` and `cs` point to the same underlying data means that any changes made to one will also be applied to the other. This concept applies to any copy or subset of them. 
+
+To demonstrate this, we first examine the channel names of the samples in `cs`.
+
+```{r reference-class-initial}
+# Get cytoset channel names
+colnames(cs)
+```
+
+Next we change the first channel name and observe what happens to the column names of `gs`.
+
+```{r reference-class-after}
+# Change name of first channel in cytoset
+colnames(cs)[1] <- "EDIT"
+
+# Print resulting GatingSet column names
+colnames(gs)
+```
+
+We see that despite never directly writing code to change the channel names in `gs`, the channel name `"FSC-A"` has also been changed to `"EDIT"`. 
+
+Without being aware of this property of reference classes, a user could unknowingly make edits to their underlying data while performing analysis. However, this error is easily avoided by making a "deep copy" with the function `gs_clone()`. The resulting `GatingSet` is identical to the one it was made from, other than the critical difference that it does not point to the same underlying data. Edits may be made to the clone freely, without the potential of unintentionally overwriting original data or unsaved changes.
+
+Users should make a clone of their `GatingSet` as below before proceeding with analysis.
+
+```{r undo-rename, include=FALSE}
+colnames(cs)[1] <- "FSC-A"
+```
+
+```{r gatingset-copy}
+# Clone GatingSet
+gs1 <- flowWorkspace::gs_clone(gs)
+```
+
+
 ```{r add-metadata, eval=FALSE, include=FALSE}
 # Get data.frame with sample info
 file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
@@ -107,6 +160,25 @@ table %>%
     )
 ```
 
+
+### Reading in FlowJo workspace
+
+Users with data in FlowJo, Diva, or Cytobank may have interest in the R package `CytoML`. Workspaces from these softwares may be imported into R as a `GatingSet`, with transformations, compensations, and gating schemes preserved. This gives users who may prefer to perform preprocessing steps in one of these programs the ability to easily move between R and their program of choice.
+
+The code below demonstrates how a user may import a workspace from FlowJo as a GatingSet. All that is required is the path to an XML file.
+
+```{r external-workspace, eval=FALSE}
+# Open FlowJo workspace in R from .xml file
+flowjo_file <- "path/to/flowjo.xml"
+ws <- CytoML::open_flowjo_xml(file)
+
+# Make GatingSet from FlowJo workspace
+gs <- CytoML::flowjo_to_gatingset(ws,
+                                  path = "path/to/fcs_files")
+```
+
+A `GatingSet` may also be exported as a workspace with the use of Docker; interested users should see the GitHub repository for `CytoML`.
+
 # Preprocessing
 
 Once setup files have been cleaned and a compensation matrix has been generated, the next step is to preprocess the raw data. In order, the steps this pipeline implements are as follows:
@@ -122,9 +194,9 @@ Each these steps, other than acquiring a compensation matrix, may be left entire
 
 This pipeline primarily uses the package `openCyto` to implement preprocessing. This package can create an automated gating pipeline using a `gatingTemplate`, which is specified by a user-created spread sheet with 10 columns: `alias`, `pop`, `parent`, `dims`, `gating_method`, `gating_args`, `collapseDataForGating`, `groupBy`, `preprocessing_method`, and `preprocessing_args`. To see the details on how the values for these columns should be entered, see the `openCytoVignette` in the `openCyto` package. `flowFun` contains a default `gatingTemplate` that will draw the basic gates, so most users only need to understand how to appropriately edit this file, and not concern themselves with making one from scratch.
 
-However, the user will have to supply a compensation matrix and choose whatever transformation they would like to apply. Also, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
+However, the user will have to supply a compensation matrix and choose whatever transformation they would like to apply. Additionally, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
 
-The code below reads in the default .csv file and prints its contents, then creates a corresponding `gatingTemplate`.
+The code below reads in the default CSV file and prints its contents, then creates a corresponding `gatingTemplate`.
 
 ```{r gating-template}
 library(openCyto)
@@ -253,6 +325,26 @@ plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 ```
 
 Once preprocessing results appear satisfactory, the user can either export results to FlowJo using the `CytoML` package (note: this requires Docker to be installed) or continue with this pipeline to cluster data.
+
+It is recommended that the user saves their `GatingSet` before continuing. Recall that the earlier preprocessing steps were performed on a deep copy of the data to make edits more easily reversible, and avoid accidentally changing the underlying data. At this point the preprocessing steps are final, and so they should be saved so that progress is not lost. To save a `GatingSet`, create a new folder in an appropriate directory, then call `flowWorkspace::save_gs()`. Note that more than one `GatingSet` may not be saved to the same directory.
+
+```{r save-gs, eval=FALSE}
+# Specify name of directory to save to
+path <- file.path(getwd(), "gating_set")
+
+# Make directory if it doesn't exist
+dir.create(path)
+
+# Save GatingSet
+flowWorkspace::save_gs(gs1, path = path) # Set `path` to the name of your chosen directory
+```
+
+After saving the user may safely close their R session and return later, if desired. To load a previously saved `GatingSet`, use `flowWorkspace::load_gs()`. The only input necessary is the name of the folder the `GatingSet` was saved to. 
+
+```{r load-gs, eval=FALSE}
+# Load saved GatingSet
+flowWorkspace::load_gs(path)
+```
 
 # Clustering
 
@@ -497,6 +589,68 @@ An annotated heatmap displaying the merged clusters may be created with the func
 annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 ```
 
+### Saving results
+
+```{r temp-fsomdt-to-gatingset, include=FALSE}
+### fsom_dt to GatingSet
+# Currently there is a mismatch between the data used in preprocessing and data used in clustering, this is a temporary fix
+fs <- tableToFlowSet(fsom_dt)
+sampleNames(fs) <- basename(sampleNames(fs))
+
+cs <- flowWorkspace::flowSet_to_cytoset(fs)
+gs1 <- flowWorkspace::GatingSet(cs)
+```
+
+The clustering results may now be saved to the `GatingSet` created during preprocessing, as a set of boolean gates. This step is implemented by the function `addClustersToGatingSet()`, which needs only three inputs: the `data.table` resulting from the clustering step, the `GatingSet` whose expression data was used for clustering, and the name of the population/gate in the `GatingSet` to add these new gates to.
+
+To see the gates that are currently in a `GatingSet`, the user can use the `gs_get_pop_paths()` function.
+
+```{r gatingset-pops}
+# See all populations in GatingSet
+flowWorkspace::gs_get_pop_paths(gs1)
+```
+
+Note that the function `openCyto::plot()` used above to visualize the `gatingTemplate` may also be used on a `GatingSet` or `GatingHierarchy` object, and may be helpful in determining the appropriate parent population.
+
+Once the parent population has been determined, the new gates may be added with `addClustersToGatingSet()`. Because `GatingSet` is a reference class, only the underlying data is edited and so there is no object returned from the function. 
+
+We visualize the results with `openCyto::plot()`:
+
+```{r add-gates-to-gatingset}
+# Add clusters to GatingSet
+addClustersToGatingSet(fsom_dt, gs1, parent_gate = "root")
+
+# Visualize new gating template
+openCyto::plot(gs1)
+```
+
+Each cluster created earlier is now saved in the `GatingSet`. This is convenient for several reasons. First, it allows for swift and easy subsetting of the `GatingSet` by any combination of clusters. Any function compatible with the `cytoset` or `flowSet` becomes available for these subsets; in the below example the function `flowWorkspace::gs_pop_get_count_fast()` is used to count the number of CD4 T cells and CD8 T cells in each sample. 
+
+```{r gatingset-count-tcells}
+# Get only CD8 and CD4 T cells in GatingSet
+flowWorkspace::gs_pop_get_count_fast(gs1, 
+                                     subpopulations = c("/CD8 T cells", "/CD4 T cells"), 
+                                     statistic = "count", 
+                                     format = "long")
+```
+
+It is also simple to extract a subset of data using one of these gates, and use it to write new FCS files. For example:
+
+```{r write-new-fcs, eval=FALSE}
+# Get cytoset for population of interest
+cs_subset <- flowWorkspace::gs_pop_get_data(gs1, y = "NK cells")
+
+# Make flowSet
+fs <- flowWorkspace::cytoset_to_flowSet(cs_subset)
+
+# Write new FCS files to disk
+flowCore::write.flowSet(fs, outdir = getwd())
+```
+
+Recall that the `GatingSet` includes compensations, transformations, sample information, metadata, and gating schemes in addition to the expression data. The goal is to keep all relevant information about the experiment and its analysis neatly contained within one lightweight object, so that once it has been created, all that is necessary to resume analysis is a call to `flowWorkspace::load_gs()`. 
+
+This feature is especially useful when performing a reclustering of the data, or applying control stains, which will be demonstrated further below. 
+
 ### Reclustering
 
 This script also allows the user to perform backgating and reclustering on any identified cell types of particular interest. This clustering may be done using either a selected number of principal components obtained from PCA, or a new subset of markers defined by the user. The former approach is demonstrated below to further investigate the cells identified as CD8 T cells.
@@ -562,6 +716,42 @@ cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
 knitr::include_graphics("images/workflow_basic/reclustered_heatmap.png")
 knitr::include_graphics("images/workflow_basic/reclustered_umap.png")
 ```
+
+As with the parent population above, metaclusters are merged.
+
+```{r reclustering-edit}
+fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+,CCR7-",
+                                                           "2" = "CD45RA+,CCR7-",
+                                                           "3" = "CD45RA+, CCR7+",
+                                                           "4" = "CD45RA+, CCR7+",
+                                                           "5" = "Undefined",
+                                                           "6" = "CD45RA+,CCR7-",
+                                                           "7" = "CD45RA+,CCR7-",
+                                                           "8" = "CD45RA+, CCR7+",
+                                                           "9" = "CD45RA+, CCR7+",
+                                                           "10" = "CD45RA+,CCR7-",
+                                                           "11" = "CD45RA-, CCR7+",
+                                                           "12" = "CD45RA-, CCR7-",
+                                                           "13" = "CD45RA-, CCR7-",
+                                                           "14" = "CD45RA+,CCR7-",
+                                                           "15" = "CD45RA-, CCR7-"))
+
+# Generate heatmap for subsetted cells
+plotMetaclusterMFIs(fsom_sub, cols_of_interest)
+```
+
+The finalized populations may then be saved to the `GatingSet`. In this case, we have a reclustering of the CD8 T cell population, so we call `addClustersToGatingSet()` with `parent_gate = "CD8 T cells"`.
+
+```{r save-reclustering-to-gatingset}
+# Add clusters to GatingSet
+addClustersToGatingSet(fsom_sub, gs1, parent_gate = "CD8 T cells")
+
+# Visualize new gating template
+openCyto::plot(gs1)
+```
+
+The resulting plot shows each cluster defined so far, and any parent-child relationships. 
+
 
 # Differential Analysis
 

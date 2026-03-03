@@ -352,7 +352,9 @@ flagMarkerNames <- function(input) {
     dplyr::pull(desc)
 
   # For each sample, subset channel/marker pairs to flagged only
-  discp_list <- lapply(cm_list, function(cm) {cm <- dplyr::filter(desc %in% flagged)})
+  discp_list <- lapply(cm_list, function(cm) {res <- cm %>% dplyr::filter(desc %in% flagged)
+                                              if (nrow(res) == 0) {res <- NULL}
+                                              return(res)})
 
   return(discp_list)
 }
@@ -390,15 +392,132 @@ flagChannelNames <- function(input) {
   flagged <- discp %>%
     dplyr::filter(flag == 1) %>%
     dplyr::pull(name)
+  print(flagged)
 
   # For each sample, subset channel/marker pairs to flagged only
   discp_list <- lapply(cm_list, function(cm) {cm <- dplyr::filter(name %in% flagged)})
+
+
+  discp_list <- lapply(cm_list, function(cm) {res <- cm %>% dplyr::filter(name %in% flagged)
+                                              if (nrow(res) == 0) {res <- NULL}
+                                              return(res)})
 
   return(discp_list)
 }
 
 
+#' makeBoolean
+#'
+#' @return A boolean vector where `TRUE` means a cell belongs to the population
+#' @export
+makeBoolean <- function(input, indices, keep_indices = FALSE) {
+  # if gatinghierarchy
+  # if flowFrame
+  # if cytoframe
 
+  mat <- flowCore::exprs(input)
+
+  row_num <- nrow(mat)
+
+  if (keep_indices) {
+    boolean_vec <- rep(FALSE, row_num)
+    boolean_vec[indices] <- TRUE
+  } else {
+    boolean_vec <- rep(TRUE, row_num)
+    boolean_vec[indices] <- FALSE
+  }
+
+  return(boolean_vec)
+}
+
+#' getClusterIndicesBySample
+#'
+#' @return A list of tibbles, where each element corresponds to a sample and
+#' contains the indices of cells belonging to each cluster
+#' @export
+getClusterIndicesBySample <- function(table) { # .id and Metacluster column assumed
+  # Get list of tibbles, where each element is a sample
+  sample_tibs <- table %>%
+    dplyr::mutate(.id = factor(.id, levels = unique(.id))) %>%
+    dplyr::group_by(.id) %>% # check column name
+    dplyr::group_split() %>%
+    stats::setNames(unique(ifelse(sapply(table$.id, is.character), basename(table$.id), table$.id)))
+
+  # For each sample, group by metacluster and get indices of their rows (relevant to subsetted table)
+  idx_tables <- lapply(sample_tibs, function(sample)
+  {
+    sample %>%
+      dplyr::group_by(Metacluster) %>%
+      dplyr::group_data()
+  })
+
+  return(idx_tables)
+}
+
+#' addClustersToGatingSet
+#'
+#' Uses cluster labels to add corresponding gates to the GatingSet
+#'
+#' @param table A data.table or tibble containing expression data for all samples.
+#' Must have a column named `.id` indicating sample ID, and a column
+#' `Metacluster` with cluster labels.
+#' @param gs The `GatingSet` to add gates to.
+#' @param parent_gate `character` indicating which population is the parent of
+#' the clusters.
+#'
+#' This function should be used after a satisfactory clustering has been obtained
+#' using the human-in-the-loop approach outlined by the vignette. The resulting
+#' table should contain expression data for each sample, with each cell assigned
+#' a cluster label. These labels will then be used to construct a gate for each
+#' cluster.
+#'
+#' @export
+addClustersToGatingSet <- function(table, gs, parent_gate) {
+  idx_tables <- getClusterIndicesBySample(table)
+
+  # Subset cytoset to parent population
+  parent_cs <- flowWorkspace::gs_pop_get_data(gs, y = parent_gate)
+
+  # Get metacluster names
+  meta_names <- idx_tables[[1]] %>%
+    dplyr::pull(Metacluster) %>%
+    unique()
+
+  # Initialize list
+  meta_idx <- vector("list", length(meta_names))
+
+  # Get list of indices in metacluster for each sample
+  for (i in seq_along(meta_names)) {
+    # Get list of indices in metacluster for each sample
+    idx_list <- sapply(idx_tables, function(table)
+    {
+      table %>%
+        dplyr::filter(Metacluster == meta_names[i]) %>%
+        dplyr::pull(.rows)
+    })
+
+    # Get list of boolean vectors for current metacluster
+    bool_list <- lapply(seq_len(length(idx_list)), function(i)
+    {
+      makeBoolean(parent_cs[[names(idx_tables)[i]]], idx_list[[i]], keep_indices = TRUE)
+    }) # note keep_indices=TRUE b/c indices give cells to keep, not remove
+
+    # Name list elements
+    names(bool_list) <- names(idx_tables)
+
+    # Assign result to list
+    meta_idx[[i]] <- bool_list
+  }
+  # Name new list with metacluster names
+  names(meta_idx) <- meta_names
+
+  # Add gates to GatingSet
+  # !!! do you need to check if the gate already exists?
+  lapply(seq_along(meta_idx), function(i) {flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)})
+}
+
+
+# instead of this, maybe add column for proposed correction to functions above?
 checkMarkerNames <- function(cm) {
   # Get channel/marker pairs for each sample as a list
   cm_list <- lapply(seq_len(length(input)), function(i) {cf <- input[[i]] %>% flowCore::parameters() %>%
@@ -443,3 +562,62 @@ checkMarkerNames <- function(cm) {
 
   return(closest_match)
 }
+
+
+###
+# get vector of marker names
+# make boolean vector based on whether or not they were used for clustering
+  # know if they were used for clustering based on vector of clustered markers given
+#
+# markers <- markernames(cs)
+#
+# old_pdata <- pData(cs)
+# num_samples <- nrow(old_pdata)
+# # for marker in markers
+# # initialize vector rep(FALSE, nrow(old_pdata))
+# # if marker is in cols_to_cluster (and maybe add check for sample) then change value to TRUE
+# clustered <- lapply(markers, function(marker) {
+#   if (marker %in% cols_to_cluster) { # To check for samples, could loop over them instead of using rep()
+#     init <- rep(TRUE, num_samples) # need to check if cols_to_cluster is character vector
+#   } else {
+#     init <- rep(FALSE, num_samples)
+#   }
+#   df <- data.frame(init)
+#   colnames(df) <- marker
+#   return(df)
+#   })
+#
+# clustered <- dplyr::bind_cols(result)
+# result <- cbind(old_pdata, clustered)
+
+
+# input is GatingSet
+addMarkersToMetaData <- function(input, cols_to_cluster) {
+
+  markers <- markernames(input)
+
+  old_pdata <- pData(input)
+  num_samples <- nrow(old_pdata)
+
+  clustered <- lapply(markers, function(marker) {
+    if (marker %in% cols_to_cluster) { # To check for samples, could loop over them instead of using rep()
+      init <- rep(TRUE, num_samples) # need to check if cols_to_cluster is character vector
+    } else {
+      init <- rep(FALSE, num_samples)
+    }
+    df <- data.frame(init)
+    colnames(df) <- marker
+    return(df)
+  })
+
+  clustered <- dplyr::bind_cols(clustered)
+  result <- cbind(old_pdata, clustered)
+
+  # edit actual pData
+  # pData(input) <- result
+  return(result)
+
+  # no need to return anything in final
+}
+
+
