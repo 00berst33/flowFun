@@ -85,18 +85,15 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
   # Select cell ID and metacluster column from subset
   fsom_sub <- fsom_sub %>%
-    dplyr::select(cell_id, Metacluster) %>%
-    dplyr::mutate(Metacluster = as.character(Metacluster)) ### edit
+    dplyr::select(cell_id, Metacluster)
 
-  fsom_dt <- fsom_dt %>%
-    dplyr::mutate(Metacluster = as.character(Metacluster)) ### edit
+  # Add levels to fsom_dt
+  levels(fsom_dt$Metacluster) <- c(levels(fsom_dt$Metacluster), levels(fsom_sub$Metacluster))
 
   # Update rows in original table
-  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id") %>%
-    dplyr::mutate(Metacluster = as.factor(Metacluster)) ### edit
+  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id")
 
   return(new_fsom)
-  # metacluster should not be a factor, change this; or add levels to fsom_dt column
 }
 
 #' editTableMetaclusters

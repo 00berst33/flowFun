@@ -77,7 +77,7 @@ library(tidytable)
 dir <- system.file("extdata", "samples", package = "flowFunData")
 
 # Load cytoset from .fcs files
-cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs", truncate_max_range = TRUE)
 
 # Make GatingSet
 gs <- flowWorkspace::GatingSet(cs)
@@ -85,7 +85,7 @@ gs <- flowWorkspace::GatingSet(cs)
 
 First the user specifies the name of the folder containing their FCS files, which are then loaded into a `cytoset` with the function `load_cytoset_from_fcs()`. This `cytoset` is then used to construct a corresponding `GatingSet`; note that both objects point to the same underlying data. 
 
-Due to its nature as a reference class, working with data in a `GatingSet` requires slightly more consideration. The fact that the objects `gs` and `cs` point to the same underlying data means that any changes made to one will also be applied to the other. This concept applies to any copy or subset of them. 
+Due to their nature as reference classes, working with data in a `GatingSet` and/or `cytoset` requires slightly more consideration than typical R objects. Our variables `gs` and `cs` point to the same underlying data, so any changes made to one will also be applied to the other. This concept applies to any copy or subset of them. 
 
 To demonstrate this, we first examine the channel names of the samples in `cs`.
 
@@ -190,20 +190,29 @@ Once setup files have been cleaned and a compensation matrix has been generated,
 5. Transforming the data.
 6. Removing dead cells.
       
-Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, by either simply using the same one for each sample, or retroactively selecting samples which the automated gating performed poorly for and re-drawing gates as necessary. Although it is implemented, it is recommended to avoid manual gating where possible. Doing so improves the objectivity and reproducibility of the analysis.
+Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, either by simply applying the sample one to each sample, or retroactively selecting samples for which the automated gating performed poorly and re-drawing gates as necessary. Although it is implemented, it is recommended to avoid manual gating where possible. Doing so improves the objectivity and reproducibility of the analysis.
 
-This pipeline primarily uses the package `openCyto` to implement preprocessing. This package can create an automated gating pipeline using a `gatingTemplate`, which is specified by a user-created spread sheet with 10 columns: `alias`, `pop`, `parent`, `dims`, `gating_method`, `gating_args`, `collapseDataForGating`, `groupBy`, `preprocessing_method`, and `preprocessing_args`. To see the details on how the values for these columns should be entered, see the `openCytoVignette` in the `openCyto` package. `flowFun` contains a default `gatingTemplate` that will draw the basic gates, so most users only need to understand how to appropriately edit this file, and not concern themselves with making one from scratch.
+This pipeline primarily uses the package `openCyto` to implement preprocessing. `openCyto` can create an automated gating pipeline using a `gatingTemplate`, which is specified by a user-created spread sheet with 10 columns: `alias`, `pop`, `parent`, `dims`, `gating_method`, `gating_args`, `collapseDataForGating`, `groupBy`, `preprocessing_method`, and `preprocessing_args`. To see the details on how the values for these columns should be entered, see the `openCytoVignette` in the `openCyto` package. `flowFun` generates a default `gatingTemplate` that will draw the basic gates, so most users only need to understand how to edit this template, and not concern themselves with making one from scratch. 
 
-However, the user will have to supply a compensation matrix and choose whatever transformation they would like to apply. Additionally, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
+The function `generateGatingTable()` creates this default. It returns a `data.table` so that the user may make edits more easily before finalizing the `gatingTemplate`. 
 
-The code below reads in the default CSV file and prints its contents, then creates a corresponding `gatingTemplate`.
+The code below generates a table with the argument `collapse_data` set to `FALSE`, so once the gating scheme is applied, gates will be uniquely determined for each sample. 
 
-```{r gating-template}
+```{r gating-template-default}
 library(openCyto)
 
 # Specify L/D stain
 ld_stain <- "BUV496-A"
 
+# Get number of samples in experiment
+num_samples <- length(gs1)
+
+# Generate default template
+gt_table <- generateGatingTable(gs1, collapse_data = FALSE, ld_stain)
+gt <- openCyto::gatingTemplate(gt_table)
+```
+
+```{r edit-template, include=FALSE, eval=FALSE, fig.height=5, fig.width=7}
 # Gating template
 # Try editing the data.table yourself if you would like to add more gates.
 # For explanations on how to do this, try running each command in the R console:
@@ -211,9 +220,8 @@ ld_stain <- "BUV496-A"
 #   `vignette(package="openCyto", "HowToAutoGating")`
 # They each will take you to page that shows you how this file should look, and
 # what it can be used for.
-
-num_samples <- length(gs1)
-ld_stain <- "BUV496-A"
+gt_table[1, "gating_args"] <- "min=c(0,0),max=c(262143,262143)"
+gt_table[2, "gating_args"] <- "gate_range=c(15000,80000)"
 
 gt_table <- data.table(alias = c("nonMargins", "nonDebris", "singlets", "live"),
                        pop = c("+", "+", "+", "-"),
@@ -232,13 +240,19 @@ plot(gt)
 gt_table
 ```
 
+###
 The first notable item in this file that a user may want to edit is `groupBy`; to apply the same gate to all samples, this value should be equivalent to the number of samples in your experiment. In this example, we have 6 samples. 
 
-It may also be helpful to edit `gating_args`. Again, more details can be found in the `openCyto` vignettes, but it is most relevant to know that the parameter `gate_range` restricts the range of the automated gate being applied at that step. So, for row 2, whose alias is `nonDebris` (i.e. where a gate will be constructed around non-debris events), we have `gate_range=c(15000,80000)`, therefore the gate cannot be placed outside of that range for FSC-A.
 
-Also, if the user does not have a live/dead stain, the fourth row with alias `live` should be removed.
+It may be helpful to edit `gating_args`. Again, more details can be found in the `openCyto` vignettes, but it is most relevant to know how to adjust the range that the gate can be drawn in. How to do so depends on the function being used to determine the gate, which is indicated in the `gating_method` column. 
+
+For instance, note the gate defined by the first row of `gt_table`, whose alias is `nonMargins`. In the `gating_method` column, we see that the value is `"boundary"`. We have `gating_args="min=c(0,0),max=c(262143,262143)"`. As a result, the gate cannot be drawn outside of the interval [0, 262143] for FSC-A or SSC-A.
+
+The user will have to supply a compensation matrix and choose whatever transformation they would like to apply. Additionally, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
 
 Below, the compensation matrix is read in, the transformation applied, and the automated gating applied and visualized.
+
+###
 
 ```{r preprocessing, fig.height=5, fig.width=7}
 detach("package:tidytable", unload = TRUE)
@@ -262,7 +276,7 @@ compensate(gs1, comp_mat)
 
 # Transform
 trans <- flowCore::estimateLogicle(gs1[[1]], channels = colnames(comp_mat))
-flowCore::transform(gs1, trans)
+flowWorkspace::transform(gs1, trans)
 
 
 # Apply gating scheme
@@ -282,7 +296,30 @@ plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
 plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 ```
 
-Here we see that the gates for dead cells and doublets are a bit loose for this sample. As an easy fix, we may adjust and draw a simple manual gate. This can be done by calling the function `editGateManual()`, which brings up an R Shiny window where the user may draw a new boundary, rectangle, ellipsoid, or polygon gate on the sample of interest. The data in the underlying `GatingSet` is edited accordingly. 
+Here we see that the debris gate for the third sample is poorly placed, and multiple gates for live/dead cells need adjustment. The algorithm used to place gates for these populations, `gate_mindensity', works by fitting a kernel density estimator to the data and finding the two largest peaks. When only one peak is found, or a sample has a more unique distribution, it may not perform as well without some additional arguments. These gates may be fixed with a few different approaches. 
+
+The first is to adjust the `gatingTemplate`. In many cases, restricting the range in which the gate can be drawn resolves this kind of issue. To set a minimum and maximum value for a gate drawn by `gate_mindensity`, edit the argument `gate_range`. The code below demonstrates this with the `data.table` created earlier, and plots the new gates generated after applying the new gating scheme.
+
+```{r edit-gatingtable}
+# Edit arguments of gate_mindensity
+gt_table[2, "gating_args"] <- "gate_range=c(0,80000)" # Set range of debris gate to [0,80000]
+
+# Remove gate(s) that will be redrawn
+# Here we delete "nonDebris", which also deletes its children gates (singlets, live) 
+flowWorkspace::gs_pop_remove(gs1, "nonDebris")
+
+# Generate new gating template
+gt <- openCyto::gatingTemplate(gt_table)
+
+# Apply to data
+openCyto::gt_gating(gt, gs1)
+
+# Plot new nonDebris gates
+plotAllSamples(gs1, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
+```
+
+
+As an easy fix, we may also adjust and draw a simple manual gate. This can be done by calling the function `editGateManual()`, which brings up an R Shiny window where the user may draw a new boundary, rectangle, ellipsoid, or polygon gate on the sample of interest. The data in the underlying `GatingSet` is edited accordingly. 
 
 ```{r manual-fix, fig.height=5, fig.width=7, fig.align='default', message=FALSE, eval=FALSE} 
 ##### Redraw gates manually, if desired
@@ -740,7 +777,24 @@ fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+,CCR7-"
 plotMetaclusterMFIs(fsom_sub, cols_of_interest)
 ```
 
-The finalized populations may then be saved to the `GatingSet`. In this case, we have a reclustering of the CD8 T cell population, so we call `addClustersToGatingSet()` with `parent_gate = "CD8 T cells"`.
+If desired, the clusters found in this subset may overwrite their parent cluster in the `data.table` used for the initial clustering. Meaning, in this case, any cells previously labeled as `"CD8 T cells"` will instead be labelled with the more specific cell type found in the reclustering above. New heatmaps and dimension reduction plots with the updated labels may then be generated.
+
+The function `overwriteMetaclusterNames()` performs this operation. The code chunk below demonstrates this and generates a new heatmap.
+
+```{r overwrite-parent-cluster, eval=FALSE}
+# Overwrite labels for CD8 T cells with those found in reclustering
+fsom_over <- overwriteMetaclusterNames(fsom_dt, fsom_sub)
+
+# Generate new UMAP
+plotUMAP(fsom_over, num_cells = 5000, seed = 42)
+```
+
+```{r umap-print, echo=FALSE, out.width = '70%', fig.align='center'}
+fsom_over <- overwriteMetaclusterNames(fsom_dt, fsom_sub)
+knitr::include_graphics("images/workflow_basic/umap_3.png")
+```
+
+The finalized populations may also be saved to the `GatingSet`. In this case, we have a reclustering of the CD8 T cell population, so we call `addClustersToGatingSet()` with `parent_gate = "CD8 T cells"`.
 
 ```{r save-reclustering-to-gatingset}
 # Add clusters to GatingSet
@@ -832,6 +886,36 @@ counts %>%
     )
 ```
 
+To instead get counts from a `GatingSet`, the function `flowWorkspace::gs_pop_get_count_fast()` with argument `format` set to `"wide"` can also quickly obtain a count matrix in the necessary format.
+
+```{r gatingset-counts}
+# Get counts from GatingSet
+gs_counts <- flowWorkspace::gs_pop_get_count_fast(gs1, format = "wide") 
+gs_counts
+```
+
+By default, counts for all populations in the gating scheme are found. However, for differential analysis, only the populations to be tested should be used. Recall that the populations in a `GatingSet` may be checked with `flowWorkspace::gs_get_pop_paths()`, and that the full gating scheme may be visualized with `openCyto::plot()`. The function `flowWorkspace::gs_pop_get_children()` is used below to retrieve the paths for each cell type found in the first round of clustering, as they all share the same parent. The count matrix is then subsetted to the appropriate populations.
+
+```{r subset-gatingset-counts}
+# Get paths to cluster populations
+subpops <- flowWorkspace::gs_pop_get_children(gs1, y = "root")
+
+# Subset count matrix to only populations of interest
+keep_idx <- rownames(gs_counts) %in% subpops
+clust_counts <- gs_counts[rownames(gs_counts) %in% subpops, ]
+
+# Ensure columns are in order that matches design matrix
+samples <- as.character(sample_info$filename)
+clust_counts <- clust_counts[, samples]
+clust_counts
+```
+
+Given any matrix of counts, `plotSampleProportions()` visualizes cell type proportions across samples.
+
+```{r visualize-counts, fig.height=5, fig.width=7} 
+plotSampleProportions(clust_counts)
+```
+
 #### Differential Abundance
 
 Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
@@ -869,7 +953,30 @@ da_results[[2]] %>%
 
 #### Differential Expression
 
-To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
+To test for differential expression, the design and contrast matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
+
+Before testing, median fluorescent intensities (MFIs) must be found for the markers of interest. If expression data is in a `data.table` format, the function `getExprMatDE()` may be used to do so. If using a `GatingSet` object, the function `flowWorkspace::gs_pop_get_stats()` with argument `type = pop.MFI` should be used, with some edits to prepare it to be passed to `limma::lmFit()`. 
+
+By default, the data is kept on the scale it was transformed to during preprocessing. If the user prefers output to match the scale of the raw data, inverse transformations should be applied before calculating any aggregate statistics and/or performing tests. 
+
+```{r gatingset-exp-mat, include=FALSE, eval=FALSE}
+# Define channels of interest
+marker_cols <- c("FITC-A", "BV711-A")
+var <- rlang::enquo(marker_cols)
+
+# Get MFIs from GatingSet
+mfis <- gs_pop_get_stats(gs1, nodes = subpops, type = pop.MFI) # may set inverse_transform = TRUE for raw data scale
+mfis <- mfis %>% 
+  dplyr::select(c(sample, pop, !!var)) %>% 
+  tidyr::pivot_longer(cols = !c(pop,sample), names_to = "feature") %>%
+  tidyr::pivot_wider(names_from = sample, values_from = value) %>%
+  dplyr::mutate(feature = paste0(feature, pop), .keep = "unused")
+
+# Ensure columns are in order corresponding to design matrix
+mfis <- mfis %>% 
+  dplyr::select(feature, dplyr::all_of(samples))
+```
+
 
 ```{r de-analysis, include=TRUE, eval=TRUE}
 # Perform differential expression analysis

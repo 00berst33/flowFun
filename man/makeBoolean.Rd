@@ -12,3 +12,4 @@ A boolean vector where \code{TRUE} means a cell belongs to the population
 \description{
 makeBoolean
 }
+\keyword{internal}

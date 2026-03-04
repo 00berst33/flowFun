@@ -4,10 +4,11 @@
 \alias{plotSampleProportions}
 \title{plotSampleProportions}
 \usage{
-plotSampleProportions(input)
+plotSampleProportions(count_mat)
 }
 \arguments{
-\item{input}{A data frame or table.}
+\item{count_mat}{A data frame or table, where rows are clusters and
+columns are samples.}
 }
 \value{
 A stacked bar plot made with \code{\link[ggplot2]{ggplot2}}.
@@ -17,4 +18,7 @@ Plot cell type proportions by sample.
 }
 \details{
 By default, the names used for each sample will be its file name.
+}
+\seealso{
+\code{\link[=getExprMatDE]{getExprMatDE()}}
 }

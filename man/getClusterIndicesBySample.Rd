@@ -13,3 +13,4 @@ contains the indices of cells belonging to each cluster
 \description{
 getClusterIndicesBySample
 }
+\keyword{internal}

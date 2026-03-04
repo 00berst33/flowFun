@@ -933,19 +933,19 @@ plotTSNE = function(fsom, num_cells, point_size = 1.5, seed = NULL) {
 #'
 #' Plot cell type proportions by sample.
 #'
-#' @param input A data frame or table.
+#' @param count_mat A data frame or table, where rows are clusters and
+#' columns are samples.
 #'
 #' @details
 #' By default, the names used for each sample will be its file name.
 #'
 #' @return A stacked bar plot made with \code{\link[ggplot2]{ggplot2}}.
+#' @seealso [getExprMatDE()]
 #'
 #' @export
-plotSampleProportions <- function(input) {
+plotSampleProportions <- function(count_mat) {
   rn <- Sample <- Proportion <- `Cell Type` <- NULL
-    sample_prop <- makeCountMatrix(input,
-                                 min_cells = 0,
-                                 min_samples = 0) %>%
+    sample_prop <- count_mat %>%
     tidytable::as_tidytable(.keep_rownames = TRUE) %>%
     tidytable::mutate(tidytable::across(tidytable::where(is.numeric), .fns = ~ ./sum(.)*100)) %>%
     tidytable::pivot_longer(cols = -rn,

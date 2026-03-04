@@ -408,6 +408,7 @@ flagChannelNames <- function(input) {
 
 #' makeBoolean
 #'
+#' @keywords internal
 #' @return A boolean vector where `TRUE` means a cell belongs to the population
 #' @export
 makeBoolean <- function(input, indices, keep_indices = FALSE) {
@@ -432,6 +433,7 @@ makeBoolean <- function(input, indices, keep_indices = FALSE) {
 
 #' getClusterIndicesBySample
 #'
+#' @keywords internal
 #' @return A list of tibbles, where each element corresponds to a sample and
 #' contains the indices of cells belonging to each cluster
 #' @export
