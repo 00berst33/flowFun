@@ -11,6 +11,7 @@ RoxygenNote: 7.3.3
 Suggests: 
     flowFunData,
     knitr,
+    openCyto,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
@@ -22,30 +23,24 @@ Imports:
     dplyr,
     edgeR,
     flowCore,
-    flowDensity,
     flowGate,
     FlowSOM,
     flowWorkspace,
     ggcyto,
     ggplot2,
-    grDevices,
-    grid,
-    gridExtra,
     limma,
     magrittr,
     MASS,
     methods,
-    openCyto,
-    patchwork,
-    Rtsne,
+    purrr,
+    rlang,
     scattermore,
     stats,
     tidyr,
     tidytable,
     umap,
     utils,
-    viridis,
-    viridisLite
+    viridis
 Remotes: 
     00berst33/flowFunData
 VignetteBuilder: knitr

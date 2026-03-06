@@ -45,9 +45,7 @@ the cluster's number, and the color of the label indicates which metacluster it
 belongs to.
 }
 \examples{
-# Read in data
-file <- system.file("extdata", "fsom_table_init.rds", package = "flowFun")
-fsom_dt <- readRDS(file)
+# not run
 
 # Generate plot
 plotLabeled2DScatter(fsom_dt,

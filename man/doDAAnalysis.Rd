@@ -23,9 +23,6 @@ doDAAnalysis(
 
 \item{norm_method}{The normalization method to be used and passed to
 \code{\link[edgeR:calcNormFactors]{edgeR::calcNormFactors()}}, if any.}
-
-\item{dir_tables}{The name of a subdirectory to save the resulting tables in.
-Default is \code{NULL}, in which case the files will be saved in \code{dir_edger}.}
 }
 \description{
 Do differential abundance analysis on the data.

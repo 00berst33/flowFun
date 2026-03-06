@@ -17,13 +17,8 @@
 flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
                            fsom_file = NULL, ...) {
   if (is.numeric(cols_to_cluster)) {
-    cols_to_cluster <- colnames(table)[cols_to_cluster] #edit?
+    cols_to_cluster <- colnames(table)[cols_to_cluster]
   }
-
-  # Flag columns used for clustering in channel_marker_pairs.csv
-  # tab <- read.csv("channel_marker_key.csv", header = TRUE) %>%
-  #   mutate(clustered_flag = ifelse(name %in% cols_to_cluster, 1, 0))
-  # write.csv(tab, "channel_marker_key.csv", row.names = FALSE)
 
   # Set input data.table to appropriate format
   prepr_mat <- tableToFlowSet(table)
@@ -55,19 +50,38 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 
   # Add attribute specifying the columns used for clustering
   attr(table, "clustered") <- cols_to_cluster
+  # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
-    # dirpath <- file.path("RDS", "Unedited")
-    # if (!dir.exists(dirpath)) {
-    #   dir.create(dirpath, recursive = TRUE)
-    # }
-
     saveRDS(fsom, fsom_file)
-    # saveRDS(fsom, file.path(dirpath, fsom_file))
   }
 
   return(table)
+}
+
+
+#' overwriteMetaclusterNames
+#'
+#' @param fsom_dt Table with all cells of interest
+#' @param fsom_sub Subset of table used for reclustering
+#'
+#' Both tables should have a `cell_id` and `Metacluster` column.
+#'
+#' @return A table with updated metacluster names from the reclustering.
+#' @export
+overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
+  # Select cell ID and metacluster column from subset
+  fsom_sub <- fsom_sub %>%
+    dplyr::select(cell_id, Metacluster)
+
+  # Add levels to fsom_dt
+  levels(fsom_dt$Metacluster) <- c(levels(fsom_dt$Metacluster), levels(fsom_sub$Metacluster))
+
+  # Update rows in original table
+  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id")
+
+  return(new_fsom)
 }
 
 
@@ -87,9 +101,6 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 #' @export
 #'
 #' @examples
-#' file <- system.file("extdata", "fsom_table_init.rds", package = "flowFun")
-#' fsom_table <- readRDS(file)
-#'
 #' fsom_table <- editTableMetaclusters(fsom_table,
 #'                                     new_labels = c(
 #'                                     "9" = "1",
@@ -102,8 +113,6 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 #'                                     "7" = "6"),
 #'                                     cluster_assignments = c("4" = "Undefined")
 #'                                     )
-#'
-#' print(fsom_table)
 editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments = NULL, level_order = NULL) {
   # Check if a merging has already been done, to determine whether to edit or create column
   Metacluster <- NULL
@@ -224,7 +233,6 @@ filterData.flowFrame <- function(input, clusters = NULL, metaclusters = NULL) {
 #' @param num_cells The total number of cells to include in the aggregate file.
 #' @param clusters A numeric vector listing the clusters of interest.
 #' @param metaclusters A character vector listing the metaclusters of interest.
-#' @param agg_name An .fcs filename. Default is "filtered_aggregate.fcs".
 #' @param dir_save If a directory path is given, then the filtered .fcs
 #' files used to create the aggregate file will be saved there. If \code{NULL}
 #' (default), then they will be discarded.
@@ -246,8 +254,7 @@ filterData.flowFrame <- function(input, clusters = NULL, metaclusters = NULL) {
 #'
 #' @export
 createFilteredAggregate <- function(input, num_cells, clusters = NULL,
-                                    metaclusters = NULL, agg_name = "aggregate.fcs",
-                                    dir_save = NULL) {
+                                    metaclusters = NULL, dir_save = NULL) {
   result <- UseMethod("createFilteredAggregate")
   return(result)
 }
@@ -260,7 +267,6 @@ createFilteredAggregate <- function(input, num_cells, clusters = NULL,
 #' @export
 createFilteredAggregate.FlowSOM <- function(input, num_cells, clusters = NULL,
                                             metaclusters = NULL,
-                                            agg_name = "filtered_aggregate.fcs",
                                             dir_save = NULL) {
   if (!inherits(input, "FlowSOM")) {
     stop("The object is not a FlowSOM object")
@@ -288,9 +294,7 @@ createFilteredAggregate.FlowSOM <- function(input, num_cells, clusters = NULL,
   # Create and save new aggregated .fcs file
   filtered_fs <- methods::as(filtered_frames, "flowSet")
   agg <- FlowSOM::AggregateFlowFrames(filtered_fs,
-                                      cTotal = num_cells,
-                                      writeOutput = TRUE,
-                                      outputFile = agg_name)
+                                      cTotal = num_cells)
   return(agg)
 }
 
@@ -613,7 +617,7 @@ revertPCAFlowSOM.data.frame <- function(input, fsom, pca_obj, num_components) {
 
 #' clusterSubsetWithPCA
 #'
-#' Recluster a subset of flow data using principal components.
+#' Cluster a subset of flow data using principal components.
 #'
 #' @param input A FlowSOM object or data frame.
 #' @param pca_obj A \code{\link[stats]{prcomp}} object as generated by [doPCA()]
@@ -637,7 +641,7 @@ revertPCAFlowSOM.data.frame <- function(input, fsom, pca_obj, num_components) {
 #' but this approach is very user-dependent, therefore lacking reproducibility.
 #'
 #' This function solves this problem by using PCA for reclustering. It
-#' takes in an aggregate .fcs file, as generated by \code{createFilteredAggregate()},
+#' takes in an aggregated dataset, as generated by \code{createFilteredAggregate()},
 #' and clusters the cells within it using the specified number of principal
 #' components. If \code{convert_to_channels} is \code{TRUE} (default), it then
 #' takes the cluster and metacluster assignments found from this clustering to
@@ -737,72 +741,4 @@ clusterSubsetWithPCA.data.frame <- function(input, pca_obj, num_components,
   }
 
   return(fsom_table)
-}
-
-#' setupDirectories
-#'
-#' Initializes and creates all directories necessary for the pipeline.
-#'
-#' @param dirs_custom A named list specifying any custom directory names.
-#'
-#' @details
-#' By default, this function creates a directory structure as follows:
-#'
-#' - \code{getwd()}
-#'   - Data
-#'     - SetUp (\code{dir_setup})
-#'     - Preprocessed SetUp (\code{dir_setup_prepr})
-#'     - Raw (\code{dir_raw})
-#'     - Preprocessed Files (\code{dir_prepr})
-#'     - Aggregates (\code{dir_agg})
-#'     - Clustered Files (\code{dir_clustr})
-#'   - Info
-#'   - RDS (\code{dir_rds})
-#'     - Unedited (\code{dir_rds_unedited})
-#'     - Edited (\code{dir_rds_edited})
-#'   - Preprocessing Results
-#'     - QC plots
-#'   - Analysis Results
-#'     - limma Analysis
-#'     - edgeR Analysis
-#'
-#' @export
-#'
-#' @examples
-#' setupDirectories(list(dir_prepr = file.path("Data", "Preprocessed Files Batch1")))
-setupDirectories = function(dirs_custom = list()) {
-
-  # Reassign environment variables if necessary
-  if ("dir_rds" %in% names(dirs_custom)) {
-    set_dir_rds(dirs_custom$dir_rds)
-  }
-  if ("dir_rds_unedited" %in% names(dirs_custom)) {
-    set_dir_rds_unedited(dirs_custom$dir_rds_unedited)
-  }
-  if ("dir_rds_edited" %in% names(dirs_custom)) {
-    set_dir_rds_edited(dirs_custom$dir_rds_edited)
-  }
-  if ("dir_agg" %in% names(dirs_custom)) {
-    set_dir_agg(dirs_custom$dir_agg)
-  }
-  if ("dir_result" %in% names(dirs_custom)) {
-    set_dir_result(dirs_custom$dir_result)
-  }
-  if ("dir_prepr" %in% names(dirs_custom)) {
-    set_dir_prepr(dirs_custom$dir_prepr)
-  }
-  if ("dir_clustr" %in% names(dirs_custom)) {
-    set_dir_clustr(dirs_custom$dir_clustr)
-  }
-
-  # Create a vector of all directory names in the environment
-  dir_names <- c(dir_rds(), dir_rds_unedited(), dir_rds_edited(),
-                 dir_agg(), dir_result(), dir_prepr(), dir_clustr())
-
-  # Create each directory if it does not already exist
-  for (dir in dir_names) {
-    if (!dir.exists(dir)) {
-      dir.create(dir, recursive = TRUE)
-    }
-  }
 }

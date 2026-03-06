@@ -9,7 +9,6 @@ createFilteredAggregate(
   num_cells,
   clusters = NULL,
   metaclusters = NULL,
-  agg_name = "aggregate.fcs",
   dir_save = NULL
 )
 }
@@ -22,8 +21,6 @@ a data frame.}
 \item{clusters}{A numeric vector listing the clusters of interest.}
 
 \item{metaclusters}{A character vector listing the metaclusters of interest.}
-
-\item{agg_name}{An .fcs filename. Default is "filtered_aggregate.fcs".}
 
 \item{dir_save}{If a directory path is given, then the filtered .fcs
 files used to create the aggregate file will be saved there. If \code{NULL}

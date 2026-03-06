@@ -4,7 +4,13 @@
 \alias{makeCountMatrix.data.frame}
 \title{makeCountMatrix.data.frame}
 \usage{
-\method{makeCountMatrix}{data.frame}(input, meta_names = NULL, min_cells = 3, min_samples = NULL)
+\method{makeCountMatrix}{data.frame}(
+  input,
+  sample_df = NULL,
+  meta_names = NULL,
+  min_cells = 3,
+  min_samples = NULL
+)
 }
 \description{
 Generate matrix of sample/metacluster cell counts.

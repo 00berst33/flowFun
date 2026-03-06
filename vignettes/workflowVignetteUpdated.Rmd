@@ -21,49 +21,130 @@ knitr::opts_chunk$set(
 if (!require(flowFunData)) {
   stop("Cannot build the vignettes without 'flowFunData'")
 }
+if (!require(openCyto)) {
+  stop("Cannot build the vignettes without 'openCyto'")
+}
 ```
 
 # Installation
-```{r, eval = FALSE}
-install.packages("devtools", dependencies = TRUE, build_vignettes = TRUE)
-devtools::install_github("00berst33/flowFun")
-# possible libcurl error on windows
+
+Data used for this vignette is kept in a separate R package, `flowFunData`. To install
+`flowFun` with built vignettes, users should run the following code. 
+
+```{r, eval=FALSE}
+install.packages("devtools")
+
+# Install with vignettes
+#   The package 'flowFunData' must first be installed
+devtools::install_github("00berst33/flowFunData")
+#   Then install flowFun
+devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
-# Reading in Data
+Otherwise, to get started with the package more swiftly, the user may install `flowFun`
+without its vignettes. 
 
-Blob Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package implements the `cytoset` and `cytoframe` data structures from the `flowWorkspace` package. These are analogous to the more well known `flowSet` and `flowFrame` structures, but store the data in a more compact format that is easier for a computer to handle. To learn more, try seeing the documentation for `flowWorkspace`, or entering `vignette(package="flowWorkspace", "flowWorkspace-Introduction")` into the RStudio console. 
+```{r, eval=FALSE}
+install.packages("devtools")
 
-These data structures are also advantageous because they may easily be converted back to a `flowFrame` or `flowSet`, which are used in many other useful packages in Bioconductor. This also makes the package more flexible, as although it focuses on the use of the FlowSOM package for clustering, the package could easily be expanded to work with any other clustering algorithm the user may prefer.
+# Install without vignettes
+#   No installation of 'flowFunData', set argument `build_vignettes` to FALSE
+devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = FALSE)
+```
 
-The code below demonstrates how data may be loaded in as the appropriate format. 
+# Data Import
 
-`getTableFromFCS()` allows the user to read .fcs files directly into a data table, either by specifying a list of directories containing relevant files, or by providing a list with the relative or absolute filepaths of each file of interest. The expression data for each sample are joined by row, and two columns are joined to the left of the table: `.id` and `cell_id`.
+Blob Cytometry data often contains millions of cells, so to facilitate fast and efficient manipulation of these large datasets, this package implements data structures from the `flowWorkspace` package; particularly the `cytoframe`, `cytoset`, `GatingHierarchy`, and `GatingSet`. 
 
-By default, all cells are sampled from each .fcs file of interest, but the parameter `num_cells` may be specified to select 
+The `cytoframe` and `cytoset` are analogous to the more well known `flowSet` and `flowFrame` structures, but instead of storing data in memory they store only a pointer to the underlying data (i.e. they are reference classes). The size of this pointer is negligible compared to the size of cytometry datasets, making operations with `cytosets` and `cytoframes` far more memory efficient. 
 
-```{r load-data}
-library(flowCore)
-library(tidytable)
-library(flowFun)
-library(ggplot2)
+The `GatingHierarchy` and `GatingSet` build upon the `cytoset` and `cytoframe`. They store not just the single cell data, but also samples, groups, transformations, compensation matrices, and gates, conveniently all in one object. Other advantages are that they facilitate automatic gating in R, and the importing of workspaces from external software like FlowJo and Cytobank. These capabilities will be discussed further below.
+
+Understanding these data structures in detail is not absolutely required to use this pipeline, but for those that would like to learn more, see the relevant documentation in `flowWorkspace`. An introductory vignette explaining the basics of these objects may be brought up in RStudio by entering `vignette(package="flowWorkspace", "flowWorkspace-Introduction")` into the console. 
+
+Below, we demonstrate how data may be imported into R from two possible sources: a set of FCS files, or a FlowJo/Diva/Cytobank workspace. 
+
+### Reading in FCS files
+
+Most often, a user has a directory or set of directories containing FCS files that they would like to import into R. The chunk below demonstrates how to prepare a set of FCS files as a `GatingSet`. 
+
+```{r load-data-flowworkspace}
 library(flowWorkspace)
+library(flowFun)
+library(data.table)
+
 # Specify path to .fcs file
-dir <- system.file("extdata", "samples", package = "flowFunData") 
-#dir <- system.file("extdata", "samples", package = "flowFun")
+dir <- system.file("extdata", "samples", package = "flowFunData")
 
 # Load cytoset from .fcs files
-cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs")
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs", truncate_max_range = TRUE)
 
 # Make GatingSet
 gs <- flowWorkspace::GatingSet(cs)
-
-# Make clone that may be freely edited
-gs1 <- flowWorkspace::gs_clone(gs)
-
-gs1
 ```
 
+First the user specifies the name of the folder containing their FCS files, which are then loaded into a `cytoset` with the function `load_cytoset_from_fcs()`. This `cytoset` is then used to construct a corresponding `GatingSet`; note that both objects point to the same underlying data. 
+
+Due to their nature as reference classes, working with data in a `GatingSet` and/or `cytoset` requires slightly more consideration than typical R objects. Our variables `gs` and `cs` point to the same underlying data, so any changes made to one will also be applied to the other. This concept applies to any copy or subset of them. 
+
+To demonstrate this, we first examine the channel names of the samples in `cs`.
+
+```{r reference-class-initial}
+# Get cytoset channel names
+colnames(cs)
+```
+
+Next we change the first channel name and observe what happens to the column names of `gs`.
+
+```{r reference-class-after}
+# Change name of first channel in cytoset
+colnames(cs)[1] <- "EDIT"
+
+# Print resulting GatingSet column names
+colnames(gs)
+```
+
+We see that despite never directly writing code to change the channel names in `gs`, the channel name `"FSC-A"` has also been changed to `"EDIT"`. 
+
+Without being aware of this property of reference classes, a user could unknowingly make edits to their underlying data while performing analysis. However, this error is easily avoided by making a "deep copy" with the function `gs_clone()`. The resulting `GatingSet` is identical to the one it was made from, other than the critical difference that it does not point to the same underlying data. Edits may be made to the clone freely, without the potential of unintentionally overwriting original data or unsaved changes.
+
+Users should make a clone of their `GatingSet` as below before proceeding with analysis.
+
+```{r undo-rename, include=FALSE}
+colnames(cs)[1] <- "FSC-A"
+```
+
+```{r gatingset-copy}
+# Clone GatingSet
+gs1 <- flowWorkspace::gs_clone(gs)
+```
+
+
+```{r add-metadata, eval=FALSE, include=FALSE}
+# Get data.frame with sample info
+file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
+samples_df <- read.csv(file)
+
+
+# pick columns to keep 
+
+
+# Add metadata to GatingSet
+pd <- flowWorkspace::pData(gs1)
+flowWorkspace::pData(gs1) <- cbind(pd, samples_df)
+
+# look at phenoData for cytoset
+
+# Check for and remove duplicate columns
+gs1_pd <- flowWorkspace::pData(gs1)
+dupes <- t(gs1_pd) %>% 
+  duplicated()
+dupes <- dupes[dupes == TRUE] %>%
+  names()
+
+gs1_pd <- gs1_pd %>%
+  dplyr::select(!names)
+```
 
 ```{r print-table, fig.align='center', echo=FALSE, include=FALSE, eval=FALSE} 
 table$.id <- basename(table$.id)
@@ -79,6 +160,25 @@ table %>%
     )
 ```
 
+
+### Reading in FlowJo workspace
+
+Users with data in FlowJo, Diva, or Cytobank may have interest in the R package `CytoML`. Workspaces from these softwares may be imported into R as a `GatingSet`, with transformations, compensations, and gating schemes preserved. This gives users who may prefer to perform preprocessing steps in one of these programs the ability to easily move between R and their program of choice.
+
+The code below demonstrates how a user may import a workspace from FlowJo as a GatingSet. All that is required is the path to an XML file.
+
+```{r external-workspace, eval=FALSE}
+# Open FlowJo workspace in R from .xml file
+flowjo_file <- "path/to/flowjo.xml"
+ws <- CytoML::open_flowjo_xml(file)
+
+# Make GatingSet from FlowJo workspace
+gs <- CytoML::flowjo_to_gatingset(ws,
+                                  path = "path/to/fcs_files")
+```
+
+A `GatingSet` may also be exported as a workspace with the use of Docker; interested users should see the GitHub repository for `CytoML`.
+
 # Preprocessing
 
 Once setup files have been cleaned and a compensation matrix has been generated, the next step is to preprocess the raw data. In order, the steps this pipeline implements are as follows:
@@ -90,21 +190,29 @@ Once setup files have been cleaned and a compensation matrix has been generated,
 5. Transforming the data.
 6. Removing dead cells.
       
-Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, by either simply using the same one for each sample, or retroactively selecting samples which the automated gating performed poorly for and re-drawing gates as necessary. Although it is implemented, it is recommended to avoid manual gating where possible. Doing so improves the objectivity and reproducibility of the analysis.
+Each these steps, other than acquiring a compensation matrix, may be left entirely automated if desired. However, oftentimes parameter tuning is necessary for optimal results. Furthermore, some samples' data may be distributed in a way that is markedly different from the average, making automated gating ineffective. For this reason the user also has the option of manually drawing gates, either by simply applying the sample one to each sample, or retroactively selecting samples for which the automated gating performed poorly and re-drawing gates as necessary. Although it is implemented, it is recommended to avoid manual gating where possible. Doing so improves the objectivity and reproducibility of the analysis.
 
-This pipeline primarily uses the package `openCyto` to implement preprocessing. This package can create an automated gating pipeline using a `gatingTemplate`, which is specified by a user-created spread sheet with 10 columns: `alias`, `pop`, `parent`, `dims`, `gating_method`, `gating_args`, `collapseDataForGating`, `groupBy`, `preprocessing_method`, and `preprocessing_args`. To see the details on how the values for these columns should be entered, see the `openCytoVignette` in the `openCyto` package. `flowFun` contains a default `gatingTemplate` that will draw the basic gates, so most users only need to understand how to appropriately edit this file, and not concern themselves with making one from scratch.
+This pipeline primarily uses the package `openCyto` to implement preprocessing. `openCyto` can create an automated gating pipeline using a `gatingTemplate`, which is specified by a user-created spread sheet with 10 columns: `alias`, `pop`, `parent`, `dims`, `gating_method`, `gating_args`, `collapseDataForGating`, `groupBy`, `preprocessing_method`, and `preprocessing_args`. To see the details on how the values for these columns should be entered, see the `openCytoVignette` in the `openCyto` package. `flowFun` generates a default `gatingTemplate` that will draw the basic gates, so most users only need to understand how to edit this template, and not concern themselves with making one from scratch. 
 
-However, the user will have to supply a compensation matrix and choose whatever transformation they would like to apply. Also, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
+The function `generateGatingTable()` creates this default. It returns a `data.table` so that the user may make edits more easily before finalizing the `gatingTemplate`. 
 
-The code below reads in the default .csv file and prints its contents, then creates a corresponding `gatingTemplate`.
+The code below generates a table with the argument `collapse_data` set to `FALSE`, so once the gating scheme is applied, gates will be uniquely determined for each sample. 
 
-```{r gating-template}
-library(flowDensity)
+```{r gating-template-default}
 library(openCyto)
 
 # Specify L/D stain
 ld_stain <- "BUV496-A"
 
+# Get number of samples in experiment
+num_samples <- length(gs1)
+
+# Generate default template
+gt_table <- generateGatingTable(gs1, collapse_data = FALSE, ld_stain)
+gt_table
+```
+
+```{r edit-template, include=FALSE, eval=FALSE, fig.height=5, fig.width=7}
 # Gating template
 # Try editing the data.table yourself if you would like to add more gates.
 # For explanations on how to do this, try running each command in the R console:
@@ -112,9 +220,8 @@ ld_stain <- "BUV496-A"
 #   `vignette(package="openCyto", "HowToAutoGating")`
 # They each will take you to page that shows you how this file should look, and
 # what it can be used for.
-
-num_samples <- length(gs1)
-ld_stain <- "BUV496-A"
+gt_table[1, "gating_args"] <- "min=c(0,0),max=c(262143,262143)"
+gt_table[2, "gating_args"] <- "gate_range=c(15000,80000)"
 
 gt_table <- data.table(alias = c("nonMargins", "nonDebris", "singlets", "live"),
                        pop = c("+", "+", "+", "-"),
@@ -130,25 +237,27 @@ gt <- openCyto::gatingTemplate(gt_table)
 
 # Visualize gating template
 plot(gt)
+gt_table
 ```
 
-The first notable item in this file that a user may want to edit is `groupBy`; to apply the same gate to all samples, this value should be equivalent to the number of samples in your experiment. In this example, we have 6 samples. 
 
-It may also be helpful to edit `gating_args`. Again, more details can be found in the `openCyto` vignettes, but it is most relevant to know that the parameter `gate_range` restricts the range of the automated gate being applied at that step. So, for row 2, whose alias is `nonDebris` (i.e. where a gate will be constructed around non-debris events), we have `gate_range=c(15000,80000)`, therefore the gate cannot be placed outside of that range for FSC-A.
+It may be helpful to edit `gating_args`. Again, more details can be found in the `openCyto` vignettes, but it is most relevant to know how to adjust the range that the gate can be drawn in. How to do so depends on the function being used to determine the gate, which is indicated in the `gating_method` column. 
 
-Also, if the user does not have a live/dead stain, the fourth row with alias `live` should be removed.
+For instance, note the gate defined by the first row of `gt_table`, whose alias is `nonMargins`. In the `gating_method` column, we see that the value is `"boundary"`. The parameters that define the range for this type of gate are `min` and `max`. We choose `gating_args="min=c(0,0),max=c(262143,262143)"`, and as a result, the gate cannot be drawn outside of the interval [0, 262143] for FSC-A or SSC-A.
+
+Before applying these gates to the data, the user should supply any compensation matrices and choose whatever transformation they would like to apply. Additionally, if your panel includes a viability stain, it is necessary to specify the corresponding channel, so that dead cells may be gated out accurately.
 
 Below, the compensation matrix is read in, the transformation applied, and the automated gating applied and visualized.
 
 ```{r preprocessing, fig.height=5, fig.width=7}
-detach("package:tidytable", unload = TRUE)
 library(ggcyto)
+
+# Make gatingTemplate from gt_table
+gt <- openCyto::gatingTemplate(gt_table)
 
 # Compensation matrix csv
 comp_mat <- system.file("extdata", "compensation_matrix.csv", package = "flowFunData")
 comp_mat <- read.csv(comp_mat, check.names = FALSE)
-
-# !!! func to edit colnames automatically
 
 # Compensate
 # !!! Note: The column names of your compensation matrix must match those
@@ -162,13 +271,11 @@ compensate(gs1, comp_mat)
 
 # Transform
 trans <- flowCore::estimateLogicle(gs1[[1]], channels = colnames(comp_mat))
-flowCore::transform(gs1, trans)
+flowWorkspace::transform(gs1, trans)
 
 
 # Apply gating scheme
 gt_gating(gt, gs1)
-
-library(tidytable)
 
 
 ## Check one gate for each sample
@@ -182,9 +289,65 @@ plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
 plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 ```
 
-Here we see that the gates for dead cells and doublets are a bit loose for this sample. As an easy fix, we may adjust and draw a simple manual gate. This can be done by calling the function `editGateManual()`, which brings up an R Shiny window where the user may draw a new boundary, rectangle, ellipsoid, or polygon gate on the sample of interest. The data in the underlying `GatingSet` is edited accordingly. 
+Here we see that the debris gate for the third sample is poorly placed, and multiple gates for live/dead cells need adjustment. The algorithm used to place gates for these populations, `gate_mindensity', works by fitting a kernel density estimator to the data and finding the two largest peaks. When only one peak is found, or a sample has a more unique distribution, it may not perform as well without some additional arguments. These gates may be fixed with a few different approaches. 
 
-```{r manual-fix, fig.height=5, fig.width=7, fig.align='default', message=FALSE, eval=FALSE} 
+The first is to adjust the `gatingTemplate`. In many cases, restricting the range in which the gate can be drawn resolves this kind of issue. To set a minimum and maximum value for a gate drawn by `gate_mindensity`, edit the argument `gate_range`. The code below demonstrates this with the `data.table` created earlier, and plots the new gates generated after applying the new gating scheme.
+
+```{r edit-gatingtable, fig.height=5, fig.width=7}
+# Edit arguments of gate_mindensity
+gt_table[2, "gating_args"] <- "gate_range=c(0,80000)" # Set range of debris gate to [0,80000]
+
+# Remove gate(s) that will be redrawn
+# Here we delete "nonDebris", which also deletes its children gates (singlets, live) 
+flowWorkspace::gs_pop_remove(gs1, "nonDebris")
+
+# Generate new gating template
+gt <- openCyto::gatingTemplate(gt_table)
+
+# Apply to data
+openCyto::gt_gating(gt, gs1)
+
+# Plot new nonDebris gates
+plotAllSamples(gs1, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
+```
+
+Another option is to draw gates with collapsed data, instead of calculating them per sample. This approach is particularly helpful when the data does not have many cells. It is also more straightforward, since the same gate is applied to each sample. The code below demonstrates this, and generates plots of the new gate for live cells.
+
+```{r collapsed-gt, fig.height=5, fig.width=7} 
+# Get new gating table
+gt_table <- generateGatingTable(gs1, collapse_data = TRUE, ld_stain)
+
+# Remove gate(s) that will be redrawn
+flowWorkspace::gs_pop_remove(gs1, "nonDebris")
+
+# Generate new gating template
+gt <- openCyto::gatingTemplate(gt_table)
+
+# Apply to data
+openCyto::gt_gating(gt, gs1)
+
+# Plot new L/D gates
+plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
+```
+
+Finally, we may also adjust a gate by manually redrawing it. This can be done through use of the optional `CytoExploreR` package and its function `cyto_gate_edit()`. A window where the user may draw a new gate on the sample of interest is then brought up. Once the gate has been drawn the data in the underlying `GatingSet` is edited accordingly. An example is shown below, but not run. Note that the `gatingTemplate` must be saved to a CSV file to run this function.
+
+```{r cytoexplorer-fix, eval=FALSE}
+library(CytoExploreR)
+
+CytoExploreR::cyto_gate_edit(gs1, 
+                             parent = "singlets", # parent population
+                             alias = "live", # name of the gate to edit
+                             channels = c("BUV496-A", "FSC-A"), # channels to gate on
+                             type = "rectangle", # type of gate to draw
+                             gatingTemplate = "file.csv") 
+```
+
+```{r manual-fix, fig.height=5, fig.width=7, fig.align='default', include=FALSE, eval=FALSE} 
+### flowGate broken by current ggplot2 and ggcyto versions
+# As an easy fix, we may also adjust and draw a simple manual gate. This can be done by calling the function `editGateManual()`, which brings up an R Shiny window where the user may draw a new boundary, rectangle, ellipsoid, or polygon gate on the sample of interest. The data in the underlying `GatingSet` is edited accordingly. 
+###
+
 ##### Redraw gates manually, if desired
 ### Edit gate for one sample:
 # Check gate before:
@@ -226,6 +389,26 @@ plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 
 Once preprocessing results appear satisfactory, the user can either export results to FlowJo using the `CytoML` package (note: this requires Docker to be installed) or continue with this pipeline to cluster data.
 
+It is recommended that the user saves their `GatingSet` before continuing. Recall that the earlier preprocessing steps were performed on a deep copy of the data to make edits more easily reversible, and avoid accidentally changing the underlying data. At this point the preprocessing steps are final, and so they should be saved so that progress is not lost. To save a `GatingSet`, create a new folder in an appropriate directory, then call `flowWorkspace::save_gs()`. Note that more than one `GatingSet` may not be saved to the same directory.
+
+```{r save-gs, eval=FALSE}
+# Specify name of directory to save to
+path <- file.path(getwd(), "gating_set")
+
+# Make directory if it doesn't exist
+dir.create(path)
+
+# Save GatingSet
+flowWorkspace::save_gs(gs1, path = path) # Set `path` to the name of your chosen directory
+```
+
+After saving the user may safely close their R session and return later, if desired. To load a previously saved `GatingSet`, use `flowWorkspace::load_gs()`. The only input necessary is the name of the folder the `GatingSet` was saved to. 
+
+```{r load-gs, eval=FALSE}
+# Load saved GatingSet
+flowWorkspace::load_gs(path)
+```
+
 # Clustering
 
 This package is compatible with various clustering algorithms, but was designed specifically with FlowSOM in mind due to its fast runtime and tools for data visualization. Therefore, much focus will be given to FlowSOM in the following section.
@@ -236,11 +419,11 @@ It is also necessary for the user to specify which markers are to be used for cl
 
 Below, the preprocessed data from earlier is clustered using the FlowSOM algorithm via the function `flowSOMWrapper()`. This outputs the same table that is given to it, but with the columns `Metacluster` and `Cluster` joined to the right, giving the results of the clustering. Specifying a seed is optional, but strongly recommended for the sake of reproducibility.
 
-``` {r flowsom-clustering}
-library(tidytable)
+`FlowSOM()` does not take `GatingSet` data structures as input, so to use this function users should subset their data to the appropriate population with `gs_pop_get_data()` and pass the result to `cytosetToTable()`. This table may then be passed to `flowSOMWrapper()`.
 
+``` {r flowsom-clustering}
 # Read in table
-prepr_table <- system.file("extdata", "prep_table.rds", package = "flowFunData")
+prepr_table <- system.file("extdata", "prepr_table.rds", package = "flowFunData")
 prepr_table <- readRDS(prepr_table)
 
 # Define markers/columns to use for clustering
@@ -253,6 +436,21 @@ fsom_dt <- flowSOMWrapper(prepr_table,
                           xdim = 12,
                           ydim = 12,
                           seed = 42)
+
+```
+
+```{r alternate-clustering, eval=FALSE, include=FALSE}
+prepr_df <- prepr_table %>%
+  as.data.frame()
+col_names <- colnames(prepr_df)[cols_to_cluster]
+
+fmeans <- flowMeans(prepr_df, 
+                    varNames = col_names, 
+                    MaxN = 20, 
+                    Standardize = FALSE, 
+                    addNoise = FALSE)
+meta_vector <- fmeans@Label
+# PhenoGraph, from cytofkit?
 
 ```
 
@@ -283,10 +481,14 @@ Finally, if a metacluster does not represent any particular cell type of interes
 
 To further aid the decision making process, a UMAP colored by metacluster is generated below. 
 
-```{r umap, fig.height=5, fig.width=6, fig.align='center'}
+```{r umap, eval=FALSE}
 # Generate UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
 
+```
+
+```{r umap-print, echo=FALSE, out.width = '80%', fig.align='center'}
+knitr::include_graphics("images/workflow_basic/umap_1.png")
 ```
 
 This plot is most useful to check metaclusters' relative sizes, and how similar they are to one another. The closer clusters (and cells) are to each other, the more similar they are to each other. However, the opposite is not necessarily true.
@@ -395,12 +597,18 @@ fsom <- FlowSOM::UpdateMetaclusters(fsom,
 
 Again, new plots are generated.
 
-```{r second-merge-plots, fig.height=5, fig.width=6, fig.align='center'}
+```{r second-merge-plots, eval=FALSE}
 # New heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
 
 # New UMAP
 plotUMAP(fsom_dt, num_cells = 5000, seed = 42)
+```
+
+```{r print-second-merge-plots, echo=FALSE, out.width='80%', fig.align='center'}
+knitr::include_graphics("images/workflow_basic/final_mfi_heatmap.png")
+
+knitr::include_graphics("images/workflow_basic/umap_2.png")
 ```
 
 Finally, once the clustering is complete, the remaining metaclusters may be labelled by setting each of them equal to the desired name, instead of another metacluster to be merged into.
@@ -443,6 +651,68 @@ An annotated heatmap displaying the merged clusters may be created with the func
 # Generate annotated heatmap
 annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 ```
+
+### Saving results
+
+```{r temp-fsomdt-to-gatingset, include=FALSE}
+### fsom_dt to GatingSet
+# Currently there is a mismatch between the data used in preprocessing and data used in clustering, this is a temporary fix
+fs <- tableToFlowSet(fsom_dt)
+sampleNames(fs) <- basename(sampleNames(fs))
+
+cs <- flowWorkspace::flowSet_to_cytoset(fs)
+gs1 <- flowWorkspace::GatingSet(cs)
+```
+
+The clustering results may now be saved to the `GatingSet` created during preprocessing, as a set of boolean gates. This step is implemented by the function `addClustersToGatingSet()`, which needs only three inputs: the `data.table` resulting from the clustering step, the `GatingSet` whose expression data was used for clustering, and the name of the population/gate in the `GatingSet` to add these new gates to.
+
+To see the gates that are currently in a `GatingSet`, the user can use the `gs_get_pop_paths()` function.
+
+```{r gatingset-pops}
+# See all populations in GatingSet
+flowWorkspace::gs_get_pop_paths(gs1)
+```
+
+Note that the function `openCyto::plot()` used above to visualize the `gatingTemplate` may also be used on a `GatingSet` or `GatingHierarchy` object, and may be helpful in determining the appropriate parent population.
+
+Once the parent population has been determined, the new gates may be added with `addClustersToGatingSet()`. Because `GatingSet` is a reference class, only the underlying data is edited and so there is no object returned from the function. 
+
+We visualize the results with `openCyto::plot()`:
+
+```{r add-gates-to-gatingset, fig.align='center', message=FALSE}
+# Add clusters to GatingSet
+addClustersToGatingSet(fsom_dt, gs1, parent_gate = "root")
+
+# Visualize new gating template
+openCyto::plot(gs1)
+```
+
+Each cluster created earlier is now saved in the `GatingSet`. This is convenient for several reasons. First, it allows for swift and easy subsetting of the `GatingSet` by any combination of clusters. Any function compatible with the `cytoset` or `flowSet` becomes available for these subsets; in the below example the function `flowWorkspace::gs_pop_get_count_fast()` is used to count the number of CD4 T cells and CD8 T cells in each sample. 
+
+```{r gatingset-count-tcells}
+# Get only CD8 and CD4 T cells in GatingSet
+flowWorkspace::gs_pop_get_count_fast(gs1, 
+                                     subpopulations = c("/CD8 T cells", "/CD4 T cells"), 
+                                     statistic = "count", 
+                                     format = "long")
+```
+
+It is also simple to extract a subset of data using one of these gates, and use it to write new FCS files. For example:
+
+```{r write-new-fcs, eval=FALSE}
+# Get cytoset for population of interest
+cs_subset <- flowWorkspace::gs_pop_get_data(gs1, y = "NK cells")
+
+# Make flowSet
+fs <- flowWorkspace::cytoset_to_flowSet(cs_subset)
+
+# Write new FCS files to disk
+flowCore::write.flowSet(fs, outdir = getwd())
+```
+
+Recall that the `GatingSet` includes compensations, transformations, sample information, metadata, and gating schemes in addition to the expression data. The goal is to keep all relevant information about the experiment and its analysis neatly contained within one lightweight object, so that once it has been created, all that is necessary to resume analysis is a call to `flowWorkspace::load_gs()`. 
+
+This feature is especially useful when performing a reclustering of the data, or applying control stains, which will be demonstrated further below. 
 
 ### Reclustering
 
@@ -491,7 +761,7 @@ fsom_sub <- clusterSubsetWithPCA(new_table,
 
 Note that the plot functions demonstrated earlier function the same for any subsets created. Since the current cells of interest are CD8 T cells, it is appropriate to define a new subset of markers to create the heatmap.
 
-```{r reclustering-plots, fig.height=6, fig.width=5, fig.align='center'}
+```{r reclustering-plots, eval=FALSE}
 # Define new columns to use
 cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
 
@@ -501,6 +771,67 @@ plotMetaclusterMFIs(fsom_sub, cols_of_interest)
 # Likewise, generate UMAP
 plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
 ```
+
+```{r print-reclustering, echo=FALSE, out.width='50%', fig.align='center'}
+# Restate since last chunk wasn't evaluated
+cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+
+knitr::include_graphics("images/workflow_basic/reclustered_heatmap.png")
+knitr::include_graphics("images/workflow_basic/reclustered_umap.png")
+```
+
+As with the parent population above, metaclusters are merged.
+
+```{r reclustering-edit, fig.align='center', fig.height=5, fig.width=4}
+fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+,CCR7-",
+                                                           "2" = "CD45RA+,CCR7-",
+                                                           "3" = "CD45RA+, CCR7+",
+                                                           "4" = "CD45RA+, CCR7+",
+                                                           "5" = "Undefined",
+                                                           "6" = "CD45RA+,CCR7-",
+                                                           "7" = "CD45RA+,CCR7-",
+                                                           "8" = "CD45RA+, CCR7+",
+                                                           "9" = "CD45RA+, CCR7+",
+                                                           "10" = "CD45RA+,CCR7-",
+                                                           "11" = "CD45RA-, CCR7+",
+                                                           "12" = "CD45RA-, CCR7-",
+                                                           "13" = "CD45RA-, CCR7-",
+                                                           "14" = "CD45RA+,CCR7-",
+                                                           "15" = "CD45RA-, CCR7-"))
+
+# Generate heatmap for subsetted cells
+plotMetaclusterMFIs(fsom_sub, cols_of_interest)
+```
+
+If desired, the clusters found in this subset may overwrite their parent cluster in the `data.table` used for the initial clustering. Meaning, in this case, any cells previously labeled as `"CD8 T cells"` will instead be labelled with the more specific cell type found in the reclustering above. New heatmaps and dimension reduction plots with the updated labels may then be generated.
+
+The function `overwriteMetaclusterNames()` performs this operation. The code chunk below demonstrates this and generates a new heatmap.
+
+```{r overwrite-parent-cluster, eval=FALSE}
+# Overwrite labels for CD8 T cells with those found in reclustering
+fsom_over <- overwriteMetaclusterNames(fsom_dt, fsom_sub)
+
+# Generate new UMAP
+plotUMAP(fsom_over, num_cells = 5000, seed = 42)
+```
+
+```{r umap-print-overwritten, echo=FALSE, out.width = '70%', fig.align='center'}
+fsom_over <- overwriteMetaclusterNames(fsom_dt, fsom_sub)
+knitr::include_graphics("images/workflow_basic/umap_3.png")
+```
+
+The finalized populations may also be saved to the `GatingSet`. In this case, we have a reclustering of the CD8 T cell population, so we call `addClustersToGatingSet()` with `parent_gate = "CD8 T cells"`.
+
+```{r save-reclustering-to-gatingset, fig.align='center'}
+# Add clusters to GatingSet
+addClustersToGatingSet(fsom_sub, gs1, parent_gate = "CD8 T cells")
+
+# Visualize new gating template
+openCyto::plot(gs1)
+```
+
+The resulting plot shows each cluster defined so far, and any parent-child relationships. 
+
 
 # Differential Analysis
 
@@ -581,6 +912,36 @@ counts %>%
     )
 ```
 
+To instead get counts from a `GatingSet`, the function `flowWorkspace::gs_pop_get_count_fast()` with argument `format` set to `"wide"` can also quickly obtain a count matrix in the necessary format.
+
+```{r gatingset-counts}
+# Get counts from GatingSet
+gs_counts <- flowWorkspace::gs_pop_get_count_fast(gs1, format = "wide") 
+gs_counts
+```
+
+By default, counts for all populations in the gating scheme are found. However, for differential analysis, only the populations to be tested should be used. Recall that the populations in a `GatingSet` may be checked with `flowWorkspace::gs_get_pop_paths()`, and that the full gating scheme may be visualized with `openCyto::plot()`. The function `flowWorkspace::gs_pop_get_children()` is used below to retrieve the paths for each cell type found in the first round of clustering, as they all share the same parent. The count matrix is then subsetted to the appropriate populations.
+
+```{r subset-gatingset-counts}
+# Get paths to cluster populations
+subpops <- flowWorkspace::gs_pop_get_children(gs1, y = "root")
+
+# Subset count matrix to only populations of interest
+keep_idx <- rownames(gs_counts) %in% subpops
+clust_counts <- gs_counts[rownames(gs_counts) %in% subpops, ]
+
+# Ensure columns are in order that matches design matrix
+samples <- as.character(sample_info$filename)
+clust_counts <- clust_counts[, samples]
+clust_counts
+```
+
+Given any matrix of counts, `plotSampleProportions()` visualizes cell type proportions across samples.
+
+```{r visualize-counts, fig.height=5, fig.width=7} 
+plotSampleProportions(clust_counts)
+```
+
 #### Differential Abundance
 
 Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
@@ -618,30 +979,40 @@ da_results[[2]] %>%
 
 #### Differential Expression
 
-To test for differential expression, the design, contrasts, and count matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
+To test for differential expression, the design and contrast matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
 
-```{r de-analysis, include=TRUE, eval=TRUE}
-# Perform differential expression analysis
-fsom_dt[, File := as.integer(factor(.id))]
-fsom_dt[, .id := NULL] # remove the old column
+Before testing, median fluorescent intensities (MFIs) must be found for the markers of interest. If expression data is in a `data.table` format, the function `getExprMatDE()` may be used to do so. If using a `GatingSet` object, the function `gs_makeMFIMatrix()` should be used instead. 
 
+By default, the data is kept on the scale it was transformed to during preprocessing. If the user prefers output to match the scale of the raw data, inverse transformations should be applied before calculating any aggregate statistics and/or performing tests. 
+
+```{r gatingset-exp-mat, include=FALSE, eval=FALSE}
 # Define channels of interest
 marker_cols <- c("FITC-A", "BV711-A")
 
-# Find expression matrix: metacluster.marker by sample
-collapsed <- getExprMatDE(fsom_dt, marker_cols)
+# Get MFIs and prepare for limma
+mfis <- gs_makeMFIMatrix(gs1, 
+                         cols = marker_cols, 
+                         subpopulations = subpops, 
+                         inverse = FALSE) # may set to TRUE to get MFIs on scale of raw data
 
-# Create linear models.
-# NOTE: weights questionable
-lm_model <- limma::lmFit(object = collapsed,
-                         design = design)
+# Ensure columns are in order corresponding to design matrix
+mfis <- mfis %>% 
+  dplyr::select(feature, dplyr::all_of(samples))
+```
 
-# Perform statistical tests.
-contrasts_fit <- limma::contrasts.fit(lm_model, contrasts)
-limma_ebayes <- limma::eBayes(contrasts_fit, trend = TRUE)
+
+```{r de-analysis, include=TRUE, eval=TRUE}
+# Define channels of interest
+marker_cols <- c("FITC-A", "BV711-A")
+
+# Perform differential expression analysis
+de_res <- doDEAnalysis(fsom_dt, 
+                       marker_cols = marker_cols, 
+                       design = design, 
+                       contrasts = contrasts)
 
 # View results
-limma::topTable(limma_ebayes)
+limma::topTable(de_res)
 ```
 
 ```{r de-analysis-tables, echo=FALSE, eval=FALSE,include=FALSE}
@@ -664,106 +1035,35 @@ de_results[[2]] %>%
     )
 ```
 
+Difference in marker expression between group may also be visualized with the function `plotGroupMFIBars()`. To use it, a matrix of MFIs for the marker of interest should be generated; if data is a `FlowSOM` object or `data.table` do so with `getSampleMetaclusterMFIs()`, if data is a `GatingSet` do so with `gs_getSampleMetaclusterMFIs()`. 
 
+Note that if input is a `GatingSet` with transformations attached, the data may be back-transformed to the linear scale before the calculation of MFIs or statistical tests.
 
-```{r extra, include=FALSE, eval=FALSE}
-# fsom_dt$.id <- file.path(dirname(fsom_dt$.id), sample_info$filename[as.numeric(factor(fsom_dt$.id))])
+```{r plot-mfis, fig.align='center', fig.height=5, fig.width=7}
+# Get table with MFIs where rows are sample and columns are metaclusters
+plot_mat <- getSampleMetaclusterMFIs(fsom_dt, "BV711-A", sample_info)
 
-fmos <- c("C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB4.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_Ctrl AWB9.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR93.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR66.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR110.fcs", "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO/FMO_MIBC MR75.fcs")
+# Generate bar plot
+plotGroupMFIBars(plot_mat, 
+                 sample_df = sample_info, 
+                 comparison = comparisons[[1]])
+```
 
-fs <- flowCore::read.flowSet(fmos, truncate_max_range = FALSE)
-f1 <- flowCore::read.FCS(files[1], truncate_max_range = FALSE)
+Finally, grouped dimension reduction plots may be generated, colored either by density or marker expression, then compared against their parent plot if one exists.
 
-# gs <- flowWorkspace::GatingSet(fs, tmp = file.path(getwd(), "temp"))
+```{r plot-group-umaps, eval=FALSE}
+# Make new parent umap
+umap <- plotUMAP(fsom_dt, num_cells = 7500, seed = 42)
 
+# Color by density
+plotGroupUMAPs(fsom_dt, sample_info, comparisons[[1]], umap = umap)
 
-ctrl_dt <- doPreprocessing(fmos,
-                           ld_channel = attr(fsom_dt, "gating_scheme")$live_gate$channels[1],
-                           compensation = attr(fsom_dt, "compensation_matrix"),
-                           transformation = attr(fsom_dt, "transformation"),
-                           transformation_type = "logicle",
-                           debris_gate = attr(fsom_dt, "gating_scheme")$debris_gate,
-                           live_gate = attr(fsom_dt, "gating_scheme")$live_gate,
-                           save_plots = FALSE,
-                           pctg_live = 0,
-                           pctg_qc = 0)
+# May also color by marker expression
+plotGroupUMAPs(fsom_dt, sample_info, comparisons[[1]], color_by = "BV711-A", umap = umap)
+```
 
-# Turn filtered control files into flowSet
-# ctrl_names <- ctrl_dt %>% pull(.id) %>% unique()
-# ctrl_fs <- lapply(ctrl_names, function(i) {
-#   ctrl_dt %>% 
-#     filter(.id == i) %>% 
-#     select(-c(1,2)) %>% 
-#     as.matrix() %>% 
-#     flowCore::flowFrame()})
-# names(ctrl_fs) <- ctrl_names
-# ctrl_fs <- methods::as(ctrl_fs, "flowSet")
-ctrl_fs <- tableToFlowSet(ctrl_dt)
-
-# Map new data to old FlowSOM codes
-ctrl_fsom <- FlowSOM::NewData(fsom, ctrl_fs)
-
-###
-# steps for if data of interest is a reclustering? 
-#
-###
-
-# helper to turn FlowSOM object into tidytable
-# ??? edit flowSOMWrapper() to accept control table ???
-ctrl_dt <- flowSOMToTable(ctrl_fsom)
-
-# make table for second term in delta MFI
-ctrl_mfis <- getSampleMetaclusterMFIsNew(ctrl_dt, sample_info, cols_to_use = c("PHA-L", "IL10R"))
-# acquire this table for all controls, put into list, pass as ctrl_input
-# make function to cluster/map control data to existing embedding
-
-# ^ above could be contained within DE function for single channel? 
-
-# differential expression
-de_table <- doDEAnalysisNew(fsom_dt, 
-                            sample_df = sample_info, 
-                            design = design, 
-                            contrasts = contrasts, 
-                            cols_to_use = c("PHA-L", "IL10R"),
-                            meta_names = meta_of_interest, 
-                            ctrl_input = NULL, 
-                            subsetted_meta = NULL, # remove need for this parameter
-                            save_csv = FALSE, 
-                            dir_tables = NULL)
-
-
-#####
-ctrl <- FlowSOM::ReadInput(fmos,
-                           compensate = TRUE,
-                           spillover = attr(fsom_dt, "compensation_matrix"),
-                           transformList = attr(fsom_dt, "transformation"))
-
-# ctrl_list <- list("PHA-L" = fmos)
-ctrl_list <- list("PHA-L" = ctrl_dt)
-
-fsom_dt <- editTableMetaclusters(fsom_dt, 
-                                 new_labels = c("9" = "1",
-                                                "2" = "1",
-                                                "8" = "4",
-                                                "23" = "15",
-                                                "21" = "15",
-                                                "20" = "15",
-                                                "22" = "15",
-                                                "7" = "6"))
-fsom_dt <- editTableMetaclusters(fsom_dt, 
-                                 new_labels = c("12" = "5",
-                                                "13" = "5",
-                                                "10" = "6",
-                                                "14" = "6",
-                                                "25" = "18",
-                                                "16" = "11",
-                                                "24" = "3"),
-                                 cluster_assignments = c("4" = "Undefined", 
-                                                         "42" = "Undefined"))
-
-fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
-                                                         "5" = "cDC",      
-                                                         "4" = "B cells",     
-                                                         "17" = "NK T cells",  
-                                                         "19" = "NK cells",                                                                                                   "1" = "CD8 T cells",                                                                                                 "11" = "gdT cells",                                                                                                  "15" = "CD4 T cells",                                                                                                "18" = "pDC",                                                                                                        "3" = "Undefined"))
+```{r print-group-umaps, echo=FALSE, out.width='60%', fig.align='center'}
+knitr::include_graphics("images/workflow_basic/group_umap1.png")
+knitr::include_graphics("images/workflow_basic/group_umap2.png")
+knitr::include_graphics("images/workflow_basic/parent_umap.png")
 ```
