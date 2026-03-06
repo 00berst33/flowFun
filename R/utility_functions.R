@@ -275,19 +275,19 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #' @param col The channel to find sample-metacluster MFIs for.
 #' @param sample_df If \code{input} is a FlowSOM object, a data frame from
 #' [prepareSampleInfo()].
-#' @param csv_name Optional. If you would like the resulting table to be saved
-#' to a .csv file, define the desired filename here.
+#' @param meta_to_use A `character` list of the names of metaclusters/populations to calculate MFIs for.
+#' Default is all.
 #'
 #' @return A table, where rows are samples and columns are metaclusters.
 #' @export
-getSampleMetaclusterMFIs <- function(input, col, sample_df, csv_name = NULL) {
+getSampleMetaclusterMFIs <- function(input, col, sample_df, meta_to_use = NULL) {
   result <- UseMethod("getSampleMetaclusterMFIs")
   return(result)
 }
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, csv_name = NULL) {
+getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, meta_to_use = NULL) {
   Metacluster <- File <- NULL
 
   var <- rlang::enquo(col)
@@ -307,14 +307,57 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, csv_name = N
   # change file number to sample and assign as rownames here
   rownames(table) <- sample_df[match(table$File, rownames(sample_df)), "File.Name"]
 
-  if(!is.null(csv_name)) {
-    utils::write.csv(table, csv_name)
-  }
-
   table <- table %>%
     dplyr::select(-"File")
 
+  if(!is.null(meta_to_use)) {
+    table <- table %>%
+      dplyr::select(meta_to_use)
+  }
+
   return(table)
+}
+
+#' @keywords internal
+#' @export
+getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, meta_to_use = NULL) {
+  var <- rlang::ensym(col)
+
+  # get table where rows are samples, columns are metaclusters, and values are MFIs
+  fitc_mfis <- input %>%
+    dplyr::select(.id, !!var, Metacluster) %>%
+    dplyr::group_by(.id, Metacluster) %>%
+    dplyr::summarise(mfi = median(.data[[rlang::as_string(var)]]), .groups = "drop") %>%
+    tidyr::pivot_wider(names_from = Metacluster, values_from = mfi) %>%
+    dplyr::mutate(.id = basename(.id))
+
+  fitc_mfis <- fitc_mfis %>%
+    dplyr::select(!.id) %>%
+    data.frame(row.names = fitc_mfis$.id, check.names = FALSE)
+
+  if(!is.null(meta_to_use)) {
+    fitc_mfis <- fitc_mfis %>%
+      dplyr::select(meta_to_use)
+  }
+
+  return(fitc_mfis)
+}
+
+
+gs_getSampleMetaclusterMFIs <- function(gs, col, sample_df, subpopulations, inverse = FALSE) {
+  var <- rlang::ensym(col)
+
+  mfis <- flowWorkspace::gs_pop_get_stats(gs,
+                                          nodes = subpopulations,
+                                          type = pop.MFI,
+                                          inverse = inverse) %>%
+    dplyr::select(sample, pop, !!var) %>%
+    tidyr::pivot_wider(names_from = pop, values_from = !!var)
+
+  # Ensure columns are in order corresponding to design matrix
+  sample_idx <- match(sample_df[, 2], mfis$sample)
+  mfis <- mfis[sample_idx,]
+  return(mfis)
 }
 
 

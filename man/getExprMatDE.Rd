@@ -4,7 +4,7 @@
 \alias{getExprMatDE}
 \title{getExprMatDE}
 \usage{
-getExprMatDE(fsom_dt, marker_cols)
+getExprMatDE(fsom_dt, marker_cols, sample_col = .id)
 }
 \arguments{
 \item{fsom_dt}{A data.table with columns for markers/channels, a column \code{File}
@@ -12,7 +12,10 @@ denoting the sample a cell is from, and a column \code{Metacluster} denoting the
 metacluster a cell belongs to}
 
 \item{marker_cols}{A character vector of markers/channels of interest; these
-should be column names of \code{fsom_dt}
+should be column names of \code{fsom_dt}}
+
+\item{sample_col}{The column in \code{fsom_dt} corresponding to sample ID. Assumed
+to be \code{.id} by default
 
 The resulting table is passed onto \code{\link[limma:lmFit]{limma::lmFit()}} in this package's typical
 workflow, but it may also serve as a helpful summary of the data.}
@@ -22,5 +25,5 @@ A data.table where columns are samples and rows are metacluster/marker groups
 }
 \description{
 Find expression matrix, where rows are a metacluster/marker pair, and columns
-are samples.
+are samples. Helper for \code{doDEAnalysis()}
 }

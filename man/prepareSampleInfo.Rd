@@ -41,10 +41,6 @@ names, and any additional columns should specify parameters of interest,
 like NAC vs. No NAC. Each column should be named after what it represents.
 This file will be read in as a data frame and will be used for comparative
 analysis.
-
-\emph{REMOVE} differences from orig. script: all columns other than filename and sample names
-have make.names() applied.
-\emph{note} need to make edits to better incorporate controls
 }
 \examples{
 # It is important that `comparisons` is defined properly.

@@ -39,7 +39,7 @@ generateGatingTable <- function(gs, collapse_data = FALSE, ld_stain = NULL) {
                             parent = "singlets",
                             dims = "BUV496-A",
                             gating_method = "gate_mindensity",
-                            gating_args = "positive=FALSE",
+                            gating_args = NA,
                             collapseDataForGating = collapse_data,
                             groupBy = as.integer(group_by),
                             preprocessing_method = NA,
@@ -80,7 +80,7 @@ plotAllSamples <- function(gs, xdim, ydim, subset, node) {
 #' editGateManual
 #'
 #' A function enabling the user to redraw gates for all or a subset of a
-#' \code{GatingSet}
+#' \code{GatingSet}. !!! not working with current versions of ggcyto and ggplot2
 #'
 #' @param gs A \code{GatingSet} whose gates will be manually edited
 #' @param node A \code{character} string specifying which node to redraw
@@ -195,126 +195,3 @@ getChannel <- function(ff, marker) {
   return(methods::as(Biobase::pData(flowCore::parameters(ff))[
     which(Biobase::pData(flowCore::parameters(ff))[, "desc"] == marker), "name"], "character"))
 }
-
-#' plotBeforeAfter
-#'
-#' Plot events that were removed between steps.
-#'
-#' @param ff1 The "before" flowFrame.
-#' @param ff2 The "after" flowFrame.
-#' @param channel1 The channel to plot on the x-axis.
-#' @param channel2 The channel to plot on the y-axis.
-#' @param ncells The number of cells to include in the plot.
-#'
-#' @return A plot where cells that were removed are highlighted in red, and cells
-#' that were kept are highlighted in blue.
-#'
-plotBeforeAfter <- function(ff1, ff2, channel1, channel2, ncells) {
-  x <- y <- NULL
-
-  df <- data.frame(x = flowCore::exprs(ff1)[, channel1],
-                   y = flowCore::exprs(ff1)[, channel2])
-  i <- sample(nrow(df), min(nrow(df), ncells))
-  if (!"Original_ID" %in% colnames(flowCore::exprs(ff1))) {
-    ff1@exprs <- cbind(ff1@exprs,
-                       Original_ID = seq_len(nrow(ff1@exprs)))
-  }
-  plot <- ggplot2::ggplot(df[i,], ggplot2::aes(x = x, y = y)) +
-    ggplot2::geom_point(size = 0.5,
-                        color = ifelse(flowCore::exprs(ff1)[i,"Original_ID"] %in%
-                                         flowCore::exprs(ff2)[,"Original_ID"], 'blue', 'red')) +
-    ggplot2::xlab(getMarker(ff1, channel1)) +
-    ggplot2::ylab(getMarker(ff1, channel2)) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position = "none")
-
-  #ggpubr::ggarrange(plot)
-  return(plot)
-}
-
-#' getTableFromFCS
-#'
-#' Generate a data.table to use for analysis from existing .fcs files.
-#'
-#' @param input List of filenames with relative file paths, or a directory name.
-#' @param num_cells Optional parameter for stratified sampling, the number of
-#' cells to randomly sample from each file.
-#'
-#' @return A data.table containing .fcs file data.
-#'
-#' @export
-getTableFromFCS <- function(input, num_cells = NULL) {
-  # Prepare input
-  if (all(dir.exists(input))) {
-    # files <- lapply(input, list.files, full.names = TRUE)
-    files <- unlist(lapply(input, list.files, full.names = TRUE), use.names = FALSE)
-  } else if (all(file.exists(input))) {
-    files <- input
-  } else {
-    stop("Invalid input.")
-  }
-
-  if (is.null(num_cells)) {
-    num_cells <- Inf
-  }
-
-  if (length(files) == 1) {
-    # Read in file
-    ff <- flowCore::read.FCS(files, truncate_max_range = FALSE)
-
-    data <- tidytable::as_tidytable(flowCore::exprs(ff))
-
-    prepr_table <- data %>%
-      tidytable::mutate(.id = rep(files, nrow(data)),
-                        cell_id = seq(1, nrow(data)),
-                        .before = 1)
-  } else if (length(files) > 1) { # check
-    # Initialize final data table
-    prepr_tables <- lapply(1:length(files), function(i) {tidytable::data.table()})
-
-    # First cell ID
-    current_id <- 1
-
-    # Iterate over all files
-    for (i in 1:length(files)) {
-      file <- files[[i]]
-
-      # Read in file
-      ff <- flowCore::read.FCS(file, truncate_max_range = FALSE)
-
-      # Make cell ID column and add to table
-      vec <- seq(current_id, current_id + nrow(flowCore::exprs(ff)) - 1)
-      dt <- tidytable::data.table(cell_id = vec, flowCore::exprs(ff))
-
-      # Set first cell ID for next file
-      current_id <- nrow(flowCore::exprs(ff)) + 1
-
-      # Sample `num_cells`
-      ids <- sample.int(length(vec), size = min(num_cells, length(vec)))
-      ids <- sort(ids)
-      dt <- dt[ids, ]
-
-      # Add data table to list
-      prepr_tables[[i]] <- rbind(prepr_tables[[i]], dt)
-    }
-    # Concatenate all data tables into one, with column for sample ID
-    data.table::setattr(prepr_tables, 'names', files)
-    prepr_table <- tidytable::bind_rows(prepr_tables, .id = TRUE) %>%
-      tidytable::select(dplyr::where(~ !any(is.na(.)))) # remove columns that don't appear in all tables
-  }
-
-  # Get all channel names from .fcs files
-  fcs_channels <- as.vector(Biobase::pData(flowCore::parameters(ff))$name)
-  fcs_col_nums <- which(fcs_channels %in% c(colnames(prepr_table)))
-
-  # Add attribute to table specifying which columns came from .fcs files
-  data.table::setattr(prepr_table, "cols_from_fcs", fcs_channels[fcs_col_nums])
-  # Add attributes to keep track of which marker each channel/column corresponds to
-  for (i in fcs_col_nums) {
-    col <- fcs_channels[i]
-    data.table::setattr(prepr_table[[col]], "marker", as.vector(Biobase::pData(flowCore::parameters(ff))$desc)[i])
-  }
-
-  return(prepr_table)
-}
-

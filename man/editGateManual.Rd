@@ -32,5 +32,5 @@ A \code{GatingSet} whose gates have been redrawn according to user input.
 }
 \description{
 A function enabling the user to redraw gates for all or a subset of a
-\code{GatingSet}
+\code{GatingSet}. !!! not working with current versions of ggcyto and ggplot2
 }

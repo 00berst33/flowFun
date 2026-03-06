@@ -29,9 +29,6 @@ A data.table with an added column \code{Meta_edited}.
 Merge or relabel metaclusters, and reassign clusters.
 }
 \examples{
-file <- system.file("extdata", "fsom_table_init.rds", package = "flowFun")
-fsom_table <- readRDS(file)
-
 fsom_table <- editTableMetaclusters(fsom_table,
                                     new_labels = c(
                                     "9" = "1",
@@ -44,6 +41,4 @@ fsom_table <- editTableMetaclusters(fsom_table,
                                     "7" = "6"),
                                     cluster_assignments = c("4" = "Undefined")
                                     )
-
-print(fsom_table)
 }

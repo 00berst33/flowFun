@@ -32,15 +32,15 @@ Imports:
     magrittr,
     MASS,
     methods,
-    Rtsne,
+    purrr,
+    rlang,
     scattermore,
     stats,
     tidyr,
     tidytable,
     umap,
     utils,
-    viridis,
-    viridisLite
+    viridis
 Remotes: 
     00berst33/flowFunData
 VignetteBuilder: knitr
