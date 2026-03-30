@@ -2,7 +2,7 @@
 #'
 #' @param gs A `GatingSet`
 #' @param collapse_data A `boolean`, indicating if samples should be collapsed
-#' into one
+#' into one. Default is `TRUE`
 #' @param ld_stain If the experiment contains a live/dead stain, a `character`
 #' indicating which channel
 #'
@@ -10,7 +10,7 @@
 #' @seealso [openCyto::gatingTemplate()]
 #'
 #' @export
-generateGatingTable <- function(gs, collapse_data = FALSE, ld_stain = NULL) {
+generateGatingTable <- function(gs, collapse_data = TRUE, ld_stain = NULL) {
   # Get number of samples in experiment
   num_samples <- length(gs)
 
@@ -88,6 +88,9 @@ plotAllSamples <- function(gs, xdim, ydim, subset, node) {
 #' gate on. By default, it is set to the channels used in the original gate. If it
 #' is of length-1, a histogram will be displayed for the user to draw on. If
 #' length-2, a scatterplot will be displayed instead.
+#' @param gate_type A \code{character} giving the type of gate to be drawn. Set
+#' to \code{"rectangle"} by default. See documentation for [CytoExploreR::cyto_gate_edit()]
+#' for other options
 #' @param ref_sample A \code{numeric} or \code{character}, specifying the index
 #' or name of the sample within the \code{GatingSet} that you would like to
 #' draw the new gate on. NOTE: if \code{sample_ids} is specified by the user,
@@ -100,8 +103,8 @@ plotAllSamples <- function(gs, xdim, ydim, subset, node) {
 #'
 #' @return A \code{GatingSet} whose gates have been redrawn according to user input.
 #' @export
-editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = NULL) {
-
+editGateManual <- function(gs, node, dims = NULL, gate_type = "rectangle",
+                           ref_sample = 1, sample_ids = NULL) {
   # Subset GatingSet if sample_ids given
   if (!is.null(sample_ids)) {
     sn <- flowWorkspace::sampleNames(gs)
@@ -124,6 +127,8 @@ editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = N
     else {
       ref_sample <- match(sn, flowWorkspace::sampleNames(gs))[ref_sample]
     }
+  } else {
+    sample_ids <- seq_along(gs)
   }
 
   # Get default dimensions if none were given
@@ -136,28 +141,24 @@ editGateManual <- function(gs, node, dims = NULL, ref_sample = 1, sample_ids = N
   # Get immediate parent of node to be redrawn
   node_parent <- flowWorkspace::gs_pop_get_parent(gs, node, path = "full")
 
+  # Get corresponding cytoset
+  cs <- flowWorkspace::gs_pop_get_data(gs, y = node_parent)
 
   # Open R Shiny window to redraw gate
-  flowGate::gs_gate_interactive(gs,
-                                filterId = "newGate",
-                                sample = ref_sample, # sample to draw the gate on
-                                subset = node_parent,
-                                dims = dims,
-                                regate = FALSE, # if true, redrawn gate and children are deleted
-                                overlayGates = node # overlay gate that is being redrawn
-  )
+  gate <- CytoExploreR::cyto_gate_draw(cs,
+                                       alias = "newGate",
+                                       channels = dims,
+                                       type = gate_type)
 
-  # Get new gate that was just drawn
-  gate <- flowWorkspace::gs_pop_get_gate(gs, "newGate")
+  # Prepare gate for all samples of interest
+  gates <- rep(gate[[1]], length(sample_ids))
+  names(gates) <- flowWorkspace::sampleNames(gs)
 
   # Set existing gate to the new one
-  flowWorkspace::gs_pop_set_gate(gs, node, gate)
+  flowWorkspace::gs_pop_set_gate(gs, node, gates)
 
   # Recompute descendants of the redrawn gate
   flowWorkspace::recompute(gs, node)
-
-  # Delete temporary gate
-  flowWorkspace::gs_pop_remove(gs, "newGate")
 }
 
 

@@ -22,7 +22,6 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 
   # Set input data.table to appropriate format
   prepr_mat <- tableToFlowSet(table)
-  # prepr_mat <- as.matrix(table, rownames = TRUE)
 
   # Set default options
   default_options <- list(colsToUse = cols_to_cluster,
@@ -59,7 +58,6 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
 
   return(table)
 }
-
 
 #' overwriteMetaclusterNames
 #'

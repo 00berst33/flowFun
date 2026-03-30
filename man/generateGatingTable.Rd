@@ -4,13 +4,13 @@
 \alias{generateGatingTable}
 \title{generateGatingTable}
 \usage{
-generateGatingTable(gs, collapse_data = FALSE, ld_stain = NULL)
+generateGatingTable(gs, collapse_data = TRUE, ld_stain = NULL)
 }
 \arguments{
 \item{gs}{A \code{GatingSet}}
 
 \item{collapse_data}{A \code{boolean}, indicating if samples should be collapsed
-into one}
+into one. Default is \code{TRUE}}
 
 \item{ld_stain}{If the experiment contains a live/dead stain, a \code{character}
 indicating which channel}

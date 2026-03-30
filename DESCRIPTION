@@ -19,11 +19,11 @@ biocViews:
 Imports: 
     Biobase,
     ComplexHeatmap,
+    CytoExploreR,
     data.table,
     dplyr,
     edgeR,
     flowCore,
-    flowGate,
     FlowSOM,
     flowWorkspace,
     ggcyto,

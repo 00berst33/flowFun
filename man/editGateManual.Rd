@@ -4,7 +4,14 @@
 \alias{editGateManual}
 \title{editGateManual}
 \usage{
-editGateManual(gs, node, dims = NULL, ref_sample = 1, sample_ids = NULL)
+editGateManual(
+  gs,
+  node,
+  dims = NULL,
+  gate_type = "rectangle",
+  ref_sample = 1,
+  sample_ids = NULL
+)
 }
 \arguments{
 \item{gs}{A \code{GatingSet} whose gates will be manually edited}
@@ -15,6 +22,10 @@ editGateManual(gs, node, dims = NULL, ref_sample = 1, sample_ids = NULL)
 gate on. By default, it is set to the channels used in the original gate. If it
 is of length-1, a histogram will be displayed for the user to draw on. If
 length-2, a scatterplot will be displayed instead.}
+
+\item{gate_type}{A \code{character} giving the type of gate to be drawn. Set
+to \code{"rectangle"} by default. See documentation for \code{\link[CytoExploreR:cyto_gate_edit]{CytoExploreR::cyto_gate_edit()}}
+for other options}
 
 \item{ref_sample}{A \code{numeric} or \code{character}, specifying the index
 or name of the sample within the \code{GatingSet} that you would like to

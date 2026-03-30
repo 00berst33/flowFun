@@ -109,9 +109,9 @@ plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
                           row_names_gp = grid::gpar(fontsize = 7),
                           column_names_gp = grid::gpar(fontsize = 7),
                           heatmap_legend_param = list(
-                           title = "Expression",
-                           title_gp = grid::gpar(fontsize = 9),
-                           labels_gp = grid::gpar(fontsize = 8)))
+                            title = "Expression",
+                            title_gp = grid::gpar(fontsize = 9),
+                            labels_gp = grid::gpar(fontsize = 8)))
 
   # Add any additional options chosen by user, and overwrite defaults if needed
   additional_options <- list(...)

@@ -43,6 +43,58 @@ addMetaToTable <- function(table, sample_dt, join_col) {
   }
 }
 
+
+# put within GatingSet to table or something
+#' @keywords internal
+#' @export
+getPrettyColNamesFromGatingSet <- function(input) {
+  if (is(input, "GatingSet")) {
+    input <- flowWorkspace::gs_pop_get_data(input)
+  }
+  table <- input[[1]] %>%
+    flowCore::parameters() %>%
+    Biobase::pData()
+
+  channels <- table$name
+  markers <- table$desc
+
+  new_colnames <- sapply(seq_along(channels), function(i) {
+    colname <- ifelse(is.na(markers[[i]]),
+                      paste0(channels[[i]], " <", channels[[i]], ">"),
+                      paste0(channels[[i]], " <", markers[[i]], ">"))
+  })
+
+  return(new_colnames)
+}
+
+# changes columns of compensation matrix to channels, markers, or both (pretty)
+# and checks order of columns
+#' @keywords internal
+#' @export
+prepareCompensationMatrix <- function(matrix, gs, col_format = c("markers", "channels", "both")) {
+  if (is(input, "GatingSet")) {
+    input <- flowWorkspace::gs_pop_get_data(input)
+  }
+  table <- input[[1]] %>%
+    flowCore::parameters() %>%
+    Biobase::pData()
+
+  channels <- table$name
+  markers <- table$desc
+
+  # Get new column names
+  if (col_format == "markers") {
+    col_names <- markers
+  } else if (col_format == "channels") {
+    col_names <- channels
+  } else if (col_format == "both") {
+    col_names <- getPrettyColNamesFromGatingSet(gs)
+  }
+
+
+
+}
+
 #' gatingSetToTable
 #'
 #' @param gs Preprocessed GatingSet to convert
@@ -141,6 +193,22 @@ flowSOMToTable <- function(fsom) {
     tidytable::mutate(Cluster = clust_labels,
                       Metacluster = meta_labels,
                       .keep = "all")
+
+  # Add "clustered" attribute
+  clustered <- fsom$info$parameters$colsToUse
+
+  if (!is.null(clustered)) {
+    if (is.call(clustered)) {
+      clustered <- eval(clustered)
+    }
+    if (is.numeric(clustered)) {
+      clustered <- colnames(fsom$data)[clustered]
+      names(clustered) <- NULL
+    }
+    attr(dt, "clustered") <- clustered
+  } else {
+    attr(dt, "clustered") <- colnames(fsom$data)
+  }
 
   return(dt)
 }

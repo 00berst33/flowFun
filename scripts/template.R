@@ -28,6 +28,7 @@
 # or a new subset of markers defined by the user.
 
 # Load packages.
+library(data.table)
 library(flowFun)
 library(flowCore)
 library(flowWorkspace)
@@ -95,7 +96,7 @@ asinh_trans <- flowWorkspace::transformerList(colnames(comp_mat), asinh_trans)
 
 # getting inverse
 # asinh_inv <- flowCore::transformList(names(asinh_trans), lapply(asinh_trans, `[[`, "inverse"))
-
++
 
 # Apply transformation
 flowWorkspace::transform(gs1, log_trans)
@@ -104,8 +105,6 @@ flowWorkspace::transform(gs1, log_trans)
 ld_stain <- "BUV496-A"
 
 # Prepare gatingTemplate for preprocessing
-# !!! Note: debris_args, singlet_args, and live_args must be strings, specifying arguments
-# that are passed to openCyto::gate_mindensity and/or flowStats::gate_singlet
 gt_table <- generateGatingTable(gs1,
                                 collapse_data = FALSE, # if TRUE, gates are drawn on collapsed data and replicated across all samples
                                 ld_stain = "BUV496-A") # remove this argument if your data has no L/D stain
@@ -150,7 +149,7 @@ plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live_cells")
 gt_table[2, "gating_args"] <- "gate_range=c(0,80000)"
 
 # Remove gate(s) that will be redrawn
-# Here we delete "nonDebris", which also deletes its children gates (singlets, live)
+# Here we delete "nonDebris", which also deletes its children gates (singlets, live_cells)
 flowWorkspace::gs_pop_remove(gs1, "nonDebris")
 
 # Generate new gating template
@@ -210,17 +209,18 @@ CytoML::gatingset_to_flowjo(gs, "path/to/saved_ws.wsp")
 ##############
 
 # Get flowSet from GatingSet
-ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live")
+ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Cluster
 # Define markers/columns to use for clustering
-cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)
+cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)-3 ### edit
 
 # Perform clustering
 fsom <- FlowSOM::FlowSOM(ex_fs,
                          xdim = 10,
                          ydim = 10,
+                         colsToUse = cols_to_cluster,
                          nClus = 10)
 
 # Make data.table
