@@ -45,24 +45,36 @@ addMetaToTable <- function(table, sample_dt, join_col) {
 
 
 # put within GatingSet to table or something
+# change name
 #' @keywords internal
 #' @export
 getPrettyColNamesFromGatingSet <- function(input) {
+  # Get cytoset if input is a GatingSet
   if (is(input, "GatingSet")) {
     input <- flowWorkspace::gs_pop_get_data(input)
   }
+  # Get first element of cytoset
   table <- input[[1]] %>%
     flowCore::parameters() %>%
     Biobase::pData()
 
+  # Get channels and markers in cytoframe
   channels <- table$name
   markers <- table$desc
 
+  # Get new column names, in form of `channel <marker>`
   new_colnames <- sapply(seq_along(channels), function(i) {
     colname <- ifelse(is.na(markers[[i]]),
                       paste0(channels[[i]], " <", channels[[i]], ">"),
                       paste0(channels[[i]], " <", markers[[i]], ">"))
   })
+
+  # Rename channels of each cytoframe as specified above
+  # res <- lapply(seq_along(input), function (i) {
+  #   lapply(seq_along(channels), function (j) {
+  #     flowWorkspace::cf_rename_channel(input[[i]], channels[[j]], new_colnames[[j]])
+  #     })
+  #   })
 
   return(new_colnames)
 }
@@ -72,25 +84,30 @@ getPrettyColNamesFromGatingSet <- function(input) {
 #' @keywords internal
 #' @export
 prepareCompensationMatrix <- function(matrix, gs, col_format = c("markers", "channels", "both")) {
-  if (is(input, "GatingSet")) {
-    input <- flowWorkspace::gs_pop_get_data(input)
-  }
-  table <- input[[1]] %>%
-    flowCore::parameters() %>%
-    Biobase::pData()
+  # Make sure all columns are numeric
+  matrix <- matrix %>%
+    dplyr::select(dplyr::where(is.numeric))
 
-  channels <- table$name
-  markers <- table$desc
+  ### Make sure columns are in correct order
+  # Get row indices where 1 occurs for each column
+  idx <- sapply(seq_along(colnames(matrix)), function(i) {
+    col <- matrix[[i]]
+    idx <- match(1, col)
+    return(idx)
+  })
 
-  # Get new column names
-  if (col_format == "markers") {
-    col_names <- markers
-  } else if (col_format == "channels") {
-    col_names <- channels
-  } else if (col_format == "both") {
-    col_names <- getPrettyColNamesFromGatingSet(gs)
-  }
+  # Assign names of vector to compensation matrix colnames
+  names(idx) <- colnames(matrix)
+  # Sort indices numerically
+  idx <- sort(idx)
 
+  # Reorder matrix columns according to sorted vector names
+  sorted_mat <- matrix[names(idx)]
+
+
+  # recall compensation matrix column names need to match those in GatingSet
+  # set column names to pretty column names
+  # ???
 
 
 }
@@ -198,7 +215,7 @@ flowSOMToTable <- function(fsom) {
   clustered <- fsom$info$parameters$colsToUse
 
   if (!is.null(clustered)) {
-    if (is.call(clustered)) {
+    if (is.language(clustered)) {
       clustered <- eval(clustered)
     }
     if (is.numeric(clustered)) {
