@@ -131,7 +131,8 @@ plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   Metacluster <- NULL
 
   if (methods::is(input, "data.table") & is.null(cols_to_use)) {
-    cols_to_use <- attributes(input)$clustered
+    # cols_to_use <- attributes(input)$clustered
+    cols_to_use <- colnames(input) # use all column names if `cols_to_use` not given
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -843,4 +844,27 @@ plotSampleProportions <- function(count_mat) {
     ggplot2::ggtitle("Cell Types by Sample") +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 6)) +
     ggplot2::scale_fill_viridis_d(option = "turbo")
+}
+
+#' plotMarkerDensityByChannel
+#'
+#' @param gs A `GatingSet`
+#' @param channel The channel to plot densities for
+#' @param population A `character` indicating which subpopulation to use
+#' @param inverse A boolean, whether or not the data should be inverse transformed
+#' before plotting. `FALSE` by default
+#'
+#' @return A faceted plot with density plots of the chosen channel for each sample
+#' @export
+plotMarkerDensityByChannel <- function(gs, channel, population = "root", inverse = FALSE) {
+  channel <- rlang::enquo(channel)
+
+  # Plot marker expression by sample
+  p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = population) +
+    ggplot2::geom_density()
+  if (inverse) {
+    p <- p + ggcyto::axis_x_inverse_trans()
+  }
+
+  return (p)
 }

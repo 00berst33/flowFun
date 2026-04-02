@@ -59,6 +59,12 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
   return(table)
 }
 
+prepareControls <- function(gs, ref_sample = 1) {
+  # gs_pop_get_gate(), gh_apply_to_cs()
+  gh <- gs[[ref_sample]]
+
+}
+
 #' overwriteMetaclusterNames
 #'
 #' @param fsom_dt Table with all cells of interest

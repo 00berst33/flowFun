@@ -227,6 +227,10 @@ flowSOMToTable <- function(fsom) {
     attr(dt, "clustered") <- colnames(fsom$data)
   }
 
+  # Add "codes" attribute
+  codes <- fsom$map$codes
+  attr(dt, "codes") <- codes
+
   return(dt)
 }
 
@@ -641,9 +645,45 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
   # Name new list with metacluster names
   names(meta_idx) <- meta_names
 
-  # Add gates to GatingSet
+  ## Add gates to GatingSet
   # !!! do you need to check if the gate already exists?
   lapply(seq_along(meta_idx), function(i) {flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)})
+
+  ## Add keywords to GatingSet
+  # Get metaclustering
+  metaclustering <- table %>%
+    dplyr::select(Cluster, Metacluster) %>%
+    dplyr::group_by(Cluster) %>%
+    unique() %>%
+    dplyr::arrange(Cluster) %>% # sort rows by ascending cluster number
+    dplyr::pull(Metacluster)
+
+  # Get codes
+  codes <- attr(table, "codes")
+
+  # clusterings keyword, make it a list of lists(?)
+    # each element's name is its parent node
+      # metaclustering
+      # codes
+  clustering <- list("clustering" = metaclustering, "cluster_codes" = codes)
+
+  # Check if any clusterings have already been added to GatingSet
+  gs_clusterings <- tryCatch(
+    keyword(gs, "clustering"),
+    error = function(e) {
+     list()
+    }
+  )
+
+  # Add new clustering to list
+  gs_clusterings[[parent_gate]] <- clustering
+
+  # Add edited list of clusterings to GatingSet
+  if (length(gs_clusterings) == 1) { # if this is the first clustering
+    flowWorkspace::gs_keyword_insert(gs, "clusterings", gs_clusterings) # what about shell FlowSOM instead?
+  } else { # if this is a secondary clustering
+    flowWorkspace::gs_keyword_set(gs, "clusterings", gs_clusterings)
+  }
 }
 
 
