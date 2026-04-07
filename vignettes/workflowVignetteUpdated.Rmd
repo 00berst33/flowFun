@@ -291,7 +291,8 @@ plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 
 Here we see that the debris gate for the third sample is poorly placed, and multiple gates for live/dead cells need adjustment. The algorithm used to place gates for these populations, `gate_mindensity', works by fitting a kernel density estimator to the data and finding the two largest peaks. When only one peak is found, or a sample has a more unique distribution, it may not perform as well without some additional arguments. These gates may be fixed with a few different approaches. 
 
-The first is to adjust the `gatingTemplate`. In many cases, restricting the range in which the gate can be drawn resolves this kind of issue. To set a minimum and maximum value for a gate drawn by `gate_mindensity`, edit the argument `gate_range`. The code below demonstrates this with the `data.table` created earlier, and plots the new gates generated after applying the new gating scheme.
+The first is to adjust the `gatingTemplate`. In many cases, restricting the range in which the gate can be drawn resolves this kind of issue. To set a minimum and maximum value for a gate drawn by `gate_mindensity`, edit the argument `gate_range`. Note that making changes to the `gatingTemplate` does not immediately affect the `GatingSet` it was applied to. First, the old gate(s) and any associated children must be deleted within the `GatingSet` with `flowWorkspace::gs_pop_remove()` (this does not delete the gates defined in the `gatingTemplate`). The new `gatingTemplate` can then be applied with `openCyto::gatingTemplate()` and the deleted gates will be redrawn according to the adjustments. The code below demonstrates this with the `data.table` created earlier, and plots the new gates generated after applying the new gating scheme.
+
 
 ```{r edit-gatingtable, fig.height=5, fig.width=7}
 # Edit arguments of gate_mindensity
@@ -330,17 +331,18 @@ openCyto::gt_gating(gt, gs1)
 plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live")
 ```
 
-Finally, we may also adjust a gate by manually redrawing it. This can be done through use of the optional `CytoExploreR` package and its function `cyto_gate_edit()`. A window where the user may draw a new gate on the sample of interest is then brought up. Once the gate has been drawn the data in the underlying `GatingSet` is edited accordingly. An example is shown below, but not run. Note that the `gatingTemplate` must be saved to a CSV file to run this function.
+Finally, we may also adjust a gate by manually redrawing it. This can be done with the function `editGateManual()`, which implements `CytoExploreR::cyto_gate_draw()` for this pipeline. A window where the user may draw a new gate on the sample(s) of interest is brought up, and once the gate has been drawn, the given `GatingSet` is edited accordingly. An example of how this function may be used is shown below, where we choose to manually draw and replace the `"live_cells"` gate for all samples with a rectangle gate. Other supported gate types are polygon, ellipse, threshold, boundary, interval, quadrant, and web; see `?CytoExploreR::cyto_gate_draw()` for more details.
 
 ```{r cytoexplorer-fix, eval=FALSE}
-library(CytoExploreR)
+### Edit gate for one sample:
+# Check gate before:
+autoplot(gs1[[3]])
 
-CytoExploreR::cyto_gate_edit(gs1, 
-                             parent = "singlets", # parent population
-                             alias = "live", # name of the gate to edit
-                             channels = c("BUV496-A", "FSC-A"), # channels to gate on
-                             type = "rectangle", # type of gate to draw
-                             gatingTemplate = "file.csv") 
+# Example of a call to manually redraw gates; not run
+editGateManual(gs1,
+               node = "nonDebris", # name of population to redraw gates for
+               gate_type = "rectangle", # type of gate to draw
+               sample_ids = 1) # vector of sample indices to redraw gates for, default is NULL (all samples)
 ```
 
 ```{r manual-fix, fig.height=5, fig.width=7, fig.align='default', include=FALSE, eval=FALSE} 
@@ -687,13 +689,13 @@ addClustersToGatingSet(fsom_dt, gs1, parent_gate = "root")
 openCyto::plot(gs1)
 ```
 
-Each cluster created earlier is now saved in the `GatingSet`. This is convenient for several reasons. First, it allows for swift and easy subsetting of the `GatingSet` by any combination of clusters. Any function compatible with the `cytoset` or `flowSet` becomes available for these subsets; in the below example the function `flowWorkspace::gs_pop_get_count_fast()` is used to count the number of CD4 T cells and CD8 T cells in each sample. 
+Each cluster created earlier is now saved in the `GatingSet`. This is convenient for several reasons. First, it allows for swift and easy subsetting of the `GatingSet` by any combination of clusters. Any function compatible with the `cytoset` or `flowSet` becomes available for these subsets; in the below example the function `flowWorkspace::gs_pop_get_count_fast()` is used to get frequencies of CD4 T cells and CD8 T cells in each sample. 
 
 ```{r gatingset-count-tcells}
 # Get only CD8 and CD4 T cells in GatingSet
 flowWorkspace::gs_pop_get_count_fast(gs1, 
                                      subpopulations = c("/CD8 T cells", "/CD4 T cells"), 
-                                     statistic = "count", 
+                                     statistic = "freq", 
                                      format = "long")
 ```
 

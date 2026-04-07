@@ -539,12 +539,79 @@ gs_makeMFIMatrix <- function(gs, cols, subpopulations, inverse = FALSE) {
     dplyr::mutate(feature = paste0(feature, pop), .keep = "unused")
 
   # Ensure columns are in order corresponding to design matrix
-  mfis <- mfis %>%
-    dplyr::select(feature, dplyr::all_of(samples))
+  #mfis <- mfis %>%
+  #  dplyr::select(feature, dplyr::all_of(samples))
 
   return(mfis)
 }
 
+#' gs_makeDeltaMFIs
+#'
+#' @param gs A GatingSet to find delta MFIs for
+#' @param control_gs A GatingSet containing control samples
+#' @param subpopulations The populations to perform the calculation for. Passed to
+#' `gs_makeMFIMatrix()`
+#' @param cols The markers to find delta MFIs for
+#' @param metadata_col The column in `pData(gs)` to use to match control and primary
+#' samples. If `NULL`, samples in both `GatingSets` will be assumed to be in the
+#' correct order
+#'
+#' @export
+gs_makeDeltaMFIs <- function(gs, control_gs, subpopulations, cols, metadata_col = NULL) {
+  # Get MFIs for both GatingSets
+  gs_mfis <- gs_makeMFIMatrix(gs, cols, population, inverse = TRUE)
+  ctrl_mfis <- gs_makeMFIMatrix(control_gs, cols, population, inverse = TRUE)
+
+  # Orders samples in control matrix according to metadata, if `metadata_col` given
+  if (!is.null(metadata_col)) {
+    sn <- sampleNames(gs1)
+    ctrl_match <- pData(gs1)[sn, metadata_col]
+
+    # order control MFI matrix
+    ctrl_mfis <- ctrl_mfis[, ctrl_match]
+  }
+
+  # Find dMFIs
+  delta_mfis <- gs_mfis %>%
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric), ~ . - ctrl_mfis[, -1]))
+
+  return(delta_mfis)
+}
+
+
+#' clusterControls
+#'
+#' @param control_gs A GatingSet containing control samples
+#' @param primary_gs A GatingSet containing primary data
+#' @param population The population that is to be clustered on
+#'
+#' @export
+clusterControls <- function(control_gs, primary_gs, population) {
+  # Get flowSet from controls
+  ctrl_fs <- flowWorkspace::gs_pop_get_data(control_gs, population)
+  ctrl_fs <- flowWorkspace::cytoset_to_flowSet(ctrl_fs)
+
+  # Get flowSet from primary
+  prim_fs <- flowWorkspace::gs_pop_get_data(primary_gs, population)
+  prim_fs <- flowWorkspace::cytoset_to_flowSet(prim_fs)
+
+  parent_clustering <- eval(str2lang(keyword(primary_gs[[1]], population)))#[[population]]
+
+  # Rebuild a FlowSOM-like object shell
+  fsom_shell <- FlowSOM::FlowSOM(
+    input = prim_fs,
+    colsToUse = parent_clustering[["clustered"]], # maybe "clustered" instead
+    xdim = parent_clustering[["xdim"]],
+    ydim = parent_clustering[["ydim"]]
+  )
+
+  # Project onto saved codes
+  fsom_projected <- FlowSOM::NewData(fsom_shell, input = ctrl_fs)
+  fsom_projected$metaclustering <- parent_clustering[["clustering"]]
+
+  # Return new FlowSOM object
+  return(fsom_projected)
+}
 
 #' doDEAnalysis
 #'

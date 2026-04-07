@@ -131,8 +131,11 @@ plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   Metacluster <- NULL
 
   if (methods::is(input, "data.table") & is.null(cols_to_use)) {
-    # cols_to_use <- attributes(input)$clustered
-    cols_to_use <- colnames(input) # use all column names if `cols_to_use` not given
+    if (!is.null(attr(input, "clustered"))) {
+      cols_to_use <- attr(input, "clustered")
+    } else {
+      stop("Default not found, please specify `cols_to_use`")
+    }
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -856,14 +859,33 @@ plotSampleProportions <- function(count_mat) {
 #'
 #' @return A faceted plot with density plots of the chosen channel for each sample
 #' @export
-plotMarkerDensityByChannel <- function(gs, channel, population = "root", inverse = FALSE) {
+plot1DMarkerDensities <- function(gs, channel, population = "root",
+                                  facet_by = c("samples", "subpopulations"), inverse = FALSE) {
   channel <- rlang::enquo(channel)
 
-  # Plot marker expression by sample
-  p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = population) +
-    ggplot2::geom_density()
-  if (inverse) {
-    p <- p + ggcyto::axis_x_inverse_trans()
+  if (facet_by == "samples") {
+    # Plot marker expression by sample
+    p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = population) +
+      ggplot2::geom_density()
+    if (inverse) {
+      p <- p + ggcyto::axis_x_inverse_trans()
+    }
+  }
+
+  if (facet_by == "subpopulations") {
+    # Plot by metacluster
+    meta_pops <- flowWorkspace::gs_pop_get_children(gs, y = population, path = "auto")
+    p <- lapply(meta_pops, function(pop) {
+      p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = meta_pops) +
+        ggplot2::geom_density() +
+        ggplot2::facet_null()
+      if (inverse) {
+        p <- p + ggcyto::axis_x_inverse_trans()
+      }
+      p <- ggcyto::as.ggplot(p)
+      return(p)
+    })
+    p <- patchwork::wrap_plots(p)
   }
 
   return (p)

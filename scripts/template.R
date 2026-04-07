@@ -50,7 +50,7 @@ data_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw" ###
 # Get all filenames and create GatingSet
 files <- list.files(data_dir, full.names = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files,
-                                           which.lines = 50000) # if NULL, all cells are read in
+                                           which.lines = 10000) # if NULL, all cells are read in
                                                                 # if an integer, a random sample of given size is read in
 gs <- flowWorkspace::GatingSet(cs)
 
@@ -78,10 +78,11 @@ colnames(gs1)
 
 # Print column names in GatingSet not found in column names of compensation matrix
 colnames(gs1)[!(colnames(gs1) %in% colnames(comp_mat))]
-
-# Standardize marker/channel names if necessary
-# colnames(comp_mat) <-
-# cs_swap_colnames(), cs_rename_channel(), cs_rename_marker()
+# Prepare compensation matrix to be passed to `compensate`
+#   Columns are matched to those in the GatingSet based on the regexpr given to pattern.
+#   Default is `" >.*"`. Setting `pattern = ""` tells the function that column names
+#   do not need to be matched.
+comp_mat <- prepareCompensationMatrix(comp_mat, gs1, pattern = "")
 
 # Compensate data
 compensate(gs1, comp_mat)
@@ -96,7 +97,7 @@ asinh_trans <- flowWorkspace::transformerList(colnames(comp_mat), asinh_trans)
 
 # getting inverse
 # asinh_inv <- flowCore::transformList(names(asinh_trans), lapply(asinh_trans, `[[`, "inverse"))
-+
+
 
 # Apply transformation
 flowWorkspace::transform(gs1, log_trans)
@@ -106,7 +107,7 @@ ld_stain <- "BUV496-A"
 
 # Prepare gatingTemplate for preprocessing
 gt_table <- generateGatingTable(gs1,
-                                collapse_data = FALSE, # if TRUE, gates are drawn on collapsed data and replicated across all samples
+                                collapse_data = TRUE, # if TRUE, gates are drawn on collapsed data and replicated across all samples
                                 ld_stain = "BUV496-A") # remove this argument if your data has no L/D stain
 
 # Check resulting table
@@ -214,14 +215,14 @@ ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Cluster
 # Define markers/columns to use for clustering
-cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)-3 ### edit
+cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)-2
 
 # Perform clustering
 fsom <- FlowSOM::FlowSOM(ex_fs,
                          xdim = 10,
                          ydim = 10,
                          colsToUse = cols_to_cluster,
-                         nClus = 10)
+                         nClus = 23)
 
 # Make data.table
 fsom_dt <- flowSOMToTable(fsom)
@@ -338,3 +339,62 @@ plot_mat <- getSampleMetaclusterMFIs(fsom_dt, "BV711-A", sample_info)
 plotGroupMFIBars(plot_mat,
                  sample_df = sample_info,
                  comparison = comparisons[[1]])
+
+#### Optionally, apply 1D boundary gates after clustering
+# Plot channel marker densities by sample/metacluster
+plot1DMarkerDensities(gs1,
+                      channel = "FITC-A",
+                      population = "live_cells",
+                      facet_by = "subpopulations", # may also facet by "samples"
+                      inverse = FALSE)
+
+# Add gate to GatingSet with openCyto
+# Add boundary gate on channel; note arguments here are the same as column names for
+#   the earlier gatingTemplate
+openCyto::gs_add_gating_method(gs1,
+                               alias = "+FITC-A",
+                               parent = "9",         # add +FITC-A gate to metacluster 9
+                               dims = "FITC-A",
+                               gating_method = "gate_mindensity",
+                               collapseDataForGating = TRUE,
+                               groupBy = length(gs1))
+
+####
+## Optionally, apply controls to find delta MFIs
+
+# Load in control FCS files
+ctrl_dir <- "C:/path/to/files"
+
+# Read in
+ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
+# Apply transformations, compensations and gates to control gs
+ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
+
+# Apply clustering to controls
+# This may also be done manually using `FlowSOM::NewData`
+fsom_projected <- clusterControls(ctrl_gs, gs1, "live_cells")
+
+# Edit clusters if desired
+# ...
+
+# Get data.table for controls, and add clusters to corresponding GatingSet
+ctrl_dt <- flowSOMToTable(fsom_projected)
+addClustersToGatingSet(ctrl_dt, ctrl_gs, "live_cells")
+
+# Read in table of sample info, if you have one; see `?addMetadataToGatingSet` for
+# details on how this table should be defined
+sample_df <- read.csv("path/to/sample/info/csv")
+# Add metadata to GatingSet
+addMetadataToGatingSet(gs1, sample_df)
+# Check results
+pData(gs1)
+# this also allows us to use functions in ggcyto package to facet by any group defined
+# in this metadata
+
+# Define markers to test
+cols_to_test <- c("PHA-L", "IL10R")
+
+# Get delta MFIs
+delta_mfis <- gs_makeDeltaMFIs(gs1, ctrl_gs, population = "live_cells", metadata_col = "FMO")
+
+# Do DE testing and make plots as you would for typical DE testing

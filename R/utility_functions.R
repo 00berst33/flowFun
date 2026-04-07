@@ -83,7 +83,7 @@ getPrettyColNamesFromGatingSet <- function(input) {
 # and checks order of columns
 #' @keywords internal
 #' @export
-prepareCompensationMatrix <- function(matrix, gs, col_format = c("markers", "channels", "both")) {
+prepareCompensationMatrix <- function(matrix, gs, pattern = " <.*") {
   # Make sure all columns are numeric
   matrix <- matrix %>%
     dplyr::select(dplyr::where(is.numeric))
@@ -104,12 +104,24 @@ prepareCompensationMatrix <- function(matrix, gs, col_format = c("markers", "cha
   # Reorder matrix columns according to sorted vector names
   sorted_mat <- matrix[names(idx)]
 
-
   # recall compensation matrix column names need to match those in GatingSet
-  # set column names to pretty column names
-  # ???
 
+  # Get column names that will be used in compensation matrix
+  # if (extend_cols) {
+  #   pretty <- getPrettyColNamesFromGatingSet(gs)
+  #   gs_cols <- pretty
+  # } else {
+  #   gs_cols <- colnames(gs1[[1]])
+  # }
+  gs_cols <- colnames(gs[[1]])
 
+  # Match compensation matrix column names to those in GatingSet
+  match_idx <- match(colnames(comp_mat), sub(pattern, "", gs_cols))
+  result <- gs_cols[match_idx]
+  colnames(matrix) <- result
+
+  # Return prepared matrix
+  return(matrix)
 }
 
 #' gatingSetToTable
@@ -140,7 +152,7 @@ gatingSetToTable <- function(gs, population = "root") {
 
 
   # Bind all tables into one, by row
-  table <- tidytable::bind_rows(gs_list, .id = "File")
+  table <- tidytable::bind_rows(gs_list, .id = ".id")
   # Create cell id column
   table <- table %>%
     tidytable::mutate(cell_id = seq(1, nrow(table)),
@@ -207,7 +219,10 @@ flowSOMToTable <- function(fsom) {
   dt <- fsom$data
   dt <- dt %>%
     tidytable::as_tidytable() %>%
-    tidytable::mutate(Cluster = clust_labels,
+    tidytable::mutate(.id = rep(                     # add column for sample names
+                        names(fsom$metaData),
+                        times = sapply(fsom$metaData, function(x) diff(x) + 1)),
+                      Cluster = clust_labels,
                       Metacluster = meta_labels,
                       .keep = "all")
 
@@ -224,12 +239,23 @@ flowSOMToTable <- function(fsom) {
     }
     attr(dt, "clustered") <- clustered
   } else {
-    attr(dt, "clustered") <- colnames(fsom$data)
+    clustered <- colnames(fsom$data)
+    names(clustered) <- NULL
+    attr(dt, "clustered") <- clustered
   }
 
   # Add "codes" attribute
-  codes <- fsom$map$codes
-  attr(dt, "codes") <- codes
+  # codes <- fsom$map$codes
+  # attr(dt, "codes") <- codes
+
+  # Get needed info from FlowSOM, add as attribute
+  clustering <- list("colsToUse" = fsom$info$parameters$colsToUse,
+                     "clustered" = clustered,
+                     "xdim" = fsom$info$parameters$xdim,
+                     "ydim" = fsom$info$parameters$ydim,
+                     "clustering" = fsom$metaclustering,
+                     "codes" = fsom$map$codes)
+  attr(dt, "clustering") <- clustering
 
   return(dt)
 }
@@ -575,7 +601,8 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
     dplyr::mutate(.id = factor(.id, levels = unique(.id))) %>%
     dplyr::group_by(.id) %>% # check column name
     dplyr::group_split() %>%
-    stats::setNames(unique(ifelse(sapply(table$.id, is.character), basename(table$.id), table$.id)))
+    stats::setNames(unique(table$.id))
+    #stats::setNames(unique(ifelse(sapply(table$.id, is.character), basename(table$.id), table$.id)))
 
   # For each sample, group by metacluster and get indices of their rows (relevant to subsetted table)
   idx_tables <- lapply(sample_tibs, function(sample)
@@ -609,6 +636,8 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 addClustersToGatingSet <- function(table, gs, parent_gate) {
   idx_tables <- getClusterIndicesBySample(table)
 
+  # check if gates already exist?
+
   # Subset cytoset to parent population
   parent_cs <- flowWorkspace::gs_pop_get_data(gs, y = parent_gate)
 
@@ -631,9 +660,9 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
     })
 
     # Get list of boolean vectors for current metacluster
-    bool_list <- lapply(seq_len(length(idx_list)), function(i)
+    bool_list <- lapply(seq_len(length(idx_list)), function(j)
     {
-      makeBoolean(parent_cs[[names(idx_tables)[i]]], idx_list[[i]], keep_indices = TRUE)
+      makeBoolean(parent_cs[[names(idx_tables)[j]]], unlist(idx_list[[j]]), keep_indices = TRUE) # can probably remove unlist()
     }) # note keep_indices=TRUE b/c indices give cells to keep, not remove
 
     # Name list elements
@@ -650,7 +679,7 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
   lapply(seq_along(meta_idx), function(i) {flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)})
 
   ## Add keywords to GatingSet
-  # Get metaclustering
+  # Get final metaclustering
   metaclustering <- table %>%
     dplyr::select(Cluster, Metacluster) %>%
     dplyr::group_by(Cluster) %>%
@@ -658,32 +687,37 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
     dplyr::arrange(Cluster) %>% # sort rows by ascending cluster number
     dplyr::pull(Metacluster)
 
-  # Get codes
-  codes <- attr(table, "codes")
+  # Get metadata on clustering from data.table attributes
+  clustering <- attr(table, "clustering")
+  # Edit "clustering" element
+  clustering[["clustering"]] <- metaclustering
 
-  # clusterings keyword, make it a list of lists(?)
-    # each element's name is its parent node
-      # metaclustering
-      # codes
-  clustering <- list("clustering" = metaclustering, "cluster_codes" = codes)
+  # Get first GatingHierarchy
+  gh <- gs[[1]]
 
-  # Check if any clusterings have already been added to GatingSet
-  gs_clusterings <- tryCatch(
-    keyword(gs, "clustering"),
-    error = function(e) {
-     list()
-    }
-  )
+  # Check if any clusterings have already been added to GatingHierarchy
+  # gh_clusterings <- tryCatch(
+  #   keyword(gh, "clusterings"),
+  #   error = function(e) {
+  #    list()
+  #   }
+  # )
+
+  # if (is.character(gh_clusterings)) {
+  #   gh_clusterings <- list(eval(str2lang(gh_clusterings)))
+  # }
 
   # Add new clustering to list
-  gs_clusterings[[parent_gate]] <- clustering
+  #gh_clusterings[[parent_gate]] <- clustering
 
-  # Add edited list of clusterings to GatingSet
-  if (length(gs_clusterings) == 1) { # if this is the first clustering
-    flowWorkspace::gs_keyword_insert(gs, "clusterings", gs_clusterings) # what about shell FlowSOM instead?
-  } else { # if this is a secondary clustering
-    flowWorkspace::gs_keyword_set(gs, "clusterings", gs_clusterings)
-  }
+  flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
+
+  # # Add edited list of clusterings to GatingSet
+  # if (length(gh_clusterings) == 1) { # if this is the first clustering
+  #   flowWorkspace::gh_keyword_insert(gh, "clusterings", gh_clusterings)
+  # } else { # if this is a secondary clustering
+  #   flowWorkspace::gh_keyword_set(gh, "clusterings", gh_clusterings)
+  # }
 }
 
 
@@ -791,3 +825,32 @@ addMarkersToMetaData <- function(input, cols_to_cluster) {
 }
 
 
+#' addMetadataToGatingSet
+#'
+#'
+#' @param gs A `GatingSet`
+#' @param sample_df A `data.frame`, where each row corresponds to a sample and
+#' each column corresponds to metadata about the samples, such as experimental group,
+#' or the filename of a corresponding control sample. Must contain a column for
+#' filename, called `File.Name`.
+#'
+#' @export
+addMetadataToGatingSet <- function(gs, sample_df) {
+  # add control files names to metadata
+  cs <- gs_pop_get_data(gs)
+
+  # Get metadata from cytoset
+  cs_meta <- cs %>%
+    pData()
+
+  # Match filenames in sample information and metadata tables
+  idx <- match(sample_df$File.Name, rownames(cs_meta))
+  # Order sample info, then get all metadata excluding filenames
+  new_metadata <- sample_df[idx, -"File.Name"]
+
+  # Add to metadata table
+  cs_meta <- cbind(cs_meta, new_metadata)
+
+  # Set pData
+  flowCore::pData(cs) <- cs_meta
+}
