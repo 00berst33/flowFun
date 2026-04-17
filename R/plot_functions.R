@@ -137,6 +137,13 @@ plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
       stop("Default not found, please specify `cols_to_use`")
     }
   }
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- colnames(input)[match_idx]
+  }
 
   # Get metacluster MFIs for each marker/channel of interest
   mfi_mat <- input %>%
@@ -258,6 +265,13 @@ plotClusterMFIs.data.frame <- function(input, cols_to_use = NULL,
     } else {
       stop("Default not found, please specify `cols_to_use`")
     }
+  }
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- colnames(input)[match_idx]
   }
 
   # Get cluster MFIs for each marker/channel of interest
@@ -384,7 +398,6 @@ annotateMFIHeatmap.data.frame <- function(merged_input, original_input = NULL, c
                                            .drop = "keep"),
                          .by = Meta_original)
   mfi_mat <- as.matrix(mfi_mat, rownames = "Meta_original")
-  colnames(mfi_mat) <- sapply(colnames(mfi_mat), getPrettyColNames, input = merged_input)
 
   # Set default heatmap options
   default_options <- list(border = TRUE,
@@ -518,6 +531,14 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
     all_clust <- unique(c(meta_nodes, clusters))
 
     only_clust <- FALSE
+  }
+
+  # If channelpair not found in table column names
+  if (!any(channelpair %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(channelpair, marker_cols)
+    # Set channelpair to pretty column names
+    channelpair <- colnames(input)[match_idx]
   }
 
   # Get all label coordinates
