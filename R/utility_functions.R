@@ -113,15 +113,21 @@ prepareCompensationMatrix <- function(matrix, gs, pattern = " <.*") {
   # } else {
   #   gs_cols <- colnames(gs1[[1]])
   # }
-  gs_cols <- colnames(gs[[1]])
+
+  gs_cols <- flowWorkspace::colnames(gs[[1]])
 
   # Match compensation matrix column names to those in GatingSet
-  match_idx <- match(colnames(comp_mat), sub(pattern, "", gs_cols))
-  result <- gs_cols[match_idx]
-  colnames(matrix) <- result
+  match_idx <- match(colnames(sorted_mat), sub(pattern, "", gs_cols))
+
+  if (any(is.na(match_idx))) {
+    warning("Column names of provided GatingSet and compensation matrix couldn't be matched. Check `pattern` argument.")
+  } else {
+    result <- gs_cols[match_idx]
+    colnames(sorted_mat) <- result
+  }
 
   # Return prepared matrix
-  return(matrix)
+  return(sorted_mat)
 }
 
 #' gatingSetToTable
@@ -709,6 +715,9 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
 
   # Add new clustering to list
   #gh_clusterings[[parent_gate]] <- clustering
+
+  # Make keyword a list
+  clustering <- list(clustering)
 
   flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
 

@@ -259,7 +259,11 @@ plotClusterMFIs.data.frame <- function(input, cols_to_use = NULL,
   Metacluster <- Cluster <- NULL
 
   if (methods::is(input, "data.table") & is.null(cols_to_use)) {
-    cols_to_use <- attributes(input)$clustered
+    if (!is.null(attr(input, "clustered"))) {
+      cols_to_use <- attr(input, "clustered")
+    } else {
+      stop("Default not found, please specify `cols_to_use`")
+    }
   }
 
   # Get cluster MFIs for each marker/channel of interest
