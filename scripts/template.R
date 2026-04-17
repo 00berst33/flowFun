@@ -173,7 +173,7 @@ CytoExploreR::cyto_gate_edit(gs1,
                              parent = "singlets", # parent population
                              alias = "live_cells", # name of the gate to edit
                              channels = c("BUV496-A", "FSC-A"), # channels to gate on
-                             type = "rectangle", # type of gate to draw
+                             type = "polygon", # type of gate to draw
                              gatingTemplate = file.path(work_dir, gt_name))
 
 
@@ -234,7 +234,7 @@ plotMetaclusterMFIs(fsom_dt)
 plotUMAP(fsom_dt, num_cells = 2500, seed = 42)
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt,
-                     channelpair = c("APC-Cy7-A", "BUV563-A"),
+                     channelpair = c("CD3 <APC-Cy7-A>", "TCRgd <BUV563-A>"),
                      clusters = c(4, 42, 76),
                      metaclusters = NULL)
 
@@ -279,7 +279,7 @@ comparisons <- list(
 # Prepare metadata for further analysis
 sample_info <- prepareSampleInfo(file,
                                  name_col = "Sample.Name",
-                                 filename_col = "X...File.Name",
+                                 filename_col = "File.Name",
                                  comparisons = comparisons)
 
 # Generate design matrix
@@ -293,18 +293,6 @@ counts <- makeCountMatrix(fsom_dt,
                           #meta_names = meta_of_interest,
                           min_cells = 3,
                           min_samples = 4)
-
-# Or, get counts from GatingSet
-gs_counts <- flowWorkspace::gs_pop_get_count_fast(gs1, format = "wide")
-# Get paths to cluster populations
-subpops <- flowWorkspace::gs_pop_get_children(gs1, y = "root")
-# Subset count matrix to only populations of interest
-keep_idx <- rownames(gs_counts) %in% subpops
-gs_counts <- gs_counts[rownames(gs_counts) %in% subpops, ]
-# Ensure columns are in order that matches design matrix
-samples <- as.character(sample_info$filename)
-gs_counts <- gs_counts[, samples]
-
 
 #
 ### Perform differential abundance analysis
@@ -363,7 +351,7 @@ openCyto::gs_add_gating_method(gs1,
 ## Optionally, apply controls to find delta MFIs
 
 # Load in control FCS files
-ctrl_dir <- "C:/path/to/files"
+ctrl_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO"
 
 # Read in
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)

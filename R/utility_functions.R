@@ -164,6 +164,11 @@ gatingSetToTable <- function(gs, population = "root") {
     tidytable::mutate(cell_id = seq(1, nrow(table)),
                       .after = 1)
 
+  # Make pretty table columns
+  pretty_cols <- getPrettyColNamesFromGatingSet(gs)
+  match_idx <- match(colnames(table), sub(" <.*", "", pretty_cols))
+  colnames(table)[!is.na(match_idx)] <- pretty_cols[stats::na.exclude(match_idx)]
+
   return(table)
 }
 
@@ -221,8 +226,11 @@ flowSOMToTable <- function(fsom) {
   meta_labels <- FlowSOM::GetMetaclusters(fsom)
   clust_labels <- factor(FlowSOM::GetClusters(fsom))
 
-  # Append labels as columns to the data.table
+  # Get data.frame from FlowSOM object and make column names pretty
   dt <- fsom$data
+  colnames(dt) <- fsom$prettyColnames
+
+  # Append labels as columns to the data.table
   dt <- dt %>%
     tidytable::as_tidytable() %>%
     tidytable::mutate(.id = rep(                     # add column for sample names
@@ -235,17 +243,22 @@ flowSOMToTable <- function(fsom) {
   # Add "clustered" attribute
   clustered <- fsom$info$parameters$colsToUse
 
-  if (!is.null(clustered)) {
-    if (is.language(clustered)) {
+  if (!is.null(clustered)) { # If user specified which columns to cluster on
+    if (is.language(clustered)) { # if input was a variable, evaluate it
       clustered <- eval(clustered)
     }
-    if (is.numeric(clustered)) {
-      clustered <- colnames(fsom$data)[clustered]
+    if (is.character(clustered)) { # if input was character, match it to prettyColNames
+      match_idx <- match(clustered, names(fsom$prettyColnames))
+      clustered <- fsom$prettyColnames[match_idx]
+      names(clustered) <- NULL
+    }
+    if (is.numeric(clustered)) { # if input was numeric, use it to get appropriate column names
+      clustered <- fsom$prettyColnames[clustered]
       names(clustered) <- NULL
     }
     attr(dt, "clustered") <- clustered
-  } else {
-    clustered <- colnames(fsom$data)
+  } else { # If user did not specify which columns to cluster on, i.e. all columns were used
+    clustered <- fsom$prettyColnames
     names(clustered) <- NULL
     attr(dt, "clustered") <- clustered
   }
