@@ -314,7 +314,9 @@ marker_cols <- c("BV711-A", "FITC-A")
 de_res <- doDEAnalysis(gs1,
                        marker_cols = marker_cols,
                        design = design,
-                       contrasts = contrasts)
+                       contrasts = contrasts,
+                       subpopulations = NULL,
+                       inverse = FALSE)
 
 # View results
 limma::topTable(de_res)

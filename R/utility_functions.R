@@ -455,6 +455,15 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, meta_to_use 
 #' @keywords internal
 #' @export
 getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, meta_to_use = NULL) {
+
+  # If input is only channel name
+  if (is.character(col) & !(col %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(col, marker_cols)
+    # Set col to pretty column names
+    col <- colnames(input)[match_idx]
+  }
+
   var <- rlang::ensym(col)
 
   # get table where rows are samples, columns are metaclusters, and values are MFIs

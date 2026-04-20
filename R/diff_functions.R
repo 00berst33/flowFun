@@ -285,10 +285,27 @@ makeContrastsMatrix <- function(sample_df, comparisons) {
 #'
 #' @export
 makeCountMatrix <- function(input, sample_df = NULL, meta_names = NULL,
-                            min_cells = 3, min_samples = NULL) {
+                            min_cells = 3, min_samples = NULL, ...) {
   result <- UseMethod("makeCountMatrix")
   return(result)
 }
+
+# makeCountMatrix.GatingSet <- function(input, sample_df = NULL, meta_names = NULL,
+#                                       min_cells = 3, min_samples = NULL, parent_pop = "root") {
+#
+#   ## Alternatively, counts may be retrieved from GatingSet
+#   gs_counts <- flowWorkspace::gs_pop_get_count_fast(input, format = "wide")
+#
+#   # Get paths to cluster populations
+#   subpops <- flowWorkspace::gs_pop_get_children(input, y = "live")
+#
+#   # Subset count matrix to only populations of interest
+#   keep_idx <- rownames(gs_counts) %in% subpops
+#
+#   # Ensure columns are in order that matches design matrix
+#   samples <- as.character(sample_info$filename)
+#   gs_counts <- gs_counts[keep_idx, samples]
+# }
 
 #' makeCountMatrix.FlowSOM
 #'
@@ -528,6 +545,14 @@ getExprMatDE <- function(fsom_dt, marker_cols, sample_col = .id) {
 #' @return A data.frame of MFIs
 #' @export
 gs_makeMFIMatrix <- function(gs, cols, subpopulations, inverse = FALSE) {
+
+  # If input is only channel name
+  if (is.character(cols) & !any(cols %in% markernames(gs))) {
+    markers <- flowWorkspace::markernames(gs1)
+    match_idx <- match(cols, names(markers))
+    cols <- markers[match_idx]
+  }
+
   var <- rlang::enquo(cols)
 
   # Get MFIs from GatingSet
@@ -640,6 +665,7 @@ doDEAnalysis <- function(input, marker_cols, design, contrasts, subpopulations =
                                   subpopulations = subpopulations,
                                   inverse = inverse) # may set to TRUE to get MFIs on scale of raw data
 
+    samples <- flowWorkspace::sampleNames(input)
     # Ensure columns are in order corresponding to design matrix
     collapsed <- collapsed %>%
       dplyr::select(feature, dplyr::all_of(samples))
