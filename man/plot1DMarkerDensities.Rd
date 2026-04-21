@@ -9,7 +9,8 @@ plot1DMarkerDensities(
   channel,
   population = "root",
   facet_by = c("samples", "subpopulations"),
-  inverse = FALSE
+  inverse = FALSE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ plot1DMarkerDensities(
 
 \item{inverse}{A boolean, whether or not the data should be inverse transformed
 before plotting. \code{FALSE} by default}
+
+\item{verbose}{Boolean specifying whether or not to print progress updates as
+function runs. Default is \code{TRUE}}
 }
 \value{
 A faceted plot with density plots of the chosen channel for each sample

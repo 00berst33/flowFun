@@ -874,11 +874,14 @@ plotSampleProportions <- function(count_mat) {
 #' @param population A `character` indicating which subpopulation to use
 #' @param inverse A boolean, whether or not the data should be inverse transformed
 #' before plotting. `FALSE` by default
+#' @param verbose Boolean specifying whether or not to print progress updates as
+#' function runs. Default is `TRUE`
 #'
 #' @return A faceted plot with density plots of the chosen channel for each sample
 #' @export
 plot1DMarkerDensities <- function(gs, channel, population = "root",
-                                  facet_by = c("samples", "subpopulations"), inverse = FALSE) {
+                                  facet_by = c("samples", "subpopulations"),
+                                  inverse = FALSE, verbose = TRUE) {
   channel <- rlang::enquo(channel)
 
   if (facet_by == "samples") {
@@ -893,8 +896,11 @@ plot1DMarkerDensities <- function(gs, channel, population = "root",
   if (facet_by == "subpopulations") {
     # Plot by metacluster
     meta_pops <- flowWorkspace::gs_pop_get_children(gs, y = population, path = "auto")
+    # Make plots for each metacluster
     p <- lapply(meta_pops, function(pop) {
-      p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = meta_pops) +
+      str <- paste0("Plotting marker density for metacluster named ", pop, "...")
+      print(str)
+      p <- ggcyto::ggcyto(gs, ggplot2::aes(x = !!channel), subset = pop) +
         ggplot2::geom_density() +
         ggplot2::facet_null()
       if (inverse) {
@@ -903,7 +909,7 @@ plot1DMarkerDensities <- function(gs, channel, population = "root",
       p <- ggcyto::as.ggplot(p)
       return(p)
     })
-    p <- patchwork::wrap_plots(p)
+    p <- patchwork::wrap_plots(unlist(p))
   }
 
   return (p)
