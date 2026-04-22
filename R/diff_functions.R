@@ -620,19 +620,14 @@ clusterControls <- function(control_gs, primary_gs, population) {
   prim_fs <- flowWorkspace::gs_pop_get_data(primary_gs, population)
   prim_fs <- flowWorkspace::cytoset_to_flowSet(prim_fs)
 
-  parent_clustering <- eval(str2lang(keyword(primary_gs[[1]], population)))#[[population]]
-
-  # Rebuild a FlowSOM-like object shell
-  fsom_shell <- FlowSOM::FlowSOM(
-    input = prim_fs,
-    colsToUse = parent_clustering[["clustered"]], # maybe "clustered" instead
-    xdim = parent_clustering[["xdim"]],
-    ydim = parent_clustering[["ydim"]]
-  )
+  # Get parent FlowSOM using filename in pData()
+  parent_fsom <- flowWorkspace::pData(primary_gs)[1, population]
+  parent_fsom <- readRDS(parent_fsom)
 
   # Project onto saved codes
-  fsom_projected <- FlowSOM::NewData(fsom_shell, input = ctrl_fs)
-  fsom_projected$metaclustering <- parent_clustering[["clustering"]]
+  fsom_projected <- FlowSOM::NewData(parent_fsom, input = ctrl_fs)
+  fsom_projected$metaclustering <- droplevels(as.factor(fsom_projected$metaclustering))
+  fsom_projected$info <- parent_fsom$info
 
   # Return new FlowSOM object
   return(fsom_projected)

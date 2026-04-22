@@ -2,7 +2,7 @@
 
 #' flowSOMWrapper
 #'
-#' @param table A data.table.
+#' @param input A `flowSet`
 #' @param cols_to_cluster A numeric or character vector specifying which columns
 #' should be used for clustering.
 #' @param num_clus The number of metaclusters to create.
@@ -14,14 +14,18 @@
 #' @return A data.table annotated with cluster and metacluster assignments.
 #'
 #' @export
-flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
+flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
                            fsom_file = NULL, ...) {
+  # Ensure data in `cols_to_cluster` is more informative (i.e. channel names)
+  if (is.language(cols_to_cluster)) {
+    cols_to_cluster <- eval(cols_to_cluster)
+  }
   if (is.numeric(cols_to_cluster)) {
-    cols_to_cluster <- colnames(table)[cols_to_cluster]
+    cols_to_cluster <- flowCore::colnames(input)[cols_to_cluster]
   }
 
   # Set input data.table to appropriate format
-  prepr_mat <- tableToFlowSet(table)
+  # prepr_mat <- tableToFlowSet(table)
 
   # Set default options
   default_options <- list(colsToUse = cols_to_cluster,
@@ -35,26 +39,33 @@ flowSOMWrapper <- function(table, cols_to_cluster, num_clus, seed = NULL,
   all_options <- utils::modifyList(default_options, additional_options)
 
   # Run clustering algorithm
-  fsom <- do.call(FlowSOM::FlowSOM, c(list(input = prepr_mat), all_options))
+  fsom <- do.call(FlowSOM::FlowSOM, c(list(input = input), all_options))
 
-  # Get metacluster and cluster labels
-  meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  clust_labels <- factor(FlowSOM::GetClusters(fsom))
+  # Convert FlowSOM object to table
+  table <- flowSOMToTable(fsom)
 
-  # Append labels as columns to the data.table
-  table <- table %>%
-    tidytable::mutate(Cluster = clust_labels,
-                      Metacluster = meta_labels,
-                      .keep = "all")
-
-  # Add attribute specifying the columns used for clustering
-  attr(table, "clustered") <- cols_to_cluster
-  # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
+  # Set FlowSOM RDS filename as table attribute
+  attr(table, "fsom_filename") <- fsom_file
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
+    #fsom$data <- fsom$data[1, ]
     saveRDS(fsom, fsom_file)
   }
+
+  # Get metacluster and cluster labels
+  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
+  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
+  #
+  # # Append labels as columns to the data.table
+  # table <- table %>%
+  #   tidytable::mutate(Cluster = clust_labels,
+  #                     Metacluster = meta_labels,
+  #                     .keep = "all")
+  #
+  # # Add attribute specifying the columns used for clustering
+  # attr(table, "clustered") <- cols_to_cluster
+  # # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   return(table)
 }

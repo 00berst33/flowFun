@@ -213,19 +213,14 @@ CytoML::gatingset_to_flowjo(gs, "path/to/saved_ws.wsp")
 ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
-# Cluster
-# Define markers/columns to use for clustering
-cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)-2
-
 # Perform clustering
-fsom <- FlowSOM::FlowSOM(ex_fs,
-                         xdim = 10,
-                         ydim = 10,
-                         colsToUse = cols_to_cluster,
-                         nClus = 23)
-
-# Make data.table
-fsom_dt <- flowSOMToTable(fsom)
+fsom_dt <- flowSOMWrapper(ex_fs,
+                          xdim = 10,
+                          ydim = 10,
+                          cols_to_cluster = c(10, 12:14, 16, 18:23, 25:32, 34), # Define markers/columns to use for clustering
+                          num_clus = 23,
+                          seed = 42,
+                          fsom_file = "fsom.rds") # if you intend to use controls, it is helpful to save the clustering
 
 ### Iteratively merge clusters until all cell types identified
 # Generate heatmap
@@ -234,7 +229,7 @@ plotMetaclusterMFIs(fsom_dt)
 plotUMAP(fsom_dt, num_cells = 2500, seed = 42)
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt,
-                     channelpair = c("CD3 <APC-Cy7-A>", "TCRgd <BUV563-A>"),
+                     channelpair = c("APC-Cy7-A", "BUV563-A"),
                      clusters = c(4, 42, 76),
                      metaclusters = NULL)
 
@@ -334,7 +329,7 @@ plotGroupMFIBars(plot_mat,
 # Plot channel marker densities by sample/metacluster
 plot1DMarkerDensities(gs1,
                       channel = "FITC-A",
-                      population = "live_cells",
+                      population = "live",
                       facet_by = "subpopulations", # may also facet by "samples"
                       inverse = FALSE)
 
@@ -360,9 +355,11 @@ ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = T
 # Apply transformations, compensations and gates to control gs
 ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
 
+ctrl_fs <- flowWorkspace::cytoset_to_flowSet(ctrl)
+
 # Apply clustering to controls
 # This may also be done manually using `FlowSOM::NewData`
-fsom_projected <- clusterControls(ctrl_gs, gs1, "live_cells")
+fsom_projected <- clusterControls(ctrl_gs, gs1, "live")
 
 # Edit clusters if desired
 # ...

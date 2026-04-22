@@ -5,7 +5,7 @@
 \title{flowSOMWrapper}
 \usage{
 flowSOMWrapper(
-  table,
+  input,
   cols_to_cluster,
   num_clus,
   seed = NULL,
@@ -14,7 +14,7 @@ flowSOMWrapper(
 )
 }
 \arguments{
-\item{table}{A data.table.}
+\item{input}{A \code{flowSet}}
 
 \item{cols_to_cluster}{A numeric or character vector specifying which columns
 should be used for clustering.}

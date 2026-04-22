@@ -1,27 +1,3 @@
-#' startProject
-#'
-#' Set working directory to a previous analysis, or create a new one.
-#' ??? anything else to instantiate here ???
-#'
-#' @param dir_name Absolute or relative filepath giving the name of the directory
-#' that you would like your analysis to be saved in. By default, a folder named
-#' "Cytometry_Analysis" is created in the current working directory.
-#'
-#' @export
-startProject <- function(dir_name = "Cytometry_Analysis") {
-  if (!dir.exists(dir_name)) {
-    dir.create(dir_name)
-    setwd(dir_name)
-  } else {
-    setwd(dir_name)
-  }
-
-  # save sample info or filepath
-  # save compensation matrix or filepath
-  # set working directory accordingly
-}
-
-
 #' addMetaToTable
 #'
 #' @param table Table containing expression data for all samples
@@ -268,10 +244,18 @@ flowSOMToTable <- function(fsom) {
   # attr(dt, "codes") <- codes
 
   # Get needed info from FlowSOM, add as attribute
+  # fsom$data <- NULL
+  # fsom$transformList <- NULL
+  # fsom$prettyColnames <- NULL
+
+  # clustering <- list("minimal_fsom" = fsom,
+  #                    "clustered" = clustered
+  #                    )
   clustering <- list("colsToUse" = fsom$info$parameters$colsToUse,
                      "clustered" = clustered,
                      "xdim" = fsom$info$parameters$xdim,
                      "ydim" = fsom$info$parameters$ydim,
+                     "nClus" = fsom$info$parameters$nClus,
                      "clustering" = fsom$metaclustering,
                      "codes" = fsom$map$codes)
   attr(dt, "clustering") <- clustering
@@ -653,6 +637,8 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 #' @param gs The `GatingSet` to add gates to.
 #' @param parent_gate `character` indicating which population is the parent of
 #' the clusters.
+#' @param fsom_file A character giving a path to an .rds file for a FlowSOM object.
+#' Default is `NULL`
 #'
 #' This function should be used after a satisfactory clustering has been obtained
 #' using the human-in-the-loop approach outlined by the vignette. The resulting
@@ -661,7 +647,7 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 #' cluster.
 #'
 #' @export
-addClustersToGatingSet <- function(table, gs, parent_gate) {
+addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
   idx_tables <- getClusterIndicesBySample(table)
 
   # check if gates already exist?
@@ -720,8 +706,21 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
   # Edit "clustering" element
   clustering[["clustering"]] <- metaclustering
 
+  if (is.null(fsom_file)) { # if fsom_file is NULL, check if there is a filename in table attributes
+    fsom_file <- attr(table, "fsom_filename")
+  }
+  if (!is.null(fsom_file)) {
+    flowWorkspace::pData(gs)[, parent_gate] <- fsom_file
+
+    # Edit FlowSOM file
+    fsom <- readRDS(fsom_file)
+    print(fsom)
+    fsom$metaclustering <- clustering$clustering
+    saveRDS(fsom, file = fsom_file)
+  }
+
   # Get first GatingHierarchy
-  gh <- gs[[1]]
+  #gh <- gs[[1]]
 
   # Check if any clusterings have already been added to GatingHierarchy
   # gh_clusterings <- tryCatch(
@@ -739,9 +738,9 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
   #gh_clusterings[[parent_gate]] <- clustering
 
   # Make keyword a list
-  clustering <- list(clustering)
+  #clustering <- list(clustering)
 
-  flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
+  #flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
 
   # # Add edited list of clusterings to GatingSet
   # if (length(gh_clusterings) == 1) { # if this is the first clustering
