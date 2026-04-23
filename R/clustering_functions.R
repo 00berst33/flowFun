@@ -25,7 +25,10 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
   }
 
   # Set input data.table to appropriate format
-  # prepr_mat <- tableToFlowSet(table)
+  if (is.data.frame(input)) {
+    input <- tableToFlowSet(input)
+  }
+
 
   # Set default options
   default_options <- list(colsToUse = cols_to_cluster,
@@ -334,7 +337,7 @@ createFilteredAggregate.data.frame <- function(input, num_cells, clusters = NULL
   files <- input %>%
     tidytable::pull(.id) %>%
     unique()
-
+  print(files)
   # Get number of cells to sample per file
   per_sample <- ceiling(num_cells/length(files))
 

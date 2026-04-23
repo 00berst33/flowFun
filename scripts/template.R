@@ -50,7 +50,7 @@ data_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw" ###
 # Get all filenames and create GatingSet
 files <- list.files(data_dir, full.names = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files,
-                                           which.lines = 10000) # if NULL, all cells are read in
+                                           which.lines = 5000) # if NULL, all cells are read in
                                                                 # if an integer, a random sample of given size is read in
 gs <- flowWorkspace::GatingSet(cs)
 
@@ -214,6 +214,9 @@ ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Perform clustering
+# If you plan to apply controls to your data and calculate delta MFIs, it is
+#   highly recommended that you save the FlowSOM object at this stage by setting
+#   `fsom_file` equal to a filepath.
 fsom_dt <- flowSOMWrapper(ex_fs,
                           xdim = 10,
                           ydim = 10,
@@ -253,7 +256,11 @@ annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 flowWorkspace::gs_get_pop_paths(gs1)
 
 # Add gates for each cluster to GatingSet
-addClustersToGatingSet(fsom_dt, gs1, parent_gate = "live_cells")
+addClustersToGatingSet(fsom_dt,
+                       gs1,
+                       parent_gate = "live_cells",
+                       fsom_file = NULL) # by default, this argument is NULL and the
+                                         # function checks the Gating
 
 # Visualize new gating template
 openCyto::plot(gs1)

@@ -168,13 +168,15 @@ tableToFlowSet <- function(table, id_col = .id) {
 
   # Make a flowFrame for each sample and put it in a list
   fs <- lapply(sample_names, function(i) {
-    table %>%
+    ff <- table %>%
       dplyr::filter(!!id_col == i) %>%
       #select(where(is.double)) %>%
       dplyr::mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
       dplyr::select(dplyr::where(is.numeric)) %>%
       as.matrix() %>%
-      flowCore::flowFrame()})
+      flowCore::flowFrame()
+    keyword(ff)[["FIL"]] <- i
+    return(ff)})
   names(fs) <- sample_names
 
   # Convert data type to flowSet
@@ -204,7 +206,11 @@ flowSOMToTable <- function(fsom) {
 
   # Get data.frame from FlowSOM object and make column names pretty
   dt <- fsom$data
-  colnames(dt) <- fsom$prettyColnames
+  # match_idx <- match(fsom$prettyColnames, colnames(dt))
+  # colnames(dt)[match_idx] <- names(fsom$prettyColnames)
+  # if (".id <.id>" %in% colnames(dt)) {
+  #   colnames(dt)[".id <.id>"] <- ".id"
+  # }
 
   # Append labels as columns to the data.table
   dt <- dt %>%
@@ -215,6 +221,9 @@ flowSOMToTable <- function(fsom) {
                       Cluster = clust_labels,
                       Metacluster = meta_labels,
                       .keep = "all")
+
+  l <- length(colnames(dt))
+  colnames(dt)[-c(l, l-1)] <- fsom$prettyColnames
 
   # Add "clustered" attribute
   clustered <- fsom$info$parameters$colsToUse

@@ -458,7 +458,7 @@ meta_vector <- fmeans@Label
 
 ```{r print-fsom-table, echo=FALSE} 
 fsom_dt %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(
@@ -532,7 +532,7 @@ fsom <- FlowSOM::UpdateMetaclusters(fsom,
 
 ```{r print-fsom-table-merge1, echo=FALSE} 
 fsom_dt %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Meta_original", "Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(
@@ -659,8 +659,14 @@ annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 ```{r temp-fsomdt-to-gatingset, include=FALSE}
 ### fsom_dt to GatingSet
 # Currently there is a mismatch between the data used in preprocessing and data used in clustering, this is a temporary fix
+file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
+
+# Prepare metadata for further analysis
+sample_info <- read.csv(file)
+
+colnames(fsom_dt)[1:2] <- c(".id", "cell_id")
 fs <- tableToFlowSet(fsom_dt)
-sampleNames(fs) <- basename(sampleNames(fs))
+flowCore::sampleNames(fs) <- sample_info$filename
 
 cs <- flowWorkspace::flowSet_to_cytoset(fs)
 gs1 <- flowWorkspace::GatingSet(cs)
@@ -730,7 +736,7 @@ new_table <- createFilteredAggregate(fsom_dt,
 
 ```{r subset-table, include=FALSE, eval=FALSE} 
 new_table %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Meta_original", "Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(
