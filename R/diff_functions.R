@@ -641,7 +641,7 @@ clusterControls <- function(control_gs, primary_gs, population) {
 #' doDEAnalysis
 #'
 #' @param input A `GatingSet` or `data.table`
-#' @param marker_cols A `character` vector specifying which markers/channels
+#' @param cols_to_test A `character` vector specifying which channels
 #' should be tested for differential expression. Each element should be a column
 #' in the data's expression matrix.
 #' @param design A design matrix from [makeDesignMatrix()]
@@ -654,7 +654,7 @@ clusterControls <- function(control_gs, primary_gs, population) {
 #'
 #' @return An `MArrayLM` object resulting from [limma::eBayes()]
 #' @export
-doDEAnalysis <- function(input, marker_cols, design, contrasts, subpopulations = NULL, inverse = FALSE) {
+doDEAnalysis <- function(input, cols_to_test, design, contrasts, subpopulations = NULL, inverse = FALSE) {
   # Find expression matrix: metacluster.marker by sample
   if (is(input, "data.frame")) {
     collapsed <- getExprMatDE(input, marker_cols)
@@ -669,6 +669,13 @@ doDEAnalysis <- function(input, marker_cols, design, contrasts, subpopulations =
     # Ensure columns are in order corresponding to design matrix
     collapsed <- collapsed %>%
       dplyr::select(feature, dplyr::all_of(samples))
+  }
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- colnames(input)[match_idx]
   }
 
   # Create linear models.

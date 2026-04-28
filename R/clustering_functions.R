@@ -88,8 +88,13 @@ overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
   # Add levels to fsom_dt
   levels(fsom_dt$Metacluster) <- c(levels(fsom_dt$Metacluster), levels(fsom_sub$Metacluster))
 
+  # Add temporary column to fsom_dt
+  fsom_dt <- fsom_dt %>%
+    dplyr::mutate(cell_id = seq(1, nrow(fsom_dt)))
+
   # Update rows in original table
-  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id")
+  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id") %>%
+    dplyr::select(-cell_id)
 
   return(new_fsom)
 }

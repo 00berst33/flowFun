@@ -6,7 +6,7 @@
 \usage{
 doDEAnalysis(
   input,
-  marker_cols,
+  cols_to_test,
   design,
   contrasts,
   subpopulations = NULL,
@@ -16,7 +16,7 @@ doDEAnalysis(
 \arguments{
 \item{input}{A \code{GatingSet} or \code{data.table}}
 
-\item{marker_cols}{A \code{character} vector specifying which markers/channels
+\item{cols_to_test}{A \code{character} vector specifying which channels
 should be tested for differential expression. Each element should be a column
 in the data's expression matrix.}
 

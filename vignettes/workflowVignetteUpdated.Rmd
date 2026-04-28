@@ -425,13 +425,19 @@ Below, the preprocessed data from earlier is clustered using the FlowSOM algorit
 
 ``` {r flowsom-clustering}
 # Read in table
-prepr_table <- system.file("extdata", "prepr_table.rds", package = "flowFunData")
-prepr_table <- readRDS(prepr_table)
-prepr_table <- prepr_table %>% 
-  dplyr::select(-cell_id) # edit
+# prepr_table <- system.file("extdata", "prepr_table.rds", package = "flowFunData")
+# prepr_table <- readRDS(prepr_table)
+# prepr_table <- prepr_table %>% 
+#   dplyr::select(-cell_id) # edit
 
 fs <- flowWorkspace::gs_pop_get_data(gs1, y = "live")
 fs <- flowWorkspace::cytoset_to_flowSet(fs)
+sample_names <- flowCore::sampleNames(fs)
+fs <- lapply(seq_along(fs), function(i) {
+  ff <- fs[[i]]
+  ff@description$`$FIL` <- sample_names[[i]]
+  return(ff)})
+fs <- as(fs, "flowSet")
 
 # Define markers/columns to use for clustering
 cols_to_cluster <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV480-A", 
@@ -511,15 +517,25 @@ The function `editTableMetaclusters()` can be used to merge and rename metaclust
 
 ```{r first-merge}
 # Merge metaclusters
+# fsom_dt <- editTableMetaclusters(fsom_dt, 
+#                                  new_labels = c("9" = "1",
+#                                                 "2" = "1",
+#                                                 "8" = "4",
+#                                                 "23" = "15",
+#                                                 "21" = "15",
+#                                                 "20" = "15",
+#                                                 "22" = "15",
+#                                                 "7" = "6"))
+
 fsom_dt <- editTableMetaclusters(fsom_dt, 
-                                 new_labels = c("9" = "1",
+                                 new_labels = c("7" = "1",
                                                 "2" = "1",
-                                                "8" = "4",
-                                                "23" = "15",
-                                                "21" = "15",
-                                                "20" = "15",
-                                                "22" = "15",
-                                                "7" = "6"))
+                                                "5" = "3",
+                                                "4" = "3",
+                                                "5" = "3",
+                                                "6" = "3",
+                                                "13" = "10",
+                                                "22" = "17"))
 
 ```
 
@@ -562,7 +578,7 @@ Examining this heatmap suggests that metacluster 3 and 11 may be subsets of gdT 
 
 ```{r cluster-heatmap, fig.height=4, fig.width=7, fig.align='center'}
 # Generate cluster MFI heatmap
-plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = c(3, 11))
+plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = 9)
 ```
 
 It seems that clusters 4 and 42 have a particularly low expression of TCRgd, and express other markers that are barely present in the rest of this subset. This may be further investigated with the second notable function, `plotLabeled2DScatter()`. It creates a 2D scatterplot colored by metacluster, where each cluster center is labeled with its cluster's number. Below, this function is called on clusters 4 and 42, as well as cluster 76 to act as a point of reference.
@@ -571,7 +587,7 @@ It seems that clusters 4 and 42 have a particularly low expression of TCRgd, and
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt, 
                      channelpair = c("APC-Cy7-A", "BUV563-A"), 
-                     clusters = c(4, 42, 76),
+                     clusters = c(55, 57, 58),
                      metaclusters = NULL)
 ```
 
@@ -579,16 +595,26 @@ Clusters 4 and 42 clearly do not have a high enough expression of TCRgd to justi
 
 ```{r second-merge}
 # Merge metaclusters
-fsom_dt <- editTableMetaclusters(fsom_dt, 
-                                 new_labels = c("12" = "5",
-                                                "13" = "5",
-                                                "10" = "6",
-                                                "14" = "6",
-                                                "25" = "18",
-                                                "16" = "11",
-                                                "24" = "3"),
-                                 cluster_assignments = c("4" = "Undefined",
-                                                         "42" = "Undefined"))
+# fsom_dt <- editTableMetaclusters(fsom_dt,
+#                                  new_labels = c("12" = "5",
+#                                                 "13" = "5",
+#                                                 "10" = "6",
+#                                                 "14" = "6",
+#                                                 "25" = "18",
+#                                                 "16" = "11",
+#                                                 "24" = "3"),
+#                                  cluster_assignments = c("4" = "Undefined",
+#                                                          "42" = "Undefined"))
+fsom_dt <- editTableMetaclusters(fsom_dt,
+                                 new_labels = c("19" = "14",
+                                                "20" = "14",
+                                                "21" = "14",
+                                                "18" = "14",
+                                                "25" = "14",
+                                                "16" = "8",
+                                                "11" = "8",
+                                                "23" = "15"),
+                                 cluster_assignments = c("55" = "Undefined"))
 ```
 
 ```{r second-merge-alt, include=FALSE, eval=FALSE}
@@ -625,16 +651,27 @@ Finally, once the clustering is complete, the remaining metaclusters may be labe
 
 ```{r new-labels, fig.height=5, fig.width=6, fig.align='center'}
 # Label metaclusters
-fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
-                                                         "5" = "cDC",
-                                                         "4" = "B cells",
-                                                         "17" = "NK T cells",
-                                                         "19" = "NK cells",
+# fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("6" = "Monocytes",
+#                                                          "5" = "cDC",
+#                                                          "4" = "B cells",
+#                                                          "17" = "NK T cells",
+#                                                          "19" = "NK cells",
+#                                                          "1" = "CD8 T cells",
+#                                                          "11" = "gdT cells",
+#                                                          "15" = "CD4 T cells",
+#                                                          "18" = "pDC",
+#                                                          "3" = "Undefined"))
+
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("14" = "Monocytes",
+                                                         "24" = "cDC",
+                                                         "10" = "B cells",
+                                                         "12" = "NK T cells",
+                                                         "17" = "NK cells",
                                                          "1" = "CD8 T cells",
-                                                         "11" = "gdT cells",
-                                                         "15" = "CD4 T cells",
-                                                         "18" = "pDC",
-                                                         "3" = "Undefined"))
+                                                         "9" = "gdT cells",
+                                                         "3" = "CD4 T cells",
+                                                         "15" = "pDC",
+                                                         "8" = "Undefined"))
 
 # Generate final heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
@@ -664,7 +701,7 @@ annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 
 ### Saving results
 
-```{r temp-fsomdt-to-gatingset, include=FALSE}
+```{r temp-fsomdt-to-gatingset, include=FALSE, eval=FALSE}
 ### fsom_dt to GatingSet
 # Currently there is a mismatch between the data used in preprocessing and data used in clustering, this is a temporary fix
 fs <- tableToFlowSet(fsom_dt)
@@ -691,7 +728,7 @@ We visualize the results with `openCyto::plot()`:
 
 ```{r add-gates-to-gatingset, fig.align='center', message=FALSE}
 # Add clusters to GatingSet
-addClustersToGatingSet(fsom_dt, gs1, parent_gate = "root")
+addClustersToGatingSet(fsom_dt, gs1, parent_gate = "live")
 
 # Visualize new gating template
 openCyto::plot(gs1)
@@ -702,7 +739,8 @@ Each cluster created earlier is now saved in the `GatingSet`. This is convenient
 ```{r gatingset-count-tcells}
 # Get only CD8 and CD4 T cells in GatingSet
 flowWorkspace::gs_pop_get_count_fast(gs1, 
-                                     subpopulations = c("/CD8 T cells", "/CD4 T cells"), 
+                                     subpopulations = c("/nonMargins/nonDebris/singlets/live/CD8 T cells", 
+                                                        "/nonMargins/nonDebris/singlets/live/CD4 T cells"), 
                                      statistic = "freq", 
                                      format = "long")
 ```
@@ -773,7 +811,8 @@ Note that the plot functions demonstrated earlier function the same for any subs
 
 ```{r reclustering-plots, eval=FALSE}
 # Define new columns to use
-cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+# cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+cols_of_interest <- c("APC-Cy7-A", "Alexa Fluor 700-A", "BUV395-A", "BV750-P-A", "PE-A", "BV786-A", "BV480-A", "BUV615-P-A")
 
 # Generate heatmap for subsetted cells
 plotMetaclusterMFIs(fsom_sub, cols_of_interest)
@@ -784,7 +823,8 @@ plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
 
 ```{r print-reclustering, echo=FALSE, out.width='50%', fig.align='center'}
 # Restate since last chunk wasn't evaluated
-cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+#cols_of_interest <- c(15, 16, 18, 23:25, 28, 32)
+cols_of_interest <- c("APC-Cy7-A", "Alexa Fluor 700-A", "BUV395-A", "BV750-P-A", "PE-A", "BV786-A", "BV480-A", "BUV615-P-A")
 
 knitr::include_graphics("images/workflow_basic/reclustered_heatmap.png")
 knitr::include_graphics("images/workflow_basic/reclustered_umap.png")
@@ -793,21 +833,21 @@ knitr::include_graphics("images/workflow_basic/reclustered_umap.png")
 As with the parent population above, metaclusters are merged.
 
 ```{r reclustering-edit, fig.align='center', fig.height=5, fig.width=4}
-fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+,CCR7-",
-                                                           "2" = "CD45RA+,CCR7-",
-                                                           "3" = "CD45RA+, CCR7+",
-                                                           "4" = "CD45RA+, CCR7+",
-                                                           "5" = "Undefined",
-                                                           "6" = "CD45RA+,CCR7-",
-                                                           "7" = "CD45RA+,CCR7-",
-                                                           "8" = "CD45RA+, CCR7+",
-                                                           "9" = "CD45RA+, CCR7+",
-                                                           "10" = "CD45RA+,CCR7-",
-                                                           "11" = "CD45RA-, CCR7+",
+fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+, CCR7-",
+                                                           "2" = "CD45RA+, CCR7-",
+                                                           "3" = "CD45RA+, CCR7-",
+                                                           "4" = "CD45RA+, CCR7-",
+                                                           "5" = "CD45RA+, CCR7-",
+                                                           "6" = "CD45RA+, CCR7-",
+                                                           "7" = "CD45RA-, CCR7-",
+                                                           "8" = "CD45RA+, CCR7-",
+                                                           "9" = "CD45RA+, CCR7-",
+                                                           "10" = "CD45RA+, CCR7+",
+                                                           "11" = "CD45RA-, CCR7-",
                                                            "12" = "CD45RA-, CCR7-",
-                                                           "13" = "CD45RA-, CCR7-",
-                                                           "14" = "CD45RA+,CCR7-",
-                                                           "15" = "CD45RA-, CCR7-"))
+                                                           "13" = "CD45RA-, CCR7+",
+                                                           "14" = "CD45RA+, CCR7+",
+                                                           "15" = "CD45RA+, CCR7+"))
 
 # Generate heatmap for subsetted cells
 plotMetaclusterMFIs(fsom_sub, cols_of_interest)
@@ -934,7 +974,7 @@ By default, counts for all populations in the gating scheme are found. However, 
 
 ```{r subset-gatingset-counts}
 # Get paths to cluster populations
-subpops <- flowWorkspace::gs_pop_get_children(gs1, y = "root")
+subpops <- flowWorkspace::gs_pop_get_children(gs1, y = "live")
 
 # Subset count matrix to only populations of interest
 keep_idx <- rownames(gs_counts) %in% subpops
@@ -943,6 +983,7 @@ clust_counts <- gs_counts[rownames(gs_counts) %in% subpops, ]
 # Ensure columns are in order that matches design matrix
 samples <- as.character(sample_info$filename)
 clust_counts <- clust_counts[, samples]
+rownames(clust_counts) <- sub("^.*/", "", rownames(clust_counts))
 clust_counts
 ```
 
