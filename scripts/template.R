@@ -50,7 +50,7 @@ data_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw" ###
 # Get all filenames and create GatingSet
 files <- list.files(data_dir, full.names = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files,
-                                           which.lines = 10000) # if NULL, all cells are read in
+                                           which.lines = 5000) # if NULL, all cells are read in
                                                                 # if an integer, a random sample of given size is read in
 gs <- flowWorkspace::GatingSet(cs)
 
@@ -213,26 +213,17 @@ CytoML::gatingset_to_flowjo(gs, "path/to/saved_ws.wsp")
 ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
-# Cluster
-# Define markers/columns to use for clustering
-cols_to_cluster <- c(10, 12:14, 16, 18:23, 25:32, 34)
-
 # Perform clustering
-# fsom <- FlowSOM::FlowSOM(ex_fs,
-#                          xdim = 10,
-#                          ydim = 10,
-#                          colsToUse = cols_to_cluster,
-#                          nClus = 23)
-
-# Make data.table
-#fsom_dt <- flowSOMToTable(fsom)
-
+# If you plan to apply controls to your data and calculate delta MFIs, it is
+#   highly recommended that you save the FlowSOM object at this stage by setting
+#   `fsom_file` equal to a filepath.
 fsom_dt <- flowSOMWrapper(ex_fs,
-                          cols_to_cluster = cols_to_cluster,
                           xdim = 10,
                           ydim = 10,
+                          cols_to_cluster = c(10, 12:14, 16, 18:23, 25:32, 34), # Define markers/columns to use for clustering
                           num_clus = 23,
-                          fsom_file = "fsom.rds")
+                          seed = 42,
+                          fsom_file = "fsom.rds") # if you intend to use controls, it is helpful to save the clustering
 
 ### Iteratively merge clusters until all cell types identified
 # Generate heatmap
@@ -265,7 +256,11 @@ annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 flowWorkspace::gs_get_pop_paths(gs1)
 
 # Add gates for each cluster to GatingSet
-addClustersToGatingSet(fsom_dt, gs1, parent_gate = "live")
+addClustersToGatingSet(fsom_dt,
+                       gs1,
+                       parent_gate = "live_cells",
+                       fsom_file = NULL) # by default, this argument is NULL and the
+                                         # function checks the Gating
 
 # Visualize new gating template
 openCyto::plot(gs1)
@@ -344,7 +339,7 @@ plotGroupMFIBars(plot_mat,
 # Plot channel marker densities by sample/metacluster
 plot1DMarkerDensities(gs1,
                       channel = "FITC-A",
-                      population = "live_cells",
+                      population = "live",
                       facet_by = "subpopulations", # may also facet by "samples"
                       inverse = FALSE)
 
@@ -369,6 +364,8 @@ ctrl_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO"
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
 # Apply transformations, compensations and gates to control gs
 ctrl_gs2 <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
+
+ctrl_fs <- flowWorkspace::cytoset_to_flowSet(ctrl)
 
 # Apply clustering to controls
 # This may also be done manually using `FlowSOM::NewData`

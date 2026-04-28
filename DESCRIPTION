@@ -47,3 +47,4 @@ Remotes:
 VignetteBuilder: knitr
 LinkingTo: 
     cytolib
+URL: https://00berst33.github.io/flowFun/

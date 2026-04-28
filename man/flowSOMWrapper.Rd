@@ -14,7 +14,7 @@ flowSOMWrapper(
 )
 }
 \arguments{
-\item{input}{A flowSet.}
+\item{input}{A \code{flowSet}}
 
 \item{cols_to_cluster}{A numeric or character vector specifying which columns
 should be used for clustering.}

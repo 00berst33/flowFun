@@ -1,27 +1,3 @@
-#' startProject
-#'
-#' Set working directory to a previous analysis, or create a new one.
-#' ??? anything else to instantiate here ???
-#'
-#' @param dir_name Absolute or relative filepath giving the name of the directory
-#' that you would like your analysis to be saved in. By default, a folder named
-#' "Cytometry_Analysis" is created in the current working directory.
-#'
-#' @export
-startProject <- function(dir_name = "Cytometry_Analysis") {
-  if (!dir.exists(dir_name)) {
-    dir.create(dir_name)
-    setwd(dir_name)
-  } else {
-    setwd(dir_name)
-  }
-
-  # save sample info or filepath
-  # save compensation matrix or filepath
-  # set working directory accordingly
-}
-
-
 #' addMetaToTable
 #'
 #' @param table Table containing expression data for all samples
@@ -231,7 +207,11 @@ flowSOMToTable <- function(fsom) {
 
   # Get data.frame from FlowSOM object and make column names pretty
   dt <- fsom$data
-  colnames(dt) <- fsom$prettyColnames
+  # match_idx <- match(fsom$prettyColnames, colnames(dt))
+  # colnames(dt)[match_idx] <- names(fsom$prettyColnames)
+  # if (".id <.id>" %in% colnames(dt)) {
+  #   colnames(dt)[".id <.id>"] <- ".id"
+  # }
 
   # Append labels as columns to the data.table
   dt <- dt %>%
@@ -242,6 +222,9 @@ flowSOMToTable <- function(fsom) {
                       Cluster = clust_labels,
                       Metacluster = meta_labels,
                       .keep = "all")
+
+  l <- length(colnames(dt))
+  colnames(dt)[-c(l, l-1)] <- fsom$prettyColnames
 
   # Add "clustered" attribute
   clustered <- fsom$info$parameters$colsToUse
@@ -271,10 +254,18 @@ flowSOMToTable <- function(fsom) {
   # attr(dt, "codes") <- codes
 
   # Get needed info from FlowSOM, add as attribute
+  # fsom$data <- NULL
+  # fsom$transformList <- NULL
+  # fsom$prettyColnames <- NULL
+
+  # clustering <- list("minimal_fsom" = fsom,
+  #                    "clustered" = clustered
+  #                    )
   clustering <- list("colsToUse" = fsom$info$parameters$colsToUse,
                      "clustered" = clustered,
                      "xdim" = fsom$info$parameters$xdim,
                      "ydim" = fsom$info$parameters$ydim,
+                     "nClus" = fsom$info$parameters$nClus,
                      "clustering" = fsom$metaclustering,
                      "codes" = fsom$map$codes)
   attr(dt, "clustering") <- clustering
@@ -732,7 +723,7 @@ addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
   # Edit "clustering" element
   clustering[["clustering"]] <- metaclustering
 
-  if (is.null(fsom_file)) {
+  if (is.null(fsom_file)) { # if fsom_file is NULL, check if there is a filename in table attributes
     fsom_file <- attr(table, "fsom_filename")
   }
   if (!is.null(fsom_file)) {
@@ -745,7 +736,7 @@ addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
   }
 
   # Get first GatingHierarchy
-  gh <- gs[[1]]
+  #gh <- gs[[1]]
 
   # Check if any clusterings have already been added to GatingHierarchy
   # gh_clusterings <- tryCatch(
@@ -763,9 +754,9 @@ addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
   #gh_clusterings[[parent_gate]] <- clustering
 
   # Make keyword a list
-  clustering <- list(clustering)
+  #clustering <- list(clustering)
 
-  flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
+  #flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
 
   # # Add edited list of clusterings to GatingSet
   # if (length(gh_clusterings) == 1) { # if this is the first clustering

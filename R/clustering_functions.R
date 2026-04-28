@@ -2,7 +2,7 @@
 
 #' flowSOMWrapper
 #'
-#' @param input A flowSet.
+#' @param input A `flowSet`
 #' @param cols_to_cluster A numeric or character vector specifying which columns
 #' should be used for clustering.
 #' @param num_clus The number of metaclusters to create.
@@ -62,8 +62,23 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
+    #fsom$data <- fsom$data[1, ]
     saveRDS(fsom, fsom_file)
   }
+
+  # Get metacluster and cluster labels
+  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
+  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
+  #
+  # # Append labels as columns to the data.table
+  # table <- table %>%
+  #   tidytable::mutate(Cluster = clust_labels,
+  #                     Metacluster = meta_labels,
+  #                     .keep = "all")
+  #
+  # # Add attribute specifying the columns used for clustering
+  # attr(table, "clustered") <- cols_to_cluster
+  # # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   return(table)
 }
@@ -338,7 +353,7 @@ createFilteredAggregate.data.frame <- function(input, num_cells, clusters = NULL
   files <- input %>%
     tidytable::pull(.id) %>%
     unique()
-
+  print(files)
   # Get number of cells to sample per file
   per_sample <- ceiling(num_cells/length(files))
 
