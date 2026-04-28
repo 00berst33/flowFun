@@ -656,6 +656,8 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 #' @param gs The `GatingSet` to add gates to.
 #' @param parent_gate `character` indicating which population is the parent of
 #' the clusters.
+#' @param fsom_file Optional, a character giving a path to an .rds file for a FlowSOM
+#' object. Default is `NULL`, which checks for a filename in `attr(table, "fsom_filename")`
 #'
 #' This function should be used after a satisfactory clustering has been obtained
 #' using the human-in-the-loop approach outlined by the vignette. The resulting
@@ -664,7 +666,7 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 #' cluster.
 #'
 #' @export
-addClustersToGatingSet <- function(table, gs, parent_gate) {
+addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
   idx_tables <- getClusterIndicesBySample(table)
 
   # check if gates already exist?
@@ -707,7 +709,14 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
 
   ## Add gates to GatingSet
   # !!! do you need to check if the gate already exists?
-  lapply(seq_along(meta_idx), function(i) {flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)})
+  lapply(seq_along(meta_idx), function(i) {
+    tryCatch({flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)},
+             error = function(e) {
+               flowWorkspace::gs_pop_remove(gs, node = names(meta_idx)[i])
+               flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)
+             }) # recompute?
+    #flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)
+    })
 
   ## Add keywords to GatingSet
   # Get final metaclustering
@@ -722,6 +731,18 @@ addClustersToGatingSet <- function(table, gs, parent_gate) {
   clustering <- attr(table, "clustering")
   # Edit "clustering" element
   clustering[["clustering"]] <- metaclustering
+
+  if (is.null(fsom_file)) {
+    fsom_file <- attr(table, "fsom_filename")
+  }
+  if (!is.null(fsom_file)) {
+    flowWorkspace::pData(gs)[, parent_gate] <- fsom_file
+
+    # Edit FlowSOM file
+    fsom <- readRDS(fsom_file)
+    fsom$metaclustering <- metaclustering
+    saveRDS(fsom, file = fsom_file)
+  }
 
   # Get first GatingHierarchy
   gh <- gs[[1]]
@@ -878,9 +899,10 @@ addMetadataToGatingSet <- function(gs, sample_df) {
     pData()
 
   # Match filenames in sample information and metadata tables
-  idx <- match(sample_df$File.Name, rownames(cs_meta))
+  idx <- match(sample_df$filename, rownames(cs_meta))
   # Order sample info, then get all metadata excluding filenames
-  new_metadata <- sample_df[idx, -"File.Name"]
+  new_metadata <- sample_df[idx, ] %>%
+    dplyr::select(-filename)
 
   # Add to metadata table
   cs_meta <- cbind(cs_meta, new_metadata)

@@ -1058,7 +1058,7 @@ marker_cols <- c("FITC-A", "BV711-A")
 
 # Perform differential expression analysis
 de_res <- doDEAnalysis(fsom_dt, 
-                       marker_cols = marker_cols, 
+                       cols_to_test = marker_cols, 
                        design = design, 
                        contrasts = contrasts)
 

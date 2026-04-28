@@ -4,14 +4,14 @@
 \alias{getExprMatDE}
 \title{getExprMatDE}
 \usage{
-getExprMatDE(fsom_dt, marker_cols, sample_col = .id)
+getExprMatDE(fsom_dt, cols_to_use, sample_col = .id)
 }
 \arguments{
 \item{fsom_dt}{A data.table with columns for markers/channels, a column \code{File}
 denoting the sample a cell is from, and a column \code{Metacluster} denoting the
 metacluster a cell belongs to}
 
-\item{marker_cols}{A character vector of markers/channels of interest; these
+\item{cols_to_use}{A character vector of channels of interest; these
 should be column names of \code{fsom_dt}}
 
 \item{sample_col}{The column in \code{fsom_dt} corresponding to sample ID. Assumed

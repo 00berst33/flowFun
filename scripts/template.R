@@ -215,17 +215,24 @@ ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Cluster
 # Define markers/columns to use for clustering
-cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)-2
+cols_to_cluster <- c(10, 12:14, 16, 18:23, 25:32, 34)
 
 # Perform clustering
-fsom <- FlowSOM::FlowSOM(ex_fs,
-                         xdim = 10,
-                         ydim = 10,
-                         colsToUse = cols_to_cluster,
-                         nClus = 23)
+# fsom <- FlowSOM::FlowSOM(ex_fs,
+#                          xdim = 10,
+#                          ydim = 10,
+#                          colsToUse = cols_to_cluster,
+#                          nClus = 23)
 
 # Make data.table
-fsom_dt <- flowSOMToTable(fsom)
+#fsom_dt <- flowSOMToTable(fsom)
+
+fsom_dt <- flowSOMWrapper(ex_fs,
+                          cols_to_cluster = cols_to_cluster,
+                          xdim = 10,
+                          ydim = 10,
+                          num_clus = 23,
+                          fsom_file = "fsom.rds")
 
 ### Iteratively merge clusters until all cell types identified
 # Generate heatmap
@@ -234,7 +241,7 @@ plotMetaclusterMFIs(fsom_dt)
 plotUMAP(fsom_dt, num_cells = 2500, seed = 42)
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt,
-                     channelpair = c("CD3 <APC-Cy7-A>", "TCRgd <BUV563-A>"),
+                     channelpair = c("APC-Cy7-A", "BUV563-A"),
                      clusters = c(4, 42, 76),
                      metaclusters = NULL)
 
@@ -258,7 +265,7 @@ annotateMFIHeatmap(fsom_dt, cols_to_cluster)
 flowWorkspace::gs_get_pop_paths(gs1)
 
 # Add gates for each cluster to GatingSet
-addClustersToGatingSet(fsom_dt, gs1, parent_gate = "live_cells")
+addClustersToGatingSet(fsom_dt, gs1, parent_gate = "live")
 
 # Visualize new gating template
 openCyto::plot(gs1)
@@ -310,12 +317,15 @@ da_results <- doDAAnalysis(design = design,
 # Set markers of interest
 marker_cols <- c("BV711-A", "FITC-A")
 
+# Get clustered populations
+subpops <- gs_pop_get_children(gs1, "live_cells")
+
 # Perform differential expression analysis for given markers
 de_res <- doDEAnalysis(gs1,
-                       marker_cols = marker_cols,
+                       cols_to_test = marker_cols,
                        design = design,
                        contrasts = contrasts,
-                       subpopulations = NULL,
+                       subpopulations = subpops,
                        inverse = FALSE)
 
 # View results
@@ -358,24 +368,25 @@ ctrl_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO"
 # Read in
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
 # Apply transformations, compensations and gates to control gs
-ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
+ctrl_gs2 <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
 
 # Apply clustering to controls
 # This may also be done manually using `FlowSOM::NewData`
-fsom_projected <- clusterControls(ctrl_gs, gs1, "live_cells")
+fsom_projected <- clusterControls(ctrl_gs, gs1, "live")
 
 # Edit clusters if desired
 # ...
 
 # Get data.table for controls, and add clusters to corresponding GatingSet
 ctrl_dt <- flowSOMToTable(fsom_projected)
-addClustersToGatingSet(ctrl_dt, ctrl_gs, "live_cells")
+addClustersToGatingSet(ctrl_dt, ctrl_gs, "live")
 
 # Read in table of sample info, if you have one; see `?addMetadataToGatingSet` for
 # details on how this table should be defined
-sample_df <- read.csv("path/to/sample/info/csv")
+# Should have column named 'filename'
+sample_info <- read.csv("path/to/sample/info/csv")
 # Add metadata to GatingSet
-addMetadataToGatingSet(gs1, sample_df)
+addMetadataToGatingSet(gs1, sample_info)
 # Check results
 pData(gs1)
 # this also allows us to use functions in ggcyto package to facet by any group defined
@@ -385,6 +396,6 @@ pData(gs1)
 cols_to_test <- c("PHA-L", "IL10R")
 
 # Get delta MFIs
-delta_mfis <- gs_makeDeltaMFIs(gs1, ctrl_gs, population = "live_cells", metadata_col = "FMO")
+delta_mfis <- gs_makeDeltaMFIs(gs1, ctrl_gs, subpopulations = subpops, metadata_col = "FMO")
 
 # Do DE testing and make plots as you would for typical DE testing

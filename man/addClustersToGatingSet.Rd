@@ -4,7 +4,7 @@
 \alias{addClustersToGatingSet}
 \title{addClustersToGatingSet}
 \usage{
-addClustersToGatingSet(table, gs, parent_gate)
+addClustersToGatingSet(table, gs, parent_gate, fsom_file = NULL)
 }
 \arguments{
 \item{table}{A data.table or tibble containing expression data for all samples.
@@ -14,7 +14,10 @@ Must have a column named \code{.id} indicating sample ID, and a column
 \item{gs}{The \code{GatingSet} to add gates to.}
 
 \item{parent_gate}{\code{character} indicating which population is the parent of
-the clusters.
+the clusters.}
+
+\item{fsom_file}{Optional, a character giving a path to an .rds file for a FlowSOM
+object. Default is \code{NULL}, which checks for a filename in \code{attr(table, "fsom_filename")}
 
 This function should be used after a satisfactory clustering has been obtained
 using the human-in-the-loop approach outlined by the vignette. The resulting

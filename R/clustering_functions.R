@@ -53,6 +53,9 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
   #                     .keep = "all")
   table <- flowSOMToTable(fsom)
 
+  # Set FlowSOM RDS filename as table attribute
+  attr(table, "fsom_filename") <- fsom_file
+
   # Add attribute specifying the columns used for clustering
   #attr(input, "clustered") <- cols_to_cluster
   # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
