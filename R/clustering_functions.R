@@ -16,19 +16,17 @@
 #' @export
 flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
                            fsom_file = NULL, ...) {
-  # Ensure data in `cols_to_cluster` is more informative (i.e. channel names)
+  # Set input data.table to appropriate format
+  if (is.data.frame(input)) {
+    input <- tableToFlowSet(input)
+  }
+
   if (is.language(cols_to_cluster)) {
     cols_to_cluster <- eval(cols_to_cluster)
   }
   if (is.numeric(cols_to_cluster)) {
     cols_to_cluster <- flowCore::colnames(input)[cols_to_cluster]
   }
-
-  # Set input data.table to appropriate format
-  if (is.data.frame(input)) {
-    input <- tableToFlowSet(input)
-  }
-
 
   # Set default options
   default_options <- list(colsToUse = cols_to_cluster,
@@ -44,11 +42,23 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
   # Run clustering algorithm
   fsom <- do.call(FlowSOM::FlowSOM, c(list(input = input), all_options))
 
-  # Convert FlowSOM object to table
+  # Get metacluster and cluster labels
+  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
+  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
+
+  # Append labels as columns to the data.table
+  # input <- input %>%
+  #   tidytable::mutate(Cluster = clust_labels,
+  #                     Metacluster = meta_labels,
+  #                     .keep = "all")
   table <- flowSOMToTable(fsom)
 
   # Set FlowSOM RDS filename as table attribute
   attr(table, "fsom_filename") <- fsom_file
+
+  # Add attribute specifying the columns used for clustering
+  #attr(input, "clustered") <- cols_to_cluster
+  # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
@@ -96,8 +106,13 @@ overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
   # Add levels to fsom_dt
   levels(fsom_dt$Metacluster) <- c(levels(fsom_dt$Metacluster), levels(fsom_sub$Metacluster))
 
+  # Add temporary column to fsom_dt
+  fsom_dt <- fsom_dt %>%
+    dplyr::mutate(cell_id = seq(1, nrow(fsom_dt)))
+
   # Update rows in original table
-  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id")
+  new_fsom <- dplyr::rows_update(fsom_dt, fsom_sub, by = "cell_id") %>%
+    dplyr::select(-cell_id)
 
   return(new_fsom)
 }
@@ -220,6 +235,7 @@ filterData.data.frame <- function(input, clusters = NULL, metaclusters = NULL) {
   }
 
   filtered <- input %>%
+    tidytable::mutate(cell_id = seq(1, nrow(input))) %>%
     tidytable::filter(Metacluster %in% metaclusters & Cluster %in% clusters)
 
   return(filtered)
@@ -384,6 +400,14 @@ doPCA <- function(input, cols_to_use) {
 #' @keywords internal
 #' @export
 doPCA.flowFrame <- function(input, cols_to_use) {
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% flowCore::colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", flowCore::colnames(input))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- flowCore::colnames(input)[match_idx]
+  }
+
   if (!is.numeric(cols_to_use)) {
     marker_inds <- which(Biobase::pData(flowCore::parameters(input))$desc %in% cols_to_use)
     channel_inds <- which(Biobase::pData(flowCore::parameters(input))$name %in% cols_to_use)
@@ -406,6 +430,14 @@ doPCA.flowFrame <- function(input, cols_to_use) {
 #' @keywords internal
 #' @export
 doPCA.data.frame <- function(input, cols_to_use) {
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- colnames(input)[match_idx]
+  }
+
   expr_data <- input %>%
     tidytable::select(cols_to_use)
 

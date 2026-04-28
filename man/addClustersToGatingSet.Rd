@@ -16,8 +16,8 @@ Must have a column named \code{.id} indicating sample ID, and a column
 \item{parent_gate}{\code{character} indicating which population is the parent of
 the clusters.}
 
-\item{fsom_file}{A character giving a path to an .rds file for a FlowSOM object.
-Default is \code{NULL}
+\item{fsom_file}{Optional, a character giving a path to an .rds file for a FlowSOM
+object. Default is \code{NULL}, which checks for a filename in \code{attr(table, "fsom_filename")}
 
 This function should be used after a satisfactory clustering has been obtained
 using the human-in-the-loop approach outlined by the vignette. The resulting

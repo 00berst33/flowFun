@@ -285,7 +285,7 @@ makeContrastsMatrix <- function(sample_df, comparisons) {
 #'
 #' @export
 makeCountMatrix <- function(input, sample_df = NULL, meta_names = NULL,
-                            min_cells = 3, min_samples = NULL, ...) {
+                            min_cells = 3, min_samples = NULL) {
   result <- UseMethod("makeCountMatrix")
   return(result)
 }
@@ -499,7 +499,7 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
 #' @param fsom_dt A data.table with columns for markers/channels, a column `File`
 #' denoting the sample a cell is from, and a column `Metacluster` denoting the
 #' metacluster a cell belongs to
-#' @param marker_cols A character vector of markers/channels of interest; these
+#' @param cols_to_use A character vector of channels of interest; these
 #' should be column names of `fsom_dt`
 #' @param sample_col The column in `fsom_dt` corresponding to sample ID. Assumed
 #' to be `.id` by default
@@ -509,16 +509,24 @@ doDAAnalysis <- function(design, counts, contrasts, sample_df,
 #'
 #' @return A data.table where columns are samples and rows are metacluster/marker groups
 #' @export
-getExprMatDE <- function(fsom_dt, marker_cols, sample_col = .id) {
+getExprMatDE <- function(fsom_dt, cols_to_use, sample_col = .id) {
   marker <- median_expr <- feature <- NULL
   id <- rlang::enquo(sample_col)
 
+  # If input is only channel name
+  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(fsom_dt))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(fsom_dt))
+    match_idx <- match(cols_to_use, marker_cols)
+    # Set channelpair to pretty column names
+    cols_to_use <- colnames(fsom_dt)[match_idx]
+  }
+
   collapsed <- fsom_dt %>%
     dplyr::group_by(!!id, Metacluster) %>%
-    dplyr::summarize(dplyr::across(tidyr::all_of(!!marker_cols), median), .groups = "drop") %>%
+    dplyr::summarize(dplyr::across(tidyr::all_of(!!cols_to_use), median), .groups = "drop") %>%
     # reshape long to wide
     tidyr::pivot_longer(
-      cols = tidyr::all_of(!!marker_cols),
+      cols = tidyr::all_of(!!cols_to_use),
       names_to = "marker",
       values_to = "median_expr"
     ) %>%
@@ -636,7 +644,7 @@ clusterControls <- function(control_gs, primary_gs, population) {
 #' doDEAnalysis
 #'
 #' @param input A `GatingSet` or `data.table`
-#' @param marker_cols A `character` vector specifying which markers/channels
+#' @param cols_to_test A `character` vector specifying which channels
 #' should be tested for differential expression. Each element should be a column
 #' in the data's expression matrix.
 #' @param design A design matrix from [makeDesignMatrix()]
@@ -649,10 +657,10 @@ clusterControls <- function(control_gs, primary_gs, population) {
 #'
 #' @return An `MArrayLM` object resulting from [limma::eBayes()]
 #' @export
-doDEAnalysis <- function(input, marker_cols, design, contrasts, subpopulations = NULL, inverse = FALSE) {
+doDEAnalysis <- function(input, cols_to_test, design, contrasts, subpopulations = NULL, inverse = FALSE) {
   # Find expression matrix: metacluster.marker by sample
   if (is(input, "data.frame")) {
-    collapsed <- getExprMatDE(input, marker_cols)
+    collapsed <- getExprMatDE(input, cols_to_test)
   } else if (is(input, "GatingSet")) {
     # Get MFIs and prepare for limma
     collapsed <- gs_makeMFIMatrix(input,
