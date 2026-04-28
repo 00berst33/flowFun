@@ -427,12 +427,20 @@ Below, the preprocessed data from earlier is clustered using the FlowSOM algorit
 # Read in table
 prepr_table <- system.file("extdata", "prepr_table.rds", package = "flowFunData")
 prepr_table <- readRDS(prepr_table)
+prepr_table <- prepr_table %>% 
+  dplyr::select(-cell_id) # edit
+
+fs <- flowWorkspace::gs_pop_get_data(gs1, y = "live")
+fs <- flowWorkspace::cytoset_to_flowSet(fs)
 
 # Define markers/columns to use for clustering
-cols_to_cluster <- c(12, 14:16, 18, 20:25, 27:34, 36)
+cols_to_cluster <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV480-A", 
+                     "BV605-A", "BV650-A", "BV711-A", "BV750-P-A", "BV786-A", "BUV395-A", 
+                     "BUV563-A", "BUV615-P-A", "BUV661-A", "BUV737-A", "BUV805-A", "PE-A",
+                     "PE-CF594-A", "PE-Cy5-A", "PE-Cy7-A")
 
 # Perform clustering
-fsom_dt <- flowSOMWrapper(prepr_table,
+fsom_dt <- flowSOMWrapper(fs,
                           cols_to_cluster = cols_to_cluster,
                           num_clus = 25,
                           xdim = 12,
@@ -458,7 +466,7 @@ meta_vector <- fmeans@Label
 
 ```{r print-fsom-table, echo=FALSE} 
 fsom_dt %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(
@@ -532,7 +540,7 @@ fsom <- FlowSOM::UpdateMetaclusters(fsom,
 
 ```{r print-fsom-table-merge1, echo=FALSE} 
 fsom_dt %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Meta_original", "Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(
@@ -730,7 +738,7 @@ new_table <- createFilteredAggregate(fsom_dt,
 
 ```{r subset-table, include=FALSE, eval=FALSE} 
 new_table %>% 
-  tidytable::select(tidytable::all_of(c("cell_id", "Meta_original", "Metacluster", "Cluster"))) %>%
+  tidytable::select(tidytable::all_of(c("Meta_original", "Metacluster", "Cluster"))) %>%
   tidytable::slice_head(5) %>%
   data.frame() %>%
   knitr::kable(

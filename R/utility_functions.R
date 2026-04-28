@@ -192,13 +192,16 @@ tableToFlowSet <- function(table, id_col = .id) {
 
   # Make a flowFrame for each sample and put it in a list
   fs <- lapply(sample_names, function(i) {
-    table %>%
+    ff <- table %>%
       dplyr::filter(!!id_col == i) %>%
       #select(where(is.double)) %>%
-      dplyr::mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
+      #dplyr::mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
+      dplyr::select(-!!id_col) %>%
       dplyr::select(dplyr::where(is.numeric)) %>%
       as.matrix() %>%
-      flowCore::flowFrame()})
+      flowCore::flowFrame()
+    flowCore::keyword(ff)[["FIL"]] <- i
+    return(ff)})
   names(fs) <- sample_names
 
   # Convert data type to flowSet
