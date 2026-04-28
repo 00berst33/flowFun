@@ -207,6 +207,7 @@ flowSOMToTable <- function(fsom) {
 
   # Get data.frame from FlowSOM object and make column names pretty
   dt <- fsom$data
+  colnames(dt) <- fsom$prettyColnames
   # match_idx <- match(fsom$prettyColnames, colnames(dt))
   # colnames(dt)[match_idx] <- names(fsom$prettyColnames)
   # if (".id <.id>" %in% colnames(dt)) {
@@ -222,9 +223,6 @@ flowSOMToTable <- function(fsom) {
                       Cluster = clust_labels,
                       Metacluster = meta_labels,
                       .keep = "all")
-
-  l <- length(colnames(dt))
-  colnames(dt)[-c(l, l-1)] <- fsom$prettyColnames
 
   # Add "clustered" attribute
   clustered <- fsom$info$parameters$colsToUse
