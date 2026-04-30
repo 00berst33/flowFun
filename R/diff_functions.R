@@ -592,8 +592,8 @@ gs_makeMFIMatrix <- function(gs, cols, subpopulations, inverse = FALSE) {
 #' @export
 gs_makeDeltaMFIs <- function(gs, control_gs, subpopulations, cols, metadata_col = NULL) {
   # Get MFIs for both GatingSets
-  gs_mfis <- gs_makeMFIMatrix(gs, cols, population, inverse = TRUE)
-  ctrl_mfis <- gs_makeMFIMatrix(control_gs, cols, population, inverse = TRUE)
+  gs_mfis <- gs_makeMFIMatrix(gs, cols, subpopulations, inverse = TRUE)
+  ctrl_mfis <- gs_makeMFIMatrix(control_gs, cols, subpopulations, inverse = TRUE)
 
   # Orders samples in control matrix according to metadata, if `metadata_col` given
   if (!is.null(metadata_col)) {
