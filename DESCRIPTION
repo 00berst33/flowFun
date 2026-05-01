@@ -19,7 +19,6 @@ biocViews:
 Imports: 
     Biobase,
     ComplexHeatmap,
-    CytoExploreR,
     data.table,
     dplyr,
     edgeR,
