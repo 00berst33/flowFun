@@ -1,7 +1,13 @@
 # flowFun
-R package containing functions for analysis of flow cytometry data. This package can be installed with vignettes from the Rstudio console as follows: 
+R package integrating an end-to-end pipeline for the analysis of high parameter cytometry data. Functions for pre-processing, cell type identification, differential analysis, data visualization, and more are included. 
 
-```{r, eval = FALSE}
+## Getting Started
+Vignettes and other helpful documentation may be viewed on the package's main page: [https://00berst33.github.io/flowFun](https://00berst33.github.io/flowFun)
+
+## Installation
+This package can be installed with vignettes from the RStudio console as follows: 
+
+``` r
 install.packages("BiocManager")
 install.packages("devtools")
 
@@ -13,7 +19,7 @@ devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignett
 ```
 Or to install without vignettes:
 
-```{r, eval = FALSE}
+``` r
 install.packages("devtools")
 
 # Install without vignettes
