@@ -1,0 +1,92 @@
+# Package index
+
+## All functions
+
+- [`addClustersToGatingSet()`](https://00berst33.github.io/flowFun/reference/addClustersToGatingSet.md)
+  : addClustersToGatingSet
+- [`addMetaToTable()`](https://00berst33.github.io/flowFun/reference/addMetaToTable.md)
+  : addMetaToTable
+- [`addMetadataToGatingSet()`](https://00berst33.github.io/flowFun/reference/addMetadataToGatingSet.md)
+  : addMetadataToGatingSet
+- [`annotateMFIHeatmap()`](https://00berst33.github.io/flowFun/reference/annotateMFIHeatmap.md)
+  : annotateMFIHeatmap
+- [`clusterControls()`](https://00berst33.github.io/flowFun/reference/clusterControls.md)
+  : clusterControls
+- [`clusterSubsetWithPCA()`](https://00berst33.github.io/flowFun/reference/clusterSubsetWithPCA.md)
+  : clusterSubsetWithPCA
+- [`createFilteredAggregate()`](https://00berst33.github.io/flowFun/reference/createFilteredAggregate.md)
+  : createFilteredAggregate
+- [`doDAAnalysis()`](https://00berst33.github.io/flowFun/reference/doDAAnalysis.md)
+  : doDAAnalysis
+- [`doDEAnalysis()`](https://00berst33.github.io/flowFun/reference/doDEAnalysis.md)
+  : doDEAnalysis
+- [`doPCA()`](https://00berst33.github.io/flowFun/reference/doPCA.md) :
+  doPCA
+- [`editTableMetaclusters()`](https://00berst33.github.io/flowFun/reference/editTableMetaclusters.md)
+  : editTableMetaclusters
+- [`flagChannelNames()`](https://00berst33.github.io/flowFun/reference/flagChannelNames.md)
+  : flagChannelNames
+- [`flagMarkerNames()`](https://00berst33.github.io/flowFun/reference/flagMarkerNames.md)
+  : flagMarkerNames
+- [`flowSOMToTable()`](https://00berst33.github.io/flowFun/reference/flowSOMToTable.md)
+  : flowSOMToTable
+- [`flowSOMWrapper()`](https://00berst33.github.io/flowFun/reference/flowSOMWrapper.md)
+  : flowSOMWrapper
+- [`gatingSetToTable()`](https://00berst33.github.io/flowFun/reference/gatingSetToTable.md)
+  : gatingSetToTable
+- [`generateGatingTable()`](https://00berst33.github.io/flowFun/reference/generateGatingTable.md)
+  : generateGatingTable
+- [`getChannel()`](https://00berst33.github.io/flowFun/reference/getChannel.md)
+  : getChannel
+- [`getChannelMarkerPairs()`](https://00berst33.github.io/flowFun/reference/getChannelMarkerPairs.md)
+  : getChannelMarkerPairs
+- [`getClusterMFIs()`](https://00berst33.github.io/flowFun/reference/getClusterMFIs.md)
+  : getClusterMFIs
+- [`getExprMatDE()`](https://00berst33.github.io/flowFun/reference/getExprMatDE.md)
+  : getExprMatDE
+- [`getMarker()`](https://00berst33.github.io/flowFun/reference/getMarker.md)
+  : getMarker
+- [`getMetaclusterMFIs()`](https://00berst33.github.io/flowFun/reference/getMetaclusterMFIs.md)
+  : getMetaclusterMFIs
+- [`getSampleMetaclusterMFIs()`](https://00berst33.github.io/flowFun/reference/getSampleMetaclusterMFIs.md)
+  : getSampleMetaclusterMFIs
+- [`gs_makeDeltaMFIs()`](https://00berst33.github.io/flowFun/reference/gs_makeDeltaMFIs.md)
+  : gs_makeDeltaMFIs
+- [`gs_makeMFIMatrix()`](https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.md)
+  : gs_makeMFIMatrix
+- [`loadFlowSOMEmbedding()`](https://00berst33.github.io/flowFun/reference/loadFlowSOMEmbedding.md)
+  : loadFlowSOMEmbedding
+- [`makeContrastsMatrix()`](https://00berst33.github.io/flowFun/reference/makeContrastsMatrix.md)
+  : makeContrastsMatrix
+- [`makeCountMatrix()`](https://00berst33.github.io/flowFun/reference/makeCountMatrix.md)
+  : makeCountMatrix
+- [`makeDesignMatrix()`](https://00berst33.github.io/flowFun/reference/makeDesignMatrix.md)
+  : makeDesignMatrix
+- [`overwriteMetaclusterNames()`](https://00berst33.github.io/flowFun/reference/overwriteMetaclusterNames.md)
+  : overwriteMetaclusterNames
+- [`plot1DMarkerDensities()`](https://00berst33.github.io/flowFun/reference/plot1DMarkerDensities.md)
+  : plotMarkerDensityByChannel
+- [`plotAllSamples()`](https://00berst33.github.io/flowFun/reference/plotAllSamples.md)
+  : plotAllSamples
+- [`plotClusterMFIs()`](https://00berst33.github.io/flowFun/reference/plotClusterMFIs.md)
+  : plotClusterMFIs
+- [`plotGroupMFIBars()`](https://00berst33.github.io/flowFun/reference/plotGroupMFIBars.md)
+  : plotGroupMFIBars
+- [`plotGroupUMAPs()`](https://00berst33.github.io/flowFun/reference/plotGroupUMAPs.md)
+  : plotGroupUMAPs
+- [`plotLabeled2DScatter()`](https://00berst33.github.io/flowFun/reference/plotLabeled2DScatter.md)
+  : plotLabeled2DScatter
+- [`plotMetaclusterMFIs()`](https://00berst33.github.io/flowFun/reference/plotMetaclusterMFIs.md)
+  : plotMetaclusterMFIs
+- [`plotPCAScree()`](https://00berst33.github.io/flowFun/reference/plotPCAScree.md)
+  : plotPCAScree
+- [`plotSampleProportions()`](https://00berst33.github.io/flowFun/reference/plotSampleProportions.md)
+  : plotSampleProportions
+- [`plotUMAP()`](https://00berst33.github.io/flowFun/reference/plotUMAP.md)
+  : plotUMAP
+- [`prepareSampleInfo()`](https://00berst33.github.io/flowFun/reference/prepareSampleInfo.md)
+  : prepareSampleInfo
+- [`saveFlowSOMEmbedding()`](https://00berst33.github.io/flowFun/reference/saveFlowSOMEmbedding.md)
+  : saveFlowSOMEmbedding
+- [`tableToFlowSet()`](https://00berst33.github.io/flowFun/reference/tableToFlowSet.md)
+  : tableToFlowSet
