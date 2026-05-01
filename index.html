@@ -53,27 +53,34 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="flowfun">flowFun<a class="anchor" aria-label="anchor" href="#flowfun"></a>
 </h1></div>
-<p>R package containing functions for analysis of flow cytometry data. This package can be installed with vignettes from the Rstudio console as follows:</p>
-<p>```{r, eval = FALSE} install.packages(“BiocManager”) install.packages(“devtools”)</p>
+<p>R package integrating an end-to-end pipeline for the analysis of high parameter cytometry data. Functions for pre-processing, cell type identification, differential analysis, data visualization, and more are included.</p>
+<div class="section level2">
+<h2 id="getting-started">Getting Started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h2>
+<p>Vignettes and other helpful documentation may be viewed on the package’s main page: <a href="https://00berst33.github.io/flowFun">https://00berst33.github.io/flowFun</a></p>
 </div>
-<div class="section level1">
-<h1 id="install-with-vignettes">Install with vignettes<a class="anchor" aria-label="anchor" href="#install-with-vignettes"></a>
-</h1>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>This package can be installed with vignettes from the RStudio console as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Install with vignettes</span></span>
+<span><span class="co">#   The package 'flowFunData' must first be installed</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"00berst33/flowFunData"</span><span class="op">)</span></span>
+<span><span class="co">#   Then install flowFun</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"00berst33/flowFun"</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Or to install without vignettes:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Install without vignettes</span></span>
+<span><span class="co">#   No installation of 'flowFunData', set argument `build_vignettes` to FALSE</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"00berst33/flowFun"</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span>, build_vignettes <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level1">
-<h1 id="the-package-flowfundata-must-first-be-installed">The package ‘flowFunData’ must first be installed<a class="anchor" aria-label="anchor" href="#the-package-flowfundata-must-first-be-installed"></a>
-</h1>
-<p>devtools::install_github(“00berst33/flowFunData”) # Then install flowFun devtools::install_github(“00berst33/flowFun”, dependencies = TRUE, build_vignettes = TRUE)</p>
-<pre><code>Or to install without vignettes:
-
-```{r, eval = FALSE}
-install.packages("devtools")
-
-# Install without vignettes
-#   No installation of 'flowFunData', set argument `build_vignettes` to FALSE
-devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignettes = FALSE)</code></pre>
 </div>
-
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
