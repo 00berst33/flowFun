@@ -1171,6 +1171,17 @@ plotGroupUMAPs.data.table <- function(input, sample_df, comparison, umap = NULL,
         dplyr::pull(color_by)
       umap_df <- data.frame(umap_df, group = group_vec, values = marker_vec)
       legend_name <- color_by
+    } else if (is.character(color_by) & !(color_by %in% colnames(input))) {
+      marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+      match_idx <- match(color_by, marker_cols)
+      # Set color_by to pretty column names
+      color_by <- colnames(input)[match_idx]
+
+      # Get expression data and append column to data frame
+      marker_vec <- input[umap_df$Indices, ] %>%
+        dplyr::pull(color_by)
+      umap_df <- data.frame(umap_df, group = group_vec, values = marker_vec)
+      legend_name <- color_by
     } else {
       stop("The value given to parameter `color_by` is invalid.")
     }

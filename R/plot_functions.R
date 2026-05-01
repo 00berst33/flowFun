@@ -796,16 +796,44 @@ plotUMAP.data.frame <- function(input, num_cells = 5000, labels = NULL,
   cols_used <- attributes(input)$clustered
   meta_vec <- input$Metacluster
 
-  input <- input %>%
-    tidytable::select(cols_used)
-
   nrows <- nrow(input)
 
+  # if (num_cells < nrows) {
+  #   meta_levels <- unique(meta_vec)
+  #   num_meta <- length(meta_levels)
+  #
+  #   # Set number of cells guaranteed to be in sample
+  #   base_samples <- 10 * num_meta
+  #   # Get remaining number of cells
+  #   remaining <- max(0, num_meta - base_samples)
+  #
+  #   # Sample data by metacluster
+  #   input <- input %>%
+  #     dplyr::group_by(Metacluster) %>%
+  #     dplyr::group_modify(~ { # for each metacluster
+  #       # Get number of cells in current metacluster
+  #       cluster_size <- nrow(.x)
+  #
+  #       extra <- ifelse(remaining>0,
+  #                       round(remaining*cluster_size/nrow(input)),
+  #                       0)
+  #
+  #       num_to_sample <- min(cluster_size, 10 + extra)
+  #
+  #       .x %>%
+  #         dplyr::slice_sample(n = num_to_sample)
+  #     }) %>%
+  #     dplyr::ungroup()
+  # }
   if (num_cells < nrows) {
     inds <- sample(nrows, num_cells)
-  } else {
+  }
+  else {
     inds <- 1:nrows
   }
+
+  input <- input %>%
+    tidytable::select(cols_used)
 
   data <- input[inds, ]
   umap <- umap::umap(data)
