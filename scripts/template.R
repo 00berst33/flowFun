@@ -296,14 +296,31 @@ counts <- makeCountMatrix(fsom_dt,
                           min_cells = 3,
                           min_samples = 4)
 
+# getting frequencies instead?
+# If desired, this matrix may be exported as a .csv file (the same goes for any other matrix or data.frame in R)
+write.csv(counts, "table_filename.rds")
+
 #
 ### Perform differential abundance analysis
-#
+# doDAAnalysis() returns a list of data.frames, where each element corresponds to
+# a column in `contrasts` (i.e. a comparison)
 da_results <- doDAAnalysis(design = design,
                            counts = counts,
                            contrasts = contrasts,
                            sample_df = sample_info,
                            norm_method = "TMM")
+
+# Results may be viewed by either simply typing `da_results` in the console,
+# or selecting a particular comparison in this list to view. The example `comparisons`
+# object defined above had two elements, so we could view results as follows:
+da_results
+# or
+da_results[[1]] # display only first comparison, MIBC vs. Ctrl
+da_results[[2]] # display only second comparison, NAC vs. No NAC
+
+# You will see five columns in the resulting tables: logFC, logCPM, LR, PValue, FDR
+# i.e., log-fold change, log counts per million, likelihood ratio, p-value, false discovery rate
+#
 
 #
 ### Perform differential expression analysis
@@ -393,6 +410,10 @@ pData(gs1)
 cols_to_test <- c("PHA-L", "IL10R")
 
 # Get delta MFIs
-delta_mfis <- gs_makeDeltaMFIs(gs1, ctrl_gs, subpopulations = subpops, metadata_col = "FMO")
+delta_mfis <- gs_makeDeltaMFIs(gs1,
+                               ctrl_gs,
+                               subpopulations = subpops,
+                               metadata_col = "FMO") # the name of the column containing control filenames
+                                                     # (must be present in pData(gs1))
 
 # Do DE testing and make plots as you would for typical DE testing

@@ -4,7 +4,13 @@
 \alias{getSampleMetaclusterMFIs}
 \title{getSampleMetaclusterMFIs}
 \usage{
-getSampleMetaclusterMFIs(input, col, sample_df, meta_to_use = NULL)
+getSampleMetaclusterMFIs(
+  input,
+  col,
+  sample_df,
+  populations = NULL,
+  inverse = FALSE
+)
 }
 \arguments{
 \item{input}{description}
@@ -14,8 +20,10 @@ getSampleMetaclusterMFIs(input, col, sample_df, meta_to_use = NULL)
 \item{sample_df}{If \code{input} is a FlowSOM object, a data frame from
 \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
-\item{meta_to_use}{A \code{character} list of the names of metaclusters/populations to calculate MFIs for.
-Default is all.}
+\item{populations}{A \code{character} list of the names of metaclusters/populations to calculate MFIs for.}
+
+\item{inverse}{Boolean, whether data should be back-transformed before calculating MFIs.
+Only valid when \code{input} is a \code{GatingSet} containing a transformation.}
 }
 \value{
 A table, where rows are samples and columns are metaclusters.

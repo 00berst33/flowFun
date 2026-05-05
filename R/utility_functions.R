@@ -318,7 +318,9 @@ transformTable <- function(input, transformation = NULL,
 
     # Reverse transformation if necessary
     if (transform_type == "logicle") { # make switch()?
-      transformation <- flowCore::inverseLogicleTransform(transformation)
+      #transformation <- flowCore::inverseLogicleTransform(transformation)
+      transforms <- flowCore::transformList(names(trans), lapply(trans, `[[`, "inverse"))
+      #transforms <- attr(transforms, "transforms")
     } else if (transform_type == "arcsinh") {
       stop()
     } else if (transform_type == "other") {
@@ -329,7 +331,16 @@ transformTable <- function(input, transformation = NULL,
   }
 
   # Extract list of transformations from transformList object
-  transforms <- methods::slot(transformation, "transforms")
+  #transforms <- methods::slot(transformation, "transforms")
+
+
+  # If column names don't match
+  if (!any(names(transforms) %in% colnames(input))) {
+    marker_cols <- sub(".*<(.*)>.*", "\\1", names(transforms))
+    match_idx <- match(names(transforms), marker_cols)
+    # Set channelpair to pretty column names
+    names(transforms) <- colnames(input)[match_idx]
+  }
 
   # Apply transformation
   transformed_input <- input %>%
@@ -401,19 +412,43 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #' @param col The channel to find sample-metacluster MFIs for.
 #' @param sample_df If \code{input} is a FlowSOM object, a data frame from
 #' [prepareSampleInfo()].
-#' @param meta_to_use A `character` list of the names of metaclusters/populations to calculate MFIs for.
-#' Default is all.
+#' @param populations A `character` list of the names of metaclusters/populations to calculate MFIs for.
+#' @param inverse Boolean, whether data should be back-transformed before calculating MFIs.
+#' Only valid when `input` is a `GatingSet` containing a transformation.
 #'
 #' @return A table, where rows are samples and columns are metaclusters.
 #' @export
-getSampleMetaclusterMFIs <- function(input, col, sample_df, meta_to_use = NULL) {
+getSampleMetaclusterMFIs <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
   result <- UseMethod("getSampleMetaclusterMFIs")
   return(result)
 }
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, meta_to_use = NULL) {
+getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, populations = NULL, inverse = FALSE) {
+  var <- rlang::ensym(col)
+
+  # Get MFIs for populations of interest
+  mfis <- flowWorkspace::gs_pop_get_stats(gs1, nodes = populations, type = pop.MFI, inverse = inverse)
+
+  # Select marker/channel of interest and pivot data to wide format
+  mfis <- mfis %>%
+    dplyr::select(sample, pop, !!col) %>%
+    tidyr::pivot_wider(names_from = pop, values_from = !!col)
+
+  # Set rownames
+  rn <- mfis$sample
+  mfis <- mfis %>%
+    as.data.frame(make.names = FALSE) %>%
+    dplyr::select(-sample)
+  rownames(mfis) <- rn
+
+  return(mfis)
+}
+
+#' @keywords internal
+#' @export
+getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
   Metacluster <- File <- NULL
 
   var <- rlang::enquo(col)
@@ -436,9 +471,9 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, meta_to_use 
   table <- table %>%
     dplyr::select(-"File")
 
-  if(!is.null(meta_to_use)) {
+  if(!is.null(populations)) {
     table <- table %>%
-      dplyr::select(meta_to_use)
+      dplyr::select(populations)
   }
 
   return(table)
@@ -446,7 +481,7 @@ getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, meta_to_use 
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, meta_to_use = NULL) {
+getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
 
   # If input is only channel name
   if (is.character(col) & !(col %in% colnames(input))) {
@@ -470,9 +505,9 @@ getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, meta_to_u
     dplyr::select(!.id) %>%
     data.frame(row.names = fitc_mfis$.id, check.names = FALSE)
 
-  if(!is.null(meta_to_use)) {
+  if (!is.null(populations)) {
     fitc_mfis <- fitc_mfis %>%
-      dplyr::select(meta_to_use)
+      dplyr::select(populations)
   }
 
   return(fitc_mfis)

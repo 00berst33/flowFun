@@ -7,7 +7,7 @@
 makeCountMatrix(
   input,
   sample_df = NULL,
-  meta_names = NULL,
+  populations = NULL,
   min_cells = 3,
   min_samples = NULL
 )
@@ -18,8 +18,7 @@ makeCountMatrix(
 \item{sample_df}{If \code{input} is a FlowSOM object, a data frame from
 \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
-\item{meta_names}{A vector of metacluster names of interest. By default, all
-metacluster names are used.}
+\item{populations}{A vector of metacluster names of interest.}
 
 \item{min_cells}{An integer, the minimum number of cells a metacluster should
 have in a specified number of samples to be included in the analysis.}

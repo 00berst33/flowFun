@@ -22,7 +22,13 @@ doDAAnalysis(
 \item{sample_df}{A data frame, generated either manually or by \code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
 
 \item{norm_method}{The normalization method to be used and passed to
-\code{\link[edgeR:calcNormFactors]{edgeR::calcNormFactors()}}, if any.}
+\code{\link[edgeR:calcNormFactors]{calcNormFactors()}}, one of \verb{"TMM", "TMMwsp", "RLE", "upperquartile", or "none"}. Default is \code{"TMM"}. See documentation
+of \code{calcNormFactors()} for more details.}
+}
+\value{
+A list of tables extracted from a
+\code{\link[edgeR:`TopTags-class`]{TopTags}} object. Each element
+corresponds to a column in \code{contrasts}.
 }
 \description{
 Do differential abundance analysis on the data.
@@ -30,14 +36,11 @@ Do differential abundance analysis on the data.
 \details{
 This function performs tests for differential abundances between groups of
 interest defined by a contrasts matrix. Models are fit and compared via
-likelihood ratio tests using functions from edgeR. Results are saved as a
-.csv file for each comparison in the directory defined by \code{dir_edger()} at
-runtime. If running an edgeR analysis on multiple FlowSOM objects, or running the
-script multiple times for any reason, the user may wish to create
-sub-directories within \code{dir_edger} to stay organized. To do this,
-simply set the \code{dir_tables} parameter to a preferred sub-directory name.
+likelihood ratio tests using functions from edgeR.
 }
 \seealso{
-\code{\link[edgeR:calcNormFactors]{edgeR::calcNormFactors()}}, \code{\link[edgeR:DGEList]{edgeR::DGEList()}}, \code{\link[edgeR:estimateDisp]{edgeR::estimateDisp()}},
-\code{\link[edgeR:glmfit]{edgeR::glmFit()}}, \code{\link[edgeR:glmLRT]{edgeR::glmLRT()}}, \code{\link[edgeR:topTags]{edgeR::topTags()}}.
+\code{\link[edgeR:calcNormFactors]{calcNormFactors()}},
+\code{\link[edgeR:DGEList]{DGEList()}}, \code{\link[edgeR:estimateDisp]{estimateDisp()}},
+\code{\link[edgeR:glmFit]{glmFit()}}, \code{\link[edgeR:glmLRT]{glmLRT()}},
+\code{\link[edgeR:topTags]{topTags()}}.
 }

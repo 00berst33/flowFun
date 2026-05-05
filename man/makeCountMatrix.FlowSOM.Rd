@@ -7,7 +7,7 @@
 \method{makeCountMatrix}{FlowSOM}(
   input,
   sample_df,
-  meta_names = NULL,
+  populations = NULL,
   min_cells = 3,
   min_samples = NULL
 )
