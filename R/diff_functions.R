@@ -776,48 +776,39 @@ plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NU
                              inverse = FALSE, upper_lim = NULL) {
   Group <- value <- name <- NULL
 
-  # Get MFI matrix
-  input <- getSampleMetaclusterMFIs(input, col,
-                                    sample_df = sample_df,
-                                    populations = populations,
-                                    inverse = inverse)
+  mfis <- getSampleMetaclusterMFIs(input, col,
+                                   sample_df = sample_df,
+                                   populations = populations,
+                                   inverse = inverse)
 
   # Get list of groups by file
   grps_of_interest <- getGroups(comparison, sample_df)
 
-  # Get input as data frame
-  if (is.matrix(input)) {
-    input <- as.data.frame(input, check.names = FALSE)
+  if (is.null(populations) & is.data.frame(input)) {
+    populations <- unique(input$Metacluster)
   }
-
-  # if (!is.null(populations)) {
-  #   vars <- rlang::enquos(populations)
-  #   input <- input %>%
-  #     tidytable::select(!!!vars)
-  # }
 
   # Function to find corresponding list names
   find_list_name <- function(filename, list_of_lists) {
     list_name <- names(list_of_lists)[sapply(list_of_lists, function(lst) filename %in% lst)]
     ifelse(length(list_name) > 0, list_name, "X")
   }
-
   # Add the new column with mutate()
-  input <- input %>%
+  mfis <- mfis %>%
     dplyr::mutate(Group = purrr::map_chr(sample_df[, 2], ~ find_list_name(.x, grps_of_interest))) %>%
     dplyr::filter(Group != "X")
 
   # Data frame to plot a data point for each sample
-  point_df <- tidyr::pivot_longer(input, cols = -Group)
+  point_df <- tidyr::pivot_longer(mfis, cols = -Group)
 
   # Calculate medians for each group
-  median_df <- input %>%
+  median_df <- mfis %>%
     dplyr::group_by(Group) %>%
     dplyr::summarise_if(is.numeric, stats::median, na.rm = TRUE) %>%
     dplyr::ungroup()
 
   # Calculate standard errors for each group
-  se_df <- input %>%
+  se_df <- mfis %>%
     dplyr::group_by(Group) %>%
     dplyr::summarise_if(is.numeric, calculateSE) %>%
     dplyr::ungroup()

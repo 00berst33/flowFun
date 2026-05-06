@@ -377,7 +377,7 @@ da_results[[2]] # display only second comparison, NAC vs. No NAC
 marker_cols <- c("BV711-A", "FITC-A")
 
 # Get clustered populations
-subpops <- gs_pop_get_children(gs1, "live_cells")
+subpops <- gs_pop_get_children(gs1, "live_cells", path = "auto")
 
 # Perform differential expression analysis for given markers. This function accepts
 # either a GatingSet or data.table.
@@ -400,7 +400,7 @@ plotGroupMFIBars(gs1,
                  comparison = comparisons[[1]],
                  populations = subpops, # name of populations to plot
                  inverse = TRUE, # only applicable if input is GatingSet
-                 upper_lim = FALSE)
+                 upper_lim = NULL)
 
 # If you would like to get a table of sample/metacluster MFIs to use for your own plotting,
 # use `getSampleMetaclusterMFIs()`.
