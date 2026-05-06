@@ -911,7 +911,7 @@ addMarkersToMetaData <- function(input, cols_to_cluster) {
 #' @param sample_df A `data.frame`, where each row corresponds to a sample and
 #' each column corresponds to metadata about the samples, such as experimental group,
 #' or the filename of a corresponding control sample. Must contain a column for
-#' filename, called `File.Name`.
+#' filename, called `filename`.
 #'
 #' @export
 addMetadataToGatingSet <- function(gs, sample_df) {
