@@ -1,34 +1,12 @@
+# This template includes all the steps to run the completed flowFun pipeline, 
+# starting with FCS files through to statistical analysis and plotting of data. 
 
-#HfJKAfhkj
+# Vignettes and other helpful documentation, including a "Getting Started with
+# flowFun Guide", may be viewed on the package's main page: 
+# https://00berst33.github.io/flowFun
 
-# Perform clustering on a group of preprocessed flow cytometry data files. The
-# clustering is done with the package FlowSOM, which works by constructing
-# a self-organizing map (SOM), a type of artificial neural network. This SOM is
-# created in a way such that the closer two nodes are to each other, the more
-# similar they are to each other. Through the process of constructing this SOM,
-# each cell in the data is mapped to whichever node (or cluster) in the SOM that
-# represents it best, resulting in the final clustering. Typically, depending on
-# the desired resolution, a very high number of clusters is used - anywhere from
-# 50 - 200 may be reasonable. The clustering is then visualized as a minimum
-# spanning tree (MST).
-#
-# After clustering is complete, the next step is to identify cell type
-# populations. Because we create such a large number of nodes in the first step,
-# it is necessary to cluster them further so that we may interpret our
-# results in a biologically meaningful way. It is possible to use FlowSOM to
-# cluster the nodes, essentially producing clusters of clusters, which we
-# call "metaclusters". For example, if we expected to see CD4 T cells,
-# CD8 T cells, NK T cells, and gdT cells in our data, we might tell FlowSOM that
-# we want to first cluster our cells into 100 nodes, then cluster those 100 nodes
-# into 4 metaclusters. However, FlowSOM lacks any biological knowledge about
-# our data, and does not always reliably distinguish cell types. Because of this,
-# this workflow uses the strategy of overclustering, and requires the user to
-# manually merge metaclusters by examining dimension reduction plots and heatmaps.
-#
-# Finally, this script allows the user to perform backgating and reclustering on
-# any identified cell types of particular interest. This clustering may be done
-# using either a selected number of principal components obtained from PCA,
-# or a new subset of markers defined by the user.
+# The vignette can also be opened in RStudio by running:
+vignette(package = "flowFun", "workflowVignetteUpdated")
 
 # Load packages.
 library(data.table)
@@ -38,49 +16,57 @@ library(flowWorkspace)
 library(openCyto)
 library(ggcyto)
 library(ggplot2)
+library(CytoExploreR) # I added this here but we could remove it and just keep it below if you think that's better
+
 
 # Set a seed for reproducibility
 set.seed(84)
 
 # Set the directory you would like to store analysis results in.
-work_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC")
+work_dir <- file.path("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/Bioinformatics/High Parameter Flow Data/Testing FlowFun/April 2026/26-04-16_Analysis")
 
-#####
-## Load in raw data for first time
-# The name of the directory containing the .fcs files to analyze
-data_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw" ###
+##################
+# PRE-PROCESSING #
+##################
 
-# Get all filenames and create GatingSet
-files <- list.files(data_dir, full.names = TRUE)
+### LOAD FCS FILES ###
+
+# Note: Instead of FCS files, you can load a previously created GatingSet or 
+# cytoset, if needed. See the "Getting Started with flowFun Guide" for instructions
+# on how to do that.
+
+# Indicate the name of the directory containing the .fcs files to analyze
+data_dir <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples"
+
+# Get all filenames and create a GatingSet
+files <- list.files(data_dir,
+                    pattern = "\\.fcs$",
+                    full.names = TRUE,
+                    ignore.case = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files,
-                                           which.lines = 5000) # if NULL, all cells are read in
+                                           which.lines = 50000) # if NULL, all cells are read in
                                                                 # if an integer, a random sample of given size is read in
 gs <- flowWorkspace::GatingSet(cs)
-
-###
-## OR, Load in existing data
-# note: changes made to object created from load_cytoset() do not affect
-#   original data unless `backend_readonly=FALSE`
-# Load previously created GatingSet or cytoset, if needed
-gs <- flowWorkspace::load_gs(file.path(work_dir, "template_gs"))
-# cs <- flowWorkspace::load_cytoset(file.path(work_dir, "template_cs"))
-###
 
 # Make deep clone of GatingSet, to avoid making accidental changes to underlying data
 gs1 <- flowWorkspace::gs_clone(gs)
 
-# Compensate
-comp_mat <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/morgans_comp_matrix.csv",
+### APPLY COMPENSTATION ####
+
+# Load the compensation matrix
+comp_mat <- read.csv("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012_Comp_Matrix_noQC_fixed_names.csv",
                      check.names = FALSE) # note check.names
 
 # !!! Note: The column names of your compensation matrix must match those
 #     found in your GatingSet.
-# Check
+
+# Check column names
 colnames(comp_mat)
 colnames(gs1)
 
 # Print column names in GatingSet not found in column names of compensation matrix
 colnames(gs1)[!(colnames(gs1) %in% colnames(comp_mat))]
+
 # Prepare compensation matrix to be passed to `compensate`
 #   Columns are matched to those in the GatingSet based on the regexpr given to pattern.
 #   Default is `" >.*"`. Setting `pattern = ""` tells the function that column names
