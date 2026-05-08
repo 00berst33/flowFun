@@ -66,8 +66,7 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://00berst33.github.io/flowFun/">flowFun</a></span><span class="op">)</span></span>
-<span><span class="co"># this should be the "getting started" vignette</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://00berst33.github.io/flowFun/">flowFun</a></span><span class="op">)</span></span></code></pre></div>
 <p>To improve the accessibility of the package, <code>flowFun</code>
 provides a number of template scripts for users to make getting started
 less daunting. When viewing the GitHub page, these may be found in the
@@ -77,10 +76,23 @@ import and export data at any stage of the analysis. This page will give
 a brief overview of the pipeline and how users may import their data at
 each step. The diagram below summarizes each function relevant to the
 package, and which step they fit into.</p>
+<p><img src="images/getting_started/flowfun_diagram.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>The most important data type in this pipeline is the
 <code>GatingSet</code>, which comes from the <code>flowWorkspace</code>
 package. Users who have performed flow analysis in R before may be
-familiar with the <code>flowSet</code>, which is quite similar.</p>
+familiar with the <code>flowSet</code>, which is quite similar. Both
+store all raw data from a set of FCS files, but <code>GatingSets</code>
+are more advantageous for a few reasons. For one, in addition to the raw
+data, <code>GatingSets</code> can hold information about
+transformations, compensations, and gating schemes that are applied
+during analysis. Instead of having multiple sets of FCS files
+corresponding to raw data, preprocessed data, various subsets, etc.,
+this data structure conveniently keeps everything in one place.</p>
+<p>Additionally, <code>GatingSets</code> are far more memory efficient
+than <code>flowSets</code>. Rather than always having the full dataset
+loaded in memory, a <code>GatingSet</code> contains only a pointer to
+the data, which is stored compactly in C data structure. This makes
+performing operations on large datasets faster.</p>
   </main>
 </div>
 
