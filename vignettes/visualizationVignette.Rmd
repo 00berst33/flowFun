@@ -194,7 +194,7 @@ Below are some examples regarding basic customization of bar plots made with `gg
 
 If you are only interested in changing axes and title names, add the `labs()` function from `ggplot2`.
 
-```{r make-transform, include=FALSE}
+```{r make-transform, include=FALSE, eval=TRUE}
 # rebuild transformation
 dir <- system.file("extdata", "samples", package = "flowFunData")
 cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs", truncate_max_range = TRUE)
@@ -202,7 +202,7 @@ gs <- flowWorkspace::GatingSet(cs)
 cols <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV480-A", 
           "BV605-A", "BV650-A", "BV711-A", "BV750-P-A", "BV786-A", "BUV395-A", 
           "BUV563-A", "BUV615-P-A", "BUV661-A", "BUV737-A", "BUV805-A", "PE-A",
-          "PE-CF594-A", "PE-Cy5-A", "PE-Cy7-A")
+          "PE-CF594-A", "PE-Cy5-A", "PE-Cy7-A", "FITC-A")
 trans_list <- flowCore::estimateLogicle(gs[[1]], channels = cols)
 ```
 
