@@ -112,7 +112,7 @@ plotGroupUMAPs(fsom_dt,
                color_by = "FITC-A")
 ```
 
-```{r print-second-umap, echo=FALSE, out.width='80%', fig.align='center'}
+```{r print-group-umaps, echo=FALSE, out.width='80%', fig.align='center'}
 knitr::include_graphics("images/visualization_vignette/group_umap1.png")
 knitr::include_graphics("images/visualization_vignette/group_umap2.png")
 ```
