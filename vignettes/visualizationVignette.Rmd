@@ -30,8 +30,8 @@ It's important to make sure that the `comparisons` parameter is defined properly
 
 ```{r setup-obj, eval=TRUE}
 # Specify path to file with clustered data
-data_file <- system.file("extdata", "fsom_dt.csv", package = "flowFunData")
-fsom_dt <- read.csv(data_file)
+data_file <- system.file("extdata", "fsom_dt.rds", package = "flowFunData")
+fsom_dt <- readRDS(data_file)
 
 # Make a nested list defining any comparisons you wish to make. See the examples
 # in documentation for prepareSampleInfo() for a detailed explanation.
@@ -97,21 +97,24 @@ To create UMAPs for the purpose of comparing groups, you may use a previously cr
 
 `num_cells` specifies the number of cells to include in the plot for each group. Note that, if you are generating the figure using a previous UMAP, this parameter is bounded by the number of cells for that group that already exist in that UMAP. If `num_cells` cannot be reached, the function instead sets it to the cell count from the least abundant group, and states the actual number of cells that were used for plotting. 
 
-```{r group-umaps, eval=TRUE, message=TRUE}
+```{r group-umaps, eval=FALSE, message=FALSE}
 # Color UMAPs by density for Ctrl vs. MIBC, using above plot
 plotGroupUMAPs(fsom_dt, 
                sample_info, 
                comparisons[[1]], 
-               umap = umap_full,
-               num_cells = 5000)
+               umap = umap_full)
 
 # Color UMAPS by PHA-L expression, MIBC NAC vs. MIBC No.NAC
 plotGroupUMAPs(fsom_dt, 
                sample_info, 
                comparisons[[2]], 
                umap = umap_full,
-               color_by = "FITC-A",
-               num_cells = 5000)
+               color_by = "FITC-A")
+```
+
+```{r print-second-umap, echo=FALSE, out.width='80%', fig.align='center'}
+knitr::include_graphics("images/visualization_vignette/group_umap1.png")
+knitr::include_graphics("images/visualization_vignette/group_umap2.png")
 ```
 
 ## Bar plots
