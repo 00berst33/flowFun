@@ -35,7 +35,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
-    <li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">flowFun</a></li>
+    <li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">Main workflow</a></li>
   </ul>
 </li>
       </ul>
@@ -58,7 +58,6 @@
 
       <h1>Making and editing plots</h1>
             
-            <h4 data-toc-skip class="date">2026-05-07</h4>
       
 
       <div class="d-none name"><code>visualizationVignette.Rmd</code></div>
@@ -131,6 +130,7 @@ are used for plotting.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Color single default UMAP by metacluster</span></span>
 <span><span class="fu"><a href="../reference/plotUMAP.html">plotUMAP</a></span><span class="op">(</span><span class="va">fsom_dt</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></code></pre></div>
+<p><img src="images/workflow_final/umap3.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"></p>
 <p>We may also manually specify the number of cells that should be used,
 the order the legend elements should appear in, and the colors to use
 for each metacluster. Note that while color codes are manually chosen
@@ -151,6 +151,7 @@ will next be splitting the plot by group and recoloring.</p>
 <span><span class="co"># Plot a UMAP according to custom choices</span></span>
 <span><span class="va">umap_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plotUMAP.html">plotUMAP</a></span><span class="op">(</span><span class="va">fsom_dt</span>, num_cells <span class="op">=</span> <span class="fl">10000</span>, labels <span class="op">=</span> <span class="va">labels</span>, colors <span class="op">=</span> <span class="va">colors</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">umap_full</span></span></code></pre></div>
+<p><img src="images/visualization_vignette/big_umap.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"></p>
 <p>To create UMAPs for the purpose of comparing groups, you may use a
 previously created aggregate UMAP, like the one above, by specifying the
 parameter <code>umap</code>. If you do not do this, a new UMAP will be
@@ -175,6 +176,7 @@ number of cells that were used for plotting.</p>
 <span>               <span class="va">comparisons</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, </span>
 <span>               umap <span class="op">=</span> <span class="va">umap_full</span>,</span>
 <span>               color_by <span class="op">=</span> <span class="st">"FITC-A"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="images/visualization_vignette/group_umap1.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"><img src="images/visualization_vignette/group_umap2.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="bar-plots">Bar plots<a class="anchor" aria-label="anchor" href="#bar-plots"></a>
@@ -203,6 +205,7 @@ parameter. The channel to plot MFIs for is chosen with the
 <span>                 sample_df <span class="op">=</span> <span class="va">sample_info</span>, </span>
 <span>                 col <span class="op">=</span> <span class="st">"FITC-A"</span>,</span>
 <span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/first-bar-plot-1.png" class="r-plt" alt="" width="700"></p>
 <p>When given a <code>data.table</code>, the default behavior of this
 function is to plot all metaclusters, but if they wish to only plot
 particular populations, users may specify them with the
@@ -216,6 +219,7 @@ particular populations, users may specify them with the
 <span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, <span class="co"># plot NAC vs. No NAC groups</span></span>
 <span>                 populations <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CD8 T cells"</span>, <span class="st">"gdT cells"</span><span class="op">)</span>,  <span class="co"># choose specific populations to plot</span></span>
 <span>                 upper_lim <span class="op">=</span> <span class="fl">3.5</span><span class="op">)</span> <span class="co"># set y-axis upper limit to 3.5</span></span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/second-bar-plot-1.png" class="r-plt" alt="" width="700"></p>
 <p><code><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars()</a></code> also takes <code>GatingSets</code> as
 input. In this case, including the <code>populations</code> parameter is
 necessary, since unlike the <code>data.table</code>, our
@@ -269,6 +273,7 @@ below.</p>
 <span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, </span>
 <span>                 transformation <span class="op">=</span> <span class="va">trans_list</span>,</span>
 <span>                 inverse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="images/visualization_vignette/inverse_mfi_table.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"></p>
 <div class="section level3">
 <h3 id="plot-customization">Plot customization<a class="anchor" aria-label="anchor" href="#plot-customization"></a>
 </h3>
@@ -288,6 +293,7 @@ made with <code>ggplot2</code>.</p>
 <span>  <span class="fu">labs</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"PHA-L MFIs for all cell types"</span>, </span>
 <span>       x <span class="op">=</span> <span class="st">"Metacluster"</span>,</span>
 <span>       y <span class="op">=</span> <span class="st">"PHA-L MFI"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/custom1-1.png" class="r-plt" alt="" width="700"></p>
 <p>To customize the colors, point shapes, and legend, use
 <code>scale_fill_manual()</code> and
 <code>scale_shape_manual()</code>.</p>
@@ -299,11 +305,13 @@ made with <code>ggplot2</code>.</p>
 <span>  <span class="fu">scale_shape_manual</span><span class="op">(</span>name <span class="op">=</span> <span class="st">"NAC Group"</span>,                               </span>
 <span>                     labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MIBC NAC"</span>, <span class="st">"MIBC No NAC"</span><span class="op">)</span>,            </span>
 <span>                     values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"circle"</span>, <span class="st">"triangle"</span><span class="op">)</span><span class="op">)</span>                 <span class="co"># picks new shapes for data points</span></span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/custom2-1.png" class="r-plt" alt="" width="700"></p>
 <p>If you only wish to change colors, just specifying
 <code>values</code> is enough.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">+</span> </span>
 <span>  <span class="fu">scale_fill_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dodgerblue4"</span>, <span class="st">"firebrick4"</span><span class="op">)</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/custom3-1.png" class="r-plt" alt="" width="700"></p>
 <p>Note that giving different parameters to the <code>name</code> and/or
 <code>labels</code> parameters results in two legends.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -314,6 +322,7 @@ made with <code>ggplot2</code>.</p>
 <span>  <span class="fu">scale_shape_manual</span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Groups"</span>,                               </span>
 <span>                     labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"MIBC NAC"</span>, <span class="st">"MIBC No NAC"</span><span class="op">)</span>,            </span>
 <span>                     values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"circle"</span>, <span class="st">"triangle"</span><span class="op">)</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="visualizationVignette_files/figure-html/custom4-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

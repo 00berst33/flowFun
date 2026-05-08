@@ -71,6 +71,8 @@ results are replicable. By default, 5000 cells are used for plotting.
 plotUMAP(fsom_dt, seed = 42)
 ```
 
+![](images/workflow_final/umap3.png)
+
 We may also manually specify the number of cells that should be used,
 the order the legend elements should appear in, and the colors to use
 for each metacluster. Note that while color codes are manually chosen
@@ -95,6 +97,8 @@ labels <- c("CD8 T cells", "CD4 T cells", "B cells", "NK cells", "NK T cells",
 umap_full <- plotUMAP(fsom_dt, num_cells = 10000, labels = labels, colors = colors, seed = 42)
 umap_full
 ```
+
+![](images/visualization_vignette/big_umap.png)
 
 To create UMAPs for the purpose of comparing groups, you may use a
 previously created aggregate UMAP, like the one above, by specifying the
@@ -123,6 +127,8 @@ plotGroupUMAPs(fsom_dt,
                umap = umap_full,
                color_by = "FITC-A")
 ```
+
+![](images/visualization_vignette/group_umap1.png)![](images/visualization_vignette/group_umap2.png)
 
 ## Bar plots
 
@@ -153,6 +159,8 @@ plotGroupMFIBars(fsom_dt,
                  comparison = comparisons[[1]])
 ```
 
+![](visualizationVignette_files/figure-html/first-bar-plot-1.png)
+
 When given a `data.table`, the default behavior of this function is to
 plot all metaclusters, but if they wish to only plot particular
 populations, users may specify them with the `populations` parameter.
@@ -169,6 +177,8 @@ plotGroupMFIBars(fsom_dt,
                  populations = c("CD8 T cells", "gdT cells"),  # choose specific populations to plot
                  upper_lim = 3.5) # set y-axis upper limit to 3.5
 ```
+
+![](visualizationVignette_files/figure-html/second-bar-plot-1.png)
 
 [`plotGroupMFIBars()`](https://00berst33.github.io/flowFun/reference/plotGroupMFIBars.md)
 also takes `GatingSets` as input. In this case, including the
@@ -233,6 +243,8 @@ plotGroupMFIBars(fsom_dt,
                  inverse = TRUE)
 ```
 
+![](images/visualization_vignette/inverse_mfi_table.png)
+
 ### Plot customization
 
 Below are some examples regarding basic customization of bar plots made
@@ -256,6 +268,8 @@ p +
        y = "PHA-L MFI")
 ```
 
+![](visualizationVignette_files/figure-html/custom1-1.png)
+
 To customize the colors, point shapes, and legend, use
 `scale_fill_manual()` and `scale_shape_manual()`.
 
@@ -270,6 +284,8 @@ p +
                      values = c("circle", "triangle"))                 # picks new shapes for data points
 ```
 
+![](visualizationVignette_files/figure-html/custom2-1.png)
+
 If you only wish to change colors, just specifying `values` is enough.
 
 ``` r
@@ -277,6 +293,8 @@ If you only wish to change colors, just specifying `values` is enough.
 p + 
   scale_fill_manual(values = c("dodgerblue4", "firebrick4")) 
 ```
+
+![](visualizationVignette_files/figure-html/custom3-1.png)
 
 Note that giving different parameters to the `name` and/or `labels`
 parameters results in two legends.
@@ -291,3 +309,5 @@ p +
                      labels = c("MIBC NAC", "MIBC No NAC"),            
                      values = c("circle", "triangle"))  
 ```
+
+![](visualizationVignette_files/figure-html/custom4-1.png)

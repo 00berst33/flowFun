@@ -1,4 +1,4 @@
-# flowFun
+# Main workflow
 
 ## Installation
 
