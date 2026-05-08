@@ -1,8 +1,8 @@
 ---
-title: "flowFun"
+title: "Main workflow"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{flowFun}
+  %\VignetteIndexEntry{Workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

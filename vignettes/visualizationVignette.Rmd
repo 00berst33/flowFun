@@ -1,13 +1,14 @@
 ---
 title: "Making and editing plots"
-output:
-  html_document:
-    df_print: paged
-date: "2026-05-07"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{visualizationVignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(flowFun)
 library(flowFunData)
 library(flowWorkspace)
