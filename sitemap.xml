@@ -1,7 +1,9 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://00berst33.github.io/flowFun/404.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/LICENSE.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/articles/flowFun.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/articles/index.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/articles/visualizationVignette.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/articles/workflowVignetteUpdated.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/authors.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/index.html</loc></url>
@@ -44,6 +46,7 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/gs_makeDeltaMFIs.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/index.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/reference/inverseTransformTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/loadFlowSOMEmbedding.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/makeBoolean.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/makeContrastsMatrix.html</loc></url>
@@ -69,6 +72,5 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/revertPCAFlowSOM.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/saveFlowSOMEmbedding.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/tableToFlowSet.html</loc></url>
-<url><loc>https://00berst33.github.io/flowFun/reference/transformTable.html</loc></url>
 </urlset>
 

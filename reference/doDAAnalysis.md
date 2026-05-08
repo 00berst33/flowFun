@@ -39,26 +39,26 @@ doDAAnalysis(
 - norm_method:
 
   The normalization method to be used and passed to
-  [`edgeR::calcNormFactors()`](https://rdrr.io/pkg/edgeR/man/calcNormFactors.html),
-  if any.
+  [`calcNormFactors()`](https://rdrr.io/pkg/edgeR/man/calcNormFactors.html),
+  one of `"TMM", "TMMwsp", "RLE", "upperquartile", or "none"`. Default
+  is `"TMM"`. See documentation of `calcNormFactors()` for more details.
+
+## Value
+
+A list of tables extracted from a `TopTags` object. Each element
+corresponds to a column in `contrasts`.
 
 ## Details
 
 This function performs tests for differential abundances between groups
 of interest defined by a contrasts matrix. Models are fit and compared
-via likelihood ratio tests using functions from edgeR. Results are saved
-as a .csv file for each comparison in the directory defined by
-`dir_edger()` at runtime. If running an edgeR analysis on multiple
-FlowSOM objects, or running the script multiple times for any reason,
-the user may wish to create sub-directories within `dir_edger` to stay
-organized. To do this, simply set the `dir_tables` parameter to a
-preferred sub-directory name.
+via likelihood ratio tests using functions from edgeR.
 
 ## See also
 
-[`edgeR::calcNormFactors()`](https://rdrr.io/pkg/edgeR/man/calcNormFactors.html),
-[`edgeR::DGEList()`](https://rdrr.io/pkg/edgeR/man/DGEList.html),
-[`edgeR::estimateDisp()`](https://rdrr.io/pkg/edgeR/man/estimateDisp.html),
-[`edgeR::glmFit()`](https://rdrr.io/pkg/edgeR/man/glmfit.html),
-[`edgeR::glmLRT()`](https://rdrr.io/pkg/edgeR/man/glmLRT.html),
-[`edgeR::topTags()`](https://rdrr.io/pkg/edgeR/man/topTags.html).
+[`calcNormFactors()`](https://rdrr.io/pkg/edgeR/man/calcNormFactors.html),
+[`DGEList()`](https://rdrr.io/pkg/edgeR/man/DGEList.html),
+[`estimateDisp()`](https://rdrr.io/pkg/edgeR/man/estimateDisp.html),
+[`glmFit()`](https://rdrr.io/pkg/edgeR/man/glmfit.html),
+[`glmLRT()`](https://rdrr.io/pkg/edgeR/man/glmLRT.html),
+[`topTags()`](https://rdrr.io/pkg/edgeR/man/topTags.html).

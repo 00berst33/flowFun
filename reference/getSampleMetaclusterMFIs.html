@@ -15,10 +15,12 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/flowFun.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">flowFun</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
+    <li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">flowFun</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -41,7 +43,13 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getSampleMetaclusterMFIs</span><span class="op">(</span><span class="va">input</span>, <span class="va">col</span>, <span class="va">sample_df</span>, meta_to_use <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getSampleMetaclusterMFIs</span><span class="op">(</span></span>
+<span>  <span class="va">input</span>,</span>
+<span>  <span class="va">col</span>,</span>
+<span>  populations <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  transformation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  inverse <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -49,21 +57,26 @@
 
 
 <dl><dt id="arg-input">input<a class="anchor" aria-label="anchor" href="#arg-input"></a></dt>
-<dd><p>description</p></dd>
+<dd><p>A <code>data.table</code> or <code>GatingSet</code></p></dd>
 
 
 <dt id="arg-col">col<a class="anchor" aria-label="anchor" href="#arg-col"></a></dt>
 <dd><p>The channel to find sample-metacluster MFIs for.</p></dd>
 
 
-<dt id="arg-sample-df">sample_df<a class="anchor" aria-label="anchor" href="#arg-sample-df"></a></dt>
-<dd><p>If <code>input</code> is a FlowSOM object, a data frame from
-<code><a href="prepareSampleInfo.html">prepareSampleInfo()</a></code>.</p></dd>
+<dt id="arg-populations">populations<a class="anchor" aria-label="anchor" href="#arg-populations"></a></dt>
+<dd><p>A <code>character</code> list of the names of metaclusters/populations to calculate MFIs for.</p></dd>
 
 
-<dt id="arg-meta-to-use">meta_to_use<a class="anchor" aria-label="anchor" href="#arg-meta-to-use"></a></dt>
-<dd><p>A <code>character</code> list of the names of metaclusters/populations to calculate MFIs for.
-Default is all.</p></dd>
+<dt id="arg-transformation">transformation<a class="anchor" aria-label="anchor" href="#arg-transformation"></a></dt>
+<dd><p>A <code><a href="https://rdrr.io/pkg/flowCore/man/transformList-class.html" class="external-link">transformList</a></code> specifying
+the transformation applied to the data, if any. Required when <code>input</code> is a <code>data.table</code>
+and <code>inverse = TRUE</code></p></dd>
+
+
+<dt id="arg-inverse">inverse<a class="anchor" aria-label="anchor" href="#arg-inverse"></a></dt>
+<dd><p>Boolean, whether data should be back-transformed before calculating MFIs.
+Only valid when <code>input</code> is a <code>GatingSet</code> containing a transformation.</p></dd>
 
 </dl></div>
     <div class="section level2">

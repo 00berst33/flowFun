@@ -9,7 +9,7 @@ Generate matrix of sample/metacluster cell counts.
 makeCountMatrix(
   input,
   sample_df = NULL,
-  meta_names = NULL,
+  populations = NULL,
   min_cells = 3,
   min_samples = NULL
 )

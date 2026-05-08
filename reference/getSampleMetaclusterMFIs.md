@@ -6,28 +6,42 @@ metacluster.
 ## Usage
 
 ``` r
-getSampleMetaclusterMFIs(input, col, sample_df, meta_to_use = NULL)
+getSampleMetaclusterMFIs(
+  input,
+  col,
+  populations = NULL,
+  transformation = NULL,
+  inverse = FALSE
+)
 ```
 
 ## Arguments
 
 - input:
 
-  description
+  A `data.table` or `GatingSet`
 
 - col:
 
   The channel to find sample-metacluster MFIs for.
 
-- sample_df:
-
-  If `input` is a FlowSOM object, a data frame from
-  [`prepareSampleInfo()`](https://00berst33.github.io/flowFun/reference/prepareSampleInfo.md).
-
-- meta_to_use:
+- populations:
 
   A `character` list of the names of metaclusters/populations to
-  calculate MFIs for. Default is all.
+  calculate MFIs for.
+
+- transformation:
+
+  A
+  [`transformList`](https://rdrr.io/pkg/flowCore/man/transformList-class.html)
+  specifying the transformation applied to the data, if any. Required
+  when `input` is a `data.table` and `inverse = TRUE`
+
+- inverse:
+
+  Boolean, whether data should be back-transformed before calculating
+  MFIs. Only valid when `input` is a `GatingSet` containing a
+  transformation.
 
 ## Value
 

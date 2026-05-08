@@ -1527,11 +1527,9 @@ of MFIs or statistical tests.
 
 ``` r
 
-# Get table with MFIs where rows are sample and columns are metaclusters
-plot_mat <- getSampleMetaclusterMFIs(fsom_dt, "BV711-A", sample_info)
-
 # Generate bar plot
-plotGroupMFIBars(plot_mat, 
+plotGroupMFIBars(fsom_dt,
+                 col = "BV711-A",
                  sample_df = sample_info, 
                  comparison = comparisons[[1]])
 ```

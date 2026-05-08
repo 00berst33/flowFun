@@ -1,0 +1,9 @@
+# NEED TO HANDLE MISSING PARAMETERS FROM TRANSFORMATION
+
+NEED TO HANDLE MISSING PARAMETERS FROM TRANSFORMATION
+
+## Usage
+
+``` r
+inverseTransformTable(input, transformation)
+```

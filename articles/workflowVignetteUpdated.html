@@ -29,11 +29,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/flowFun.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">flowFun</a></li>
+<li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
+    <li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">flowFun</a></li>
   </ul>
 </li>
       </ul>
@@ -2414,11 +2416,9 @@ of MFIs for the marker of interest should be generated; if data is a
 attached, the data may be back-transformed to the linear scale before
 the calculation of MFIs or statistical tests.</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Get table with MFIs where rows are sample and columns are metaclusters</span></span>
-<span><span class="va">plot_mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getSampleMetaclusterMFIs.html">getSampleMetaclusterMFIs</a></span><span class="op">(</span><span class="va">fsom_dt</span>, <span class="st">"BV711-A"</span>, <span class="va">sample_info</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Generate bar plot</span></span>
-<span><span class="fu"><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars</a></span><span class="op">(</span><span class="va">plot_mat</span>, </span>
+<code class="sourceCode R"><span><span class="co"># Generate bar plot</span></span>
+<span><span class="fu"><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars</a></span><span class="op">(</span><span class="va">fsom_dt</span>,</span>
+<span>                 col <span class="op">=</span> <span class="st">"BV711-A"</span>,</span>
 <span>                 sample_df <span class="op">=</span> <span class="va">sample_info</span>, </span>
 <span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="workflowVignetteUpdated_files/figure-html/plot-mfis-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>

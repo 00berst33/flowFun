@@ -8,7 +8,7 @@ Generate matrix of sample/metacluster cell counts.
 makeCountMatrix(
   input,
   sample_df = NULL,
-  meta_names = NULL,
+  populations = NULL,
   min_cells = 3,
   min_samples = NULL
 )
@@ -25,10 +25,9 @@ makeCountMatrix(
   If `input` is a FlowSOM object, a data frame from
   [`prepareSampleInfo()`](https://00berst33.github.io/flowFun/reference/prepareSampleInfo.md).
 
-- meta_names:
+- populations:
 
-  A vector of metacluster names of interest. By default, all metacluster
-  names are used.
+  A vector of metacluster names of interest.
 
 - min_cells:
 
