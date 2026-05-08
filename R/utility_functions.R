@@ -186,10 +186,33 @@ tableToFlowSet <- function(table, id_col = .id) {
   return(fs)
 }
 
+#' @keywords internal
+#' @export
 flowSetToTable <- function(fs) {
-  table <- fs %>%
-    dplyr::ungroup() %>%
-    flowCore::exprs()
+  table <- lapply(seq_along(fs), function(i) {
+    df <- flowCore::exprs(fs[[i]]) %>%
+      as.data.frame(make.names = FALSE) %>%
+      dplyr::mutate(.id = flowCore::sampleNames(fs)[[i]],
+                    .before = 1)
+  }) %>%
+    dplyr::bind_rows() %>%
+    tidytable::as_tidytable()
+
+  return(table)
+}
+
+#' @keywords internal
+#' @export
+flowSetMakePrettyNames <- function(fs) {
+  channels <- flowCore::colnames(fs)
+  ff <- fs[[1]]
+
+  pretty_names <- sapply(seq_along(channels), function(i) {
+    marker <- getMarker(ff, channels[i])
+    pretty_name <- paste0(marker, " <", channels[i], ">")
+  })
+
+  return(pretty_names)
 }
 
 #' flowSOMToTable
@@ -304,51 +327,45 @@ getChannelMarkerPairs <- function(ff, save_res = TRUE) {
 #'
 #' @keywords internal
 #' @export
-transformTable <- function(input, transformation = NULL,
-                           transform_type = c("logicle", "arcsinh", "other", "none"),
-                           find_inverse = FALSE) {
-  if (find_inverse) {
-    # Get transformation
-    temp <- attr(input, "transformation")
+inverseTransformTable <- function(input, transformation) {
 
-    if (!is.null(temp)) { # If there is a transformation attached to input
-      transformation <- temp
-    }
-    #  <- methods::slot(transformation, "transformationId")
+  # Reverse transformation
+  transforms <- lapply(transformation, `[[`, "inverse")
 
-    # Reverse transformation if necessary
-    if (transform_type == "logicle") { # make switch()?
-      #transformation <- flowCore::inverseLogicleTransform(transformation)
-      transforms <- flowCore::transformList(names(trans), lapply(trans, `[[`, "inverse"))
-      #transforms <- attr(transforms, "transforms")
-    } else if (transform_type == "arcsinh") {
-      stop()
-    } else if (transform_type == "other") {
-      stop()
-    } else if (transform_type == "none") {
-      stop()
-    }
+  if (is.null(transforms)) {
+    stop("No inverse found for `transformation`.")
   }
-
-  # Extract list of transformations from transformList object
-  #transforms <- methods::slot(transformation, "transforms")
-
 
   # If column names don't match
   if (!any(names(transforms) %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", names(transforms))
-    match_idx <- match(names(transforms), marker_cols)
-    # Set channelpair to pretty column names
-    names(transforms) <- colnames(input)[match_idx]
+    # Extract only channel names from input
+    input_channels <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    if (all(names(transforms) %in% input_channels)) {
+      match_idx <- match(names(transforms), input_channels)
+      # Set transform names to pretty column names
+      names(transforms) <- colnames(input)[match_idx]
+    } else {
+      stop("One or more names in the transformation and `input` don't match.")
+    }
   }
 
-  # Apply transformation
-  transformed_input <- input %>%
-    tidytable::as_tidytable() %>%
-    tidytable::mutate(tidytable::across(tidytable::all_of(names(transforms)),
-                                        .fns = function(x) transforms[[as.character(substitute(x))]]@f(x)))
+  # Get channel names in transformation
+  channels <- names(transforms)
 
-  return(transformed_input)
+  # Transform relevant channels in data.table
+  for (i in seq_along(channels)) {
+
+    channel <- channels[[i]]
+    trans_fun <- transforms[[i]]
+
+    input <- input %>%
+      tidytable::as_tidytable() %>%
+      tidytable::mutate(
+        !!channel := tidytable::map_dbl(.data[[channel]], trans_fun)
+      )
+  }
+
+  return(input)
 }
 
 #' saveFlowSOMEmbedding
@@ -408,28 +425,39 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #'
 #' Get a table of MFIs, where each row is a sample and each column is a metacluster.
 #'
-#' @param input description
+#' @param input A `data.table` or `GatingSet`
 #' @param col The channel to find sample-metacluster MFIs for.
-#' @param sample_df If \code{input} is a FlowSOM object, a data frame from
-#' [prepareSampleInfo()].
 #' @param populations A `character` list of the names of metaclusters/populations to calculate MFIs for.
+#' @param transformation A \code{\link[flowCore:transformList]{transformList}} specifying
+#' the transformation applied to the data, if any. Required when `input` is a `data.table`
+#' and `inverse = TRUE`
 #' @param inverse Boolean, whether data should be back-transformed before calculating MFIs.
 #' Only valid when `input` is a `GatingSet` containing a transformation.
 #'
 #' @return A table, where rows are samples and columns are metaclusters.
 #' @export
-getSampleMetaclusterMFIs <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
+getSampleMetaclusterMFIs <- function(input, col, populations = NULL,
+                                     transformation = NULL, inverse = FALSE) {
   result <- UseMethod("getSampleMetaclusterMFIs")
   return(result)
 }
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, populations = NULL, inverse = FALSE) {
+getSampleMetaclusterMFIs.GatingSet <- function(input, col, populations = NULL,
+                                               transformation = NULL, inverse = FALSE) {
   var <- rlang::ensym(col)
 
   # Get MFIs for populations of interest
   mfis <- flowWorkspace::gs_pop_get_stats(gs1, nodes = populations, type = pop.MFI, inverse = inverse)
+
+  # If column is a channel, find associated marker
+  if (!(col %in% colnames(mfis))) {
+    cf <- flowWorkspace::gh_pop_get_data(input[[1]])
+    pdata <- flowWorkspace::pData(flowCore::parameters(cf))
+    idx <- match(col, pdata$name)
+    col <- pdata[idx, "desc"]
+  }
 
   # Select marker/channel of interest and pivot data to wide format
   mfis <- mfis %>%
@@ -446,42 +474,49 @@ getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, pop
   return(mfis)
 }
 
+
+# getSampleMetaclusterMFIs.FlowSOM <- function(input, col, transformation = NULL,
+#                                              populations = NULL, inverse = FALSE) {
+#   Metacluster <- File <- NULL
+#
+#   var <- rlang::enquo(col)
+#
+#   # Get metacluster labels
+#   meta_labels <- FlowSOM::GetMetaclusters(input)
+#
+#   # Append labels as columns to the data.table, and summarise
+#   table <- tidytable::as_tidytable(input$data) %>%
+#     tidytable::mutate(Metacluster = meta_labels,
+#                       .keep = "all") %>%
+#     tidytable::group_by(File) %>%
+#     tidytable::pivot_wider(names_from = Metacluster, values_from = !!var, id_cols = File, values_fn = median) %>%
+#     tidytable::filter(File %in% rownames(sample_df)) %>%
+#     as.data.frame()
+#
+#   # change file number to sample and assign as rownames here
+#   rownames(table) <- sample_df[match(table$File, rownames(sample_df)), "File.Name"]
+#
+#   table <- table %>%
+#     dplyr::select(-"File")
+#
+#   if(!is.null(populations)) {
+#     table <- table %>%
+#       dplyr::select(populations)
+#   }
+#
+#   return(table)
+# }
+
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
-  Metacluster <- File <- NULL
-
-  var <- rlang::enquo(col)
-
-  # Get metacluster labels
-  meta_labels <- FlowSOM::GetMetaclusters(input)
-
-  # Append labels as columns to the data.table, and summarise
-  table <- tidytable::as_tidytable(input$data) %>%
-    tidytable::mutate(Metacluster = meta_labels,
-                      .keep = "all") %>%
-    tidytable::group_by(File) %>%
-    tidytable::pivot_wider(names_from = Metacluster, values_from = !!var, id_cols = File, values_fn = median) %>%
-    tidytable::filter(File %in% rownames(sample_df)) %>%
-    as.data.frame()
-
-  # change file number to sample and assign as rownames here
-  rownames(table) <- sample_df[match(table$File, rownames(sample_df)), "File.Name"]
-
-  table <- table %>%
-    dplyr::select(-"File")
-
-  if(!is.null(populations)) {
-    table <- table %>%
-      dplyr::select(populations)
+getSampleMetaclusterMFIs.data.table <- function(input, col, transformation,
+                                                inverse = FALSE, populations = NULL) {
+  # Back transform data, if necessary
+  if (inverse & is.null(transformation)) {
+    stop("Must specify `transformation` when `inverse = TRUE` for `data.tables`!")
+  } else if (inverse & !is.null(transformation)) {
+    input <- inverseTransformTable(input, transformation)
   }
-
-  return(table)
-}
-
-#' @keywords internal
-#' @export
-getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
 
   # If input is only channel name
   if (is.character(col) & !(col %in% colnames(input))) {
@@ -494,23 +529,23 @@ getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, populatio
   var <- rlang::ensym(col)
 
   # get table where rows are samples, columns are metaclusters, and values are MFIs
-  fitc_mfis <- input %>%
+  mfis <- input %>%
     dplyr::select(.id, !!var, Metacluster) %>%
     dplyr::group_by(.id, Metacluster) %>%
     dplyr::summarise(mfi = median(.data[[rlang::as_string(var)]]), .groups = "drop") %>%
     tidyr::pivot_wider(names_from = Metacluster, values_from = mfi) %>%
     dplyr::mutate(.id = basename(.id))
 
-  fitc_mfis <- fitc_mfis %>%
+  mfis <- mfis %>%
     dplyr::select(!.id) %>%
-    data.frame(row.names = fitc_mfis$.id, check.names = FALSE)
+    data.frame(row.names = mfis$.id, check.names = FALSE)
 
   if (!is.null(populations)) {
-    fitc_mfis <- fitc_mfis %>%
+    mfis <- mfis %>%
       dplyr::select(populations)
   }
 
-  return(fitc_mfis)
+  return(mfis)
 }
 
 

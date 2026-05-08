@@ -758,6 +758,9 @@ getGroups <- function(comparison, sample_df) {
 #' @param comparison A list defining a comparison.
 #' @param populations A vector of strings defining the metaclusters to include
 #' in the plot. Default is all metaclusters.
+#' @param transformation A \code{\link[flowCore:transformList]{transformList}} specifying
+#' the transformation applied to the data, if any. Required when `input` is a `data.table`
+#' and `inverse = TRUE`
 #' @param inverse Boolean, whether the data should be back-transformed before
 #' plotting.
 #' @param upper_lim The y-axis upper limit.
@@ -773,13 +776,14 @@ getGroups <- function(comparison, sample_df) {
 #'
 #' @export
 plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NULL,
-                             inverse = FALSE, upper_lim = NULL) {
+                             transformation = NULL, inverse = FALSE, upper_lim = NULL) {
   Group <- value <- name <- NULL
 
   # Get MFI matrix
-  input <- getSampleMetaclusterMFIs(input, col,
-                                    sample_df = sample_df,
+  input <- getSampleMetaclusterMFIs(input,
+                                    col,
                                     populations = populations,
+                                    transformation = transformation,
                                     inverse = inverse)
 
   # Get list of groups by file
@@ -789,12 +793,6 @@ plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NU
   if (is.matrix(input)) {
     input <- as.data.frame(input, check.names = FALSE)
   }
-
-  # if (!is.null(populations)) {
-  #   vars <- rlang::enquos(populations)
-  #   input <- input %>%
-  #     tidytable::select(!!!vars)
-  # }
 
   # Function to find corresponding list names
   find_list_name <- function(filename, list_of_lists) {
@@ -850,7 +848,8 @@ plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NU
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, hjust = 1, size = 8),
                    aspect.ratio = 0.6) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, upper_lim))
+    ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, upper_lim)) +
+    ggplot2::labs(title = col, x = "Cell Type", y = "Median Expression")
 }
 
 

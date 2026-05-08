@@ -1,9 +1,9 @@
 ---
-title: "Example Plots"
+title: "Making and editing plots"
 output:
   html_document:
     df_print: paged
-date: "2024-11-09"
+date: "2026-05-07"
 ---
 
 ```{r setup, include=FALSE}
@@ -30,8 +30,8 @@ It's important to make sure that the `comparisons` parameter is defined properly
 
 ```{r setup-obj, eval=TRUE}
 # Specify path to file with clustered data
-data_file <- system.file("extdata", , package = "flowFunData")
-dat <- read.csv(data_file)
+data_file <- system.file("extdata", "fsom_dt.csv", package = "flowFunData")
+fsom_dt <- read.csv(data_file)
 
 # Make a nested list defining any comparisons you wish to make. See the examples
 # in documentation for prepareSampleInfo() for a detailed explanation.
@@ -116,118 +116,102 @@ plotGroupUMAPs(fsom_dt,
 
 ## Bar plots
 
-In this section we demonstrate how to create bar plots for MFIs or counts by group. For most cases, all that's needed is a call to the function `plotGroupMFIBars()`. It should be noted that if your data was transformed during pre-processing, you will likely want to back-transform it to a linear scale before plotting so that the results are easier to interpret. 
+In this section we demonstrate how to create bar plots for MFIs or counts by group. For most cases, all that's needed is a call to the function `plotGroupMFIBars()`. The chunk below demonstrates a basic call to this function, using the `data.table` as input. 
 
+Note that the parameter `comparison` is what dictates the groups plotted. Specifying it is straightforward, as any groups to be tested for differences should have been listed in one of the very first objects defined during differential analysis, `comparisons`. The first element of the `comparisons` object we defined above is `ctrl_vs_mibc = list(disease = list("MIBC", "Ctrl"))`, so by setting `comparison = comparisons[[1]]` this call will plot differences between the experimental and control groups. The group each sample belongs to is determined using the `sample_df` parameter. The channel to plot MFIs for is chosen with the `col` parameter, which in this case is `"FITC-A"`.
 
-When plotting MFIs, it is helpful to plot on a linear scale, so that the plots are easier to interpret. Our data in this example is on the log-icle scale, so we must perform the inverse of this transformation. This is easiest when working with a `GatingSet`, which stores cell data and any related transformations in one object. 
-
-
-```{r bar-plots}
+```{r first-bar-plot}
 # MIBC vs. Ctrl, CD8 T cells
 plotGroupMFIBars(fsom_dt, 
-                 sample_info, 
-                 col = ,
-                 comparison = comparisons[[2]], 
-                 populations = )
+                 sample_df = sample_info, 
+                 col = "FITC-A",
+                 comparison = comparisons[[1]])
+```
 
+When given a `data.table`, the default behavior of this function is to plot all metaclusters, but if they wish to only plot particular populations, users may specify them with the `populations` parameter. There is also the optional parameter `upper_lim`, which sets the limit on the y-axis.
+
+```{r second-bar-plot}
 # NAC vs. No NAC
 plotGroupMFIBars(fsom_dt, 
-                 sample_info, 
-                 col = ,
-                 comparison = comparisons[[4]], 
-                 populations = c("CD8 T cells", "CD4 T cells")) # specifying `populations` 
-                                                                # as a list of strings is OK too
+                 sample_df = sample_info, 
+                 col = "BV711-A",
+                 comparison = comparisons[[2]], # plot NAC vs. No NAC groups
+                 populations = c("CD8 T cells", "gdT cells"),  # choose specific populations to plot
+                 upper_lim = 3.5) # set y-axis upper limit to 3.5
+```
 
-# NAC vs. No NAC, CD4 T cells
+`plotGroupMFIBars()` also takes `GatingSets` as input. In this case, including the `populations` parameter is necessary, since unlike the `data.table`, our `GatingSet` contains the full gating scheme and all raw data, and therefore needs more specificity.
+
+Finally, it should be noted that if your data was transformed during pre-processing, you will likely want to back-transform it to a linear scale before plotting so that the results are easier to interpret. You may notice that the differences between cell types are quite small in the plots above. When input is a `GatingSet`, users can set the parameter `inverse = TRUE` and this will be done automatically for them. The below chunk is an example and is not run, but would produce the same plot shown just after.
+
+```{r third-bar-plot, eval=FALSE}
+# Read in GatingSet previously saved to disk
+gs <- flowWorkspace::load_gs("project/gatingset_folder")
+
+# Get children of node that was clustered on
+subpopulations <- flowWorkspace::gs_pop_get_children(gs, 
+                                                     y = "live_cells", 
+                                                     path = "auto") # shortens path name automatically
+
+# Call with GatingSet
+plotGroupMFIBars(gs, 
+                 sample_df = sample_info, 
+                 col = "FITC-A",
+                 comparison = comparisons[[1]], 
+                 populations = subpopulations,
+                 inverse = TRUE)
+```
+
+If input is a `data.table`, it does not have information about the transformation that was applied to it, so users must specify it with the parameter `transformation` when they wish to back-transform before plotting.
+
+`transformation` should be of the class `transformList` from the `flowCore` package. If the `data.table` is a realization of a `GatingSet` that was either transformed with `flowWorkspace::transform()`, or transformed in and imported from FlowJo, the appropriate data type may be extracted from it with the function `flowWorkspace::gh_get_transformations()` as shown below.
+
+```{r fourth-bar-plot, eval=FALSE} 
+# Extract transformation from GatingSet
+trans_list <- flowWorkspace::gh_get_transformations(gs[[1]],
+                                                    only.function = FALSE) # do not exclude this argument
+
+# Plot MFIs
 plotGroupMFIBars(fsom_dt, 
-                 sample_info, 
-                 col = ,
-                 comparison = comparisons[[4]], 
-                 populations = seq(1, 5))
-
-# NAC vs. No NAC, CD4 T cells
-# Scaled due to negative values
-plotGroupMFIBars(il10r_mfis+100, 
-                 sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1,5), 
-                 upper_lim = 360) # change the limit on the y-axis
+                 sample_df = sample_info, 
+                 col = "FITC-A",
+                 comparison = comparisons[[1]], 
+                 transformation = trans_list,
+                 inverse = TRUE)
 ```
 
-
-
-This may be done by applying the `transformTable()` function to the FlowSOM object's data matrix, where the parameter `transformation` is set to the `transformList` that was originally applied to your data (in this case, this is the object contained in `logicle_transformation.rds`), `transform_type` is a string specifying what kind of transformation was applied, and `find_inverse` is `TRUE`. If your data was preprocessed via `flowFun` functions, it is only necessary to specify your data table and `find_inverse`. Regardless, it is a good idea to keep track of any transformations applied to your data, for the sake of reproducibility.
-
-```{r create-tables}
-# Read in transformation object
-transform_list <- readRDS("logicle_transformation.rds")
-
-# Transform data back to linear scale
-fsom_temp <- fsom
-fsom_temp$data <- transformTable(fsom_temp$data, transform_list, transform_type = "logicle",
-                                 find_inverse = TRUE)
-```
-
-The next step to allow plotting of MFIs is creating an appropriate table. The plotting function `plotGroupMFIBars()`, for any single channel of interest, takes in a table where rows are files, columns are metaclusters, and values are the median fluorescence intensity for said channel in the current file/metacluster pair. These tables may be created with the function `getSampleMetaclusterMFIs()`, but any similarly structured table generated through other means can be used. The code below creates two of these tables, and prints part of the first, to demonstrate what an appropriate table looks like.
-
-```{r mfi-tables}
-# Make a table where rows are samples/files, and columns are metaclusters.
-pha_mfis <- getSampleMetaclusterMFIs(fsom_temp, `FITC-A`, sample_info)
-head(pha_mfis)
-
-# Try another table, with a different marker.
-il10r_mfis <- getSampleMetaclusterMFIs(fsom_temp, `BV421-A`, sample_info)
-```
-
-Finally, the code below uses the objects created above to create bar plots. Note that the parameter `comparison` is what dictates the groups plotted. Specifying it is straightforward, as any groups to be tested for differences should have been listed in one of the very first objects defined in this file, `comparisons`. For the sake of convenience, we'll show this object again here: 
-
-```{r comparisons, eval=FALSE}
-comparisons = list(
-  male_vs_female = list(Sex = list("male", "female")),
-  male_vs_female_mibc = list(Disease = "MIBC", Sex = list("male", "female")),
-  ctrl_vs_mibc = list(Disease = list("MIBC", "Ctrl")),
-  nac_vs_no_nac = list(Disease = "MIBC", NAC = list("NAC", "No.NAC"))
-)
-```
-
-To choose the groups we'd like to plot, it's easiest to select the comparison we're interested in from this list of lists as `comparisons[[i]]`, as seen below. `meta_to_plot` selects the columns from `pha_mfis` (in other words, the metaclusters) to include in the plot.
-
-```{r bar-plots}
-# Male MIBC vs. Female MIBC, CD8 T cells
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[2]], 
-                 meta_to_plot = seq(8, 12))
-
-# NAC vs. No NAC, CD8 T cells
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = c("CD8 T cell other", "CD8 Tcm", "CD8 Tem", # specifying `meta_to_plot` as a list of strings
-                                  "CD8 Temra", "CD8 Tscm"))                 # is OK too
-
-# NAC vs. No NAC, CD4 T cells
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1, 5))
-
-# NAC vs. No NAC, CD4 T cells
-# Scaled due to negative values
-plotGroupMFIBars(il10r_mfis+100, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1,5), 
-                 upper_lim = 360) # change the limit on the y-axis
+```{r print-inverse-table, echo=FALSE, out.width='80%', fig.align='center'}
+knitr::include_graphics("images/visualization_vignette/inverse_mfi_table.png")
 ```
 
 ### Plot customization
 
-Below are some examples regarding customization of this plot.
+Below are some examples regarding basic customization of bar plots made with `ggplot2`.
 
 If you are only interested in changing axes and title names, add the `labs()` function from `ggplot2`.
 
+```{r make-transform, include=FALSE}
+# rebuild transformation
+dir <- system.file("extdata", "samples", package = "flowFunData")
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs", truncate_max_range = TRUE)
+gs <- flowWorkspace::GatingSet(cs)
+cols <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV480-A", 
+          "BV605-A", "BV650-A", "BV711-A", "BV750-P-A", "BV786-A", "BUV395-A", 
+          "BUV563-A", "BUV615-P-A", "BUV661-A", "BUV737-A", "BUV805-A", "PE-A",
+          "PE-CF594-A", "PE-Cy5-A", "PE-Cy7-A")
+trans_list <- flowCore::estimateLogicle(gs[[1]], channels = cols)
+```
+
 ```{r custom1} 
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1, 5)) +
-  labs(title = "PHA-L MFIs vs. CD4 T cell type", 
+p <- plotGroupMFIBars(fsom_dt, 
+                      sample_df = sample_info, 
+                      col = "FITC-A",
+                      comparison = comparisons[[2]], 
+                      transformation = trans_list,
+                      inverse = TRUE) 
+
+p +
+  labs(title = "PHA-L MFIs for all cell types", 
        x = "Metacluster",
        y = "PHA-L MFI")
 ```
@@ -235,9 +219,7 @@ plotGroupMFIBars(pha_mfis, sample_info,
 To customize the colors, point shapes, and legend, use `scale_fill_manual()` and `scale_shape_manual()`.
 
 ```{r custom2}
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1, 5)) + 
+p + 
   scale_fill_manual(name = "NAC Group",                                # renames legend title for group bars,
                     labels = c("MIBC NAC", "MIBC No NAC"),             # picks new names for legend items
                     values = c("dodgerblue4", "firebrick4")) +         # picks new colors for bars
@@ -249,18 +231,14 @@ plotGroupMFIBars(pha_mfis, sample_info,
 If you only wish to change colors, just specifying `values` is enough.
 
 ```{r custom3}
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1, 5)) + 
+p + 
   scale_fill_manual(values = c("dodgerblue4", "firebrick4")) 
 ```
 
 Note that giving different parameters to the `name` and/or `labels` parameters results in two legends.
 
-```{r custom4}
-plotGroupMFIBars(pha_mfis, sample_info, 
-                 comparison = comparisons[[4]], 
-                 meta_to_plot = seq(1, 5)) + 
+```{r custom4, message=FALSE}
+p + 
   scale_fill_manual(name = "NAC Group",                             
                     labels = c("MIBC NAC", "MIBC No NAC"),           
                     values = c("dodgerblue4", "firebrick4")) +         

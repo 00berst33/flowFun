@@ -10,6 +10,7 @@ plotGroupMFIBars(
   sample_df,
   comparison,
   populations = NULL,
+  transformation = NULL,
   inverse = FALSE,
   upper_lim = NULL
 )
@@ -26,6 +27,10 @@ and values are MFIs for a channel}
 
 \item{populations}{A vector of strings defining the metaclusters to include
 in the plot. Default is all metaclusters.}
+
+\item{transformation}{A \code{\link[flowCore:transformList]{transformList}} specifying
+the transformation applied to the data, if any. Required when \code{input} is a \code{data.table}
+and \code{inverse = TRUE}}
 
 \item{inverse}{Boolean, whether the data should be back-transformed before
 plotting.}
