@@ -76,7 +76,7 @@ import and export data at any stage of the analysis. This page will give
 a brief overview of the pipeline and how users may import their data at
 each step. The diagram below summarizes each function relevant to the
 package, and which step they fit into.</p>
-<p><img src="images/getting_started/flowfun_diagram.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="images/getting_started/flowfun_diagram.png" class="r-plt" alt="" width="491" style="display: block; margin: auto;"></p>
 <p>The most important data type in this pipeline is the
 <code>GatingSet</code>, which comes from the <code>flowWorkspace</code>
 package. Users who have performed flow analysis in R before may be
@@ -92,7 +92,10 @@ this data structure conveniently keeps everything in one place.</p>
 than <code>flowSets</code>. Rather than always having the full dataset
 loaded in memory, a <code>GatingSet</code> contains only a pointer to
 the data, which is stored compactly in C data structure. This makes
-performing operations on large datasets faster.</p>
+performing operations on large datasets faster. Users who want to learn
+more should see the <code>flowWorkspace</code> documentation, which
+contains multiple helpful vignettes giving a more detailed overview of
+<code>GatingSets</code>.</p>
   </main>
 </div>
 

@@ -33,4 +33,6 @@ Additionally, `GatingSets` are far more memory efficient than
 `flowSets`. Rather than always having the full dataset loaded in memory,
 a `GatingSet` contains only a pointer to the data, which is stored
 compactly in C data structure. This makes performing operations on large
-datasets faster.
+datasets faster. Users who want to learn more should see the
+`flowWorkspace` documentation, which contains multiple helpful vignettes
+giving a more detailed overview of `GatingSets`.
