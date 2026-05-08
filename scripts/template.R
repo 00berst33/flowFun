@@ -58,7 +58,7 @@ comp_mat <- read.csv("/Users/morganroberts/Library/CloudStorage/OneDrive-Vancouv
                      check.names = FALSE) # note check.names
 
 # !!! Note: The column names of your compensation matrix must match those
-#     found in your GatingSet.
+#     found in your GatingSet. (??BELOW (LINE 71-73) IT SAYS THEY DON'T NEED TO BE MATCHED)
 
 # Check column names
 colnames(comp_mat)
@@ -70,16 +70,18 @@ colnames(gs1)[!(colnames(gs1) %in% colnames(comp_mat))]
 # Prepare compensation matrix to be passed to `compensate`
 #   Columns are matched to those in the GatingSet based on the regexpr given to pattern.
 #   Default is `" >.*"`. Setting `pattern = ""` tells the function that column names
-#   do not need to be matched.
+#   do not need to be matched. (?? I DON"T UNDESTAND THIS PART)
 comp_mat <- prepareCompensationMatrix(comp_mat, gs1, pattern = "")
 
 # Compensate data
 compensate(gs1, comp_mat)
 
 # Define custom transformation, if desired
+
 # logicle transformation, standard for flow cytometry:
 log_trans <- flowCore::estimateLogicle(gs1[[1]],
                                    channels = colnames(comp_mat))
+
 # Or inverse hyperbolic sin transform, standard for mass cytometry:
 asinh_trans <- flowWorkspace::asinhtGml2_trans(equal.space = TRUE)
 asinh_trans <- flowWorkspace::transformerList(colnames(comp_mat), asinh_trans)
@@ -121,7 +123,7 @@ gt_gating(gt, gs1)
 
 ## Make graphs to check results of preprocessing:
 
-## Check one gate for each sample
+## Check the gates on each sample
 # nonDebris gate
 plotAllSamples(gs1, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
 
@@ -132,10 +134,13 @@ plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
 plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live_cells")
 
 
-# Adjust gates if necessary, either by editing and reapplying the gating template,
-#   or manually redrawing them.
+# Adjust gates if necessary, either by 1) editing and reapplying the gating template,
+#   or 2) manually redrawing them.
 
-### Edit arguments of gating template
+## Option 1: Edit arguments of gating template ##
+
+# specify the row indicating the gate you want to change, using a number (e.g. 2 for nondebris)
+# set the values you want the gate to fall between (e.g. 0-80000)
 gt_table[2, "gating_args"] <- "gate_range=c(0,80000)"
 
 # Remove gate(s) that will be redrawn
@@ -148,7 +153,9 @@ gt <- openCyto::gatingTemplate(gt_table)
 # Apply to data
 openCyto::gt_gating(gt, gs1)
 
-### Redraw gates
+# Use plotAllsamples function from above (line 128-134) to check the new gates
+
+## Option 2: Manually redraw gates ##
 library(CytoExploreR)
 
 # Set desired name to save gating template under
@@ -162,7 +169,7 @@ CytoExploreR::cyto_gate_edit(gs1,
                              parent = "singlets", # parent population
                              alias = "live_cells", # name of the gate to edit
                              channels = c("BUV496-A", "FSC-A"), # channels to gate on
-                             type = "polygon", # type of gate to draw
+                             type = "polygon", # type of gate to draw. For polygon gate, you need to right click to close the gate
                              gatingTemplate = file.path(work_dir, gt_name))
 
 
@@ -170,17 +177,22 @@ CytoExploreR::cyto_gate_edit(gs1,
 flowWorkspace::save_gs(gs1, path = file.path(work_dir, "template_gs"))
 
 
-##########
-# CytoML #
-##########
+#####################################################################
+# Alternative: Starting with a FlowJo Workspace with Existing Gates #
+#####################################################################
 
-# Open FlowJo workspace in R from .xml file
-flowjo_file <- "path/to/flowjo.xml"
-ws <- CytoML::open_flowjo_xml(file)
+# Instead of using flowFun for pre-processing, you can instead start with a 
+# FlowJo workspace which includes pre-existing gates and compensation.
+
+## !! THIS PART NEEDS TO BE EXPLAINED BETTER! ## - maybe we can put this in the user guide instead of the template
+
+# Open FlowJo workspace in R from .xml file (FIGURE OUT XML vs WSP ISSUE)
+flowjo_file <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Test for flowFun.wsp"
+ws <- CytoML::open_flowjo_xml(flowjo_file)
 
 # Make GatingSet from FlowJo workspace
 gs <- CytoML::flowjo_to_gatingset(ws,
-                                  path = "path/to/fcs_files") # or cytoset = ...
+                                  path = "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples") # or cytoset = ... (?WHAT DOES THIS MEAN?)
 
 # Get first sample
 gh <- gs[[1]]
@@ -188,6 +200,7 @@ gh <- gs[[1]]
 # Plot gates of first sample
 ggcyto::autoplot(gh)
 
+## ?? THEN WHAT HAPPENS? DO YOU NEED TO MAKE A gs1? ##
 
 # Must download docker image
 # To save current GatingSet as a FlowJo workspace;
@@ -203,21 +216,32 @@ ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Perform clustering
-# NOTE: If you plan to apply controls to your data and calculate delta MFIs, it is
-#   highly recommended that you save the FlowSOM object at this stage by setting
-#   `fsom_file` equal to a filepath. If you don't do this, at the very least
-#   make sure to specify a seed and make note of the parameters you use in this
-#   call, so that this particular clustering may be recreated later if needed.
+
+# NOTE 1: If you plan to apply controls to your data and calculate delta MFIs, it is
+#      highly recommended that you save the FlowSOM object at this stage by setting
+#      `fsom_file` equal to a filepath (included in the arguments below). If you don't do this, at the very least
+#      make sure to specify a seed and make note of the parameters you use in this
+#      call, so that this particular clustering may be recreated later if needed.
+
+# NOTE 2: flowSOM works by generating clusters which are then merged into metaclusters.
+#       It does not do a great job with metaclustering so it is recommended to set the
+#       numbers of metacluster ('num_clus = #") to more clusters than you think there
+#        should be, and then manually merge them as appropriate.
 fsom_dt <- flowSOMWrapper(ex_fs,
                           cols_to_cluster = c(10, 12:14, 16, 18:23, 25:32, 34), # Define markers/columns to use for clustering
-                          num_clus = 23,
-                          xdim = 10,
+                          num_clus = 23, # sets the number of metaclusters - set it for more than you think there are
+                          xdim = 10, # xdim X ydim = number of clusters (e.g. 100 here)
                           ydim = 10,
                           seed = 42,
-                          fsom_file = "fsom.rds") # the resulting FlowSOM object will be saved to disk under this name
+                          fsom_file = "fsom.rds") # the resulting FlowSOM object will be saved to disk under this name - this is optional but see note above about dMFIs
 
-### Iteratively merge clusters until all cell types identified
+## Merge Clusters and Annotate Clusters IDs ##
+
 # Generate heatmap
+# The default is to show the parameters used for clustering. You can instead specify
+# parameters using a character vector (column numbers or channel names) and passing it to the 'cols_to_use' argument
+# plotMetaclusterMFIs(fsom_dt, cols_to_use = c("BV650-A", "BB700-P-A", "BV605-A"))
+
 plotMetaclusterMFIs(fsom_dt)
 # Generate UMAP
 plotUMAP(fsom_dt, num_cells = 2500, seed = 42)
