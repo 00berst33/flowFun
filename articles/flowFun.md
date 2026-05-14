@@ -8,24 +8,49 @@ library(flowFun)
 To improve the accessibility of the package, `flowFun` provides a number
 of template scripts for users to make getting started less daunting.
 When viewing the GitHub page, these may be found in the `\scripts`
-folder.
+folder. Vignettes giving more detailed walkthroughs of a typical
+analysis may also be found by clicking the ‘Articles’ tab above. On this
+page, we will give a brief overview of the package, and recommend how
+users can best use its documentation to inform their analyses.
 
-`flowFun` was also designed to allow users to easily import and export
-data at any stage of the analysis. This page will give a brief overview
-of the pipeline and how users may import their data at each step. The
-diagram below summarizes each function relevant to the package, and
-which step they fit into.
+#### Data types
 
-![](images/getting_started/flowfun_diagram.png)
+There are four data types crucial to this pipeline that users should be
+somewhat familiar with. The following tables summarizes them:
 
-The most important data type in this pipeline is the `GatingSet`, which
-comes from the `flowWorkspace` package. Users who have performed flow
-analysis in R before may be familiar with the `flowSet`, which is quite
-similar. Both store all raw data from a set of FCS files, but
-`GatingSets` are more advantageous for a few reasons. For one, in
-addition to the raw data, `GatingSets` can hold information about
-transformations, compensations, and gating schemes that are applied
-during analysis. Instead of having multiple sets of FCS files
+``` r
+
+df <- data.frame(Data.Type = c("flowFrame", "flowSet", "GatingHierarchy", "GatingSet"),
+                 Description = c("A class belonging to the flowCore package. It stores the data contained in a single FCS file, including annotations and raw measurement values.", 
+                                 "A class belonging to the flowCore package. A list of named flowFrames.", 
+                                 "A class belonging to the flowWorkspace package. Analogous to the flowFrame, with two key differences: it holds the corresponding gating scheme in addition to the raw data, and is more space efficient.", 
+                                 "A class belonging to the flowWorkspace package. Analogous to the flowSet. Holds a set of GatingHierarchies."))
+
+knitr::kable(df, 
+             format = "html", 
+             align = "l", 
+             col.names = c("Data Type", "Description"))
+```
+
+| Data Type | Description |
+|:---|:---|
+| flowFrame | A class belonging to the flowCore package. It stores the data contained in a single FCS file, including annotations and raw measurement values. |
+| flowSet | A class belonging to the flowCore package. A list of named flowFrames. |
+| GatingHierarchy | A class belonging to the flowWorkspace package. Analogous to the flowFrame, with two key differences: it holds the corresponding gating scheme in addition to the raw data, and is more space efficient. |
+| GatingSet | A class belonging to the flowWorkspace package. Analogous to the flowSet. Holds a set of GatingHierarchies. |
+
+Essentially, a `flowFrame` is a representation of an FCS file in R, the
+same way a `data.frame` is a representation of a CSV file in R. A
+`GatingHierarchy` stores the same information as a `flowFrame`, plus the
+gating scheme for that sample.
+
+For this pipeline, the most important of these data types is the
+`GatingSet`, which holds a set of `GatingHierarchies`. Users who have
+performed flow analysis in R before may already be familiar with the
+`flowSet`, which is quite similar. However, `GatingSets` are more
+advantageous for a few reasons. For one, as mentioned above, in addition
+to the raw data `GatingSets` can hold information about any gates
+applied during analysis. Instead of having multiple sets of FCS files
 corresponding to raw data, preprocessed data, various subsets, etc.,
 this data structure conveniently keeps everything in one place.
 
@@ -35,4 +60,28 @@ a `GatingSet` contains only a pointer to the data, which is stored
 compactly in C data structure. This makes performing operations on large
 datasets faster. Users who want to learn more should see the
 `flowWorkspace` documentation, which contains multiple helpful vignettes
-giving a more detailed overview of `GatingSets`.
+giving a more detailed explanation of `GatingSets`.
+
+#### Overview
+
+`flowFun` implements an end-to-end pipeline for cytometry analysis,
+including data import, pre-processing, cell type identification,
+differential analysis, data visualization, and data export. Notably,
+`flowFun` was designed to allow users to easily import and export data
+at any stage of the analysis.
+
+For example, if a user has a dataset which has already been
+pre-processed, they may import their data and skip to cell type
+identification. Similarly, they may use this pipeline only for
+pre-processing, then export the results to use in another program. This
+feature is advantageous for users who have access to and more
+familiarity with certain cytometry analysis software like FlowJo or
+Diva. More details will be given later.
+
+The diagram below summarizes the workflow of a typical analysis, and the
+functions relevant to each step. Blue boxes contain functions native to
+`flowFun`, and red boxes contain necessary functions native to other
+packages. Green boxes contain optional functions for importing or
+exporting data in-between steps.
+
+![](images/getting_started/flowfun_diagram_no_legend.png)

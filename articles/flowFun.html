@@ -70,22 +70,88 @@
 <p>To improve the accessibility of the package, <code>flowFun</code>
 provides a number of template scripts for users to make getting started
 less daunting. When viewing the GitHub page, these may be found in the
-<code>\scripts</code> folder.</p>
-<p><code>flowFun</code> was also designed to allow users to easily
-import and export data at any stage of the analysis. This page will give
-a brief overview of the pipeline and how users may import their data at
-each step. The diagram below summarizes each function relevant to the
-package, and which step they fit into.</p>
-<p><img src="images/getting_started/flowfun_diagram.png" class="r-plt" alt="" width="491" style="display: block; margin: auto;"></p>
-<p>The most important data type in this pipeline is the
-<code>GatingSet</code>, which comes from the <code>flowWorkspace</code>
-package. Users who have performed flow analysis in R before may be
-familiar with the <code>flowSet</code>, which is quite similar. Both
-store all raw data from a set of FCS files, but <code>GatingSets</code>
-are more advantageous for a few reasons. For one, in addition to the raw
-data, <code>GatingSets</code> can hold information about
-transformations, compensations, and gating schemes that are applied
-during analysis. Instead of having multiple sets of FCS files
+<code>\scripts</code> folder. Vignettes giving more detailed
+walkthroughs of a typical analysis may also be found by clicking the
+‘Articles’ tab above. On this page, we will give a brief overview of the
+package, and recommend how users can best use its documentation to
+inform their analyses.</p>
+<div class="section level4">
+<h4 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
+</h4>
+<p>There are four data types crucial to this pipeline that users should
+be somewhat familiar with. The following tables summarizes them:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Data.Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"flowFrame"</span>, <span class="st">"flowSet"</span>, <span class="st">"GatingHierarchy"</span>, <span class="st">"GatingSet"</span><span class="op">)</span>,</span>
+<span>                 Description <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A class belonging to the flowCore package. It stores the data contained in a single FCS file, including annotations and raw measurement values."</span>, </span>
+<span>                                 <span class="st">"A class belonging to the flowCore package. A list of named flowFrames."</span>, </span>
+<span>                                 <span class="st">"A class belonging to the flowWorkspace package. Analogous to the flowFrame, with two key differences: it holds the corresponding gating scheme in addition to the raw data, and is more space efficient."</span>, </span>
+<span>                                 <span class="st">"A class belonging to the flowWorkspace package. Analogous to the flowSet. Holds a set of GatingHierarchies."</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">df</span>, </span>
+<span>             format <span class="op">=</span> <span class="st">"html"</span>, </span>
+<span>             align <span class="op">=</span> <span class="st">"l"</span>, </span>
+<span>             col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Data Type"</span>, <span class="st">"Description"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr>
+<th style="text-align:left;">
+Data Type
+</th>
+<th style="text-align:left;">
+Description
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+flowFrame
+</td>
+<td style="text-align:left;">
+A class belonging to the flowCore package. It stores the data contained
+in a single FCS file, including annotations and raw measurement values.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flowSet
+</td>
+<td style="text-align:left;">
+A class belonging to the flowCore package. A list of named flowFrames.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GatingHierarchy
+</td>
+<td style="text-align:left;">
+A class belonging to the flowWorkspace package. Analogous to the
+flowFrame, with two key differences: it holds the corresponding gating
+scheme in addition to the raw data, and is more space efficient.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GatingSet
+</td>
+<td style="text-align:left;">
+A class belonging to the flowWorkspace package. Analogous to the
+flowSet. Holds a set of GatingHierarchies.
+</td>
+</tr>
+</tbody>
+</table>
+<p>Essentially, a <code>flowFrame</code> is a representation of an FCS
+file in R, the same way a <code>data.frame</code> is a representation of
+a CSV file in R. A <code>GatingHierarchy</code> stores the same
+information as a <code>flowFrame</code>, plus the gating scheme for that
+sample.</p>
+<p>For this pipeline, the most important of these data types is the
+<code>GatingSet</code>, which holds a set of
+<code>GatingHierarchies</code>. Users who have performed flow analysis
+in R before may already be familiar with the <code>flowSet</code>, which
+is quite similar. However, <code>GatingSets</code> are more advantageous
+for a few reasons. For one, as mentioned above, in addition to the raw
+data <code>GatingSets</code> can hold information about any gates
+applied during analysis. Instead of having multiple sets of FCS files
 corresponding to raw data, preprocessed data, various subsets, etc.,
 this data structure conveniently keeps everything in one place.</p>
 <p>Additionally, <code>GatingSets</code> are far more memory efficient
@@ -94,9 +160,33 @@ loaded in memory, a <code>GatingSet</code> contains only a pointer to
 the data, which is stored compactly in C data structure. This makes
 performing operations on large datasets faster. Users who want to learn
 more should see the <code>flowWorkspace</code> documentation, which
-contains multiple helpful vignettes giving a more detailed overview of
-<code>GatingSets</code>.</p>
-  </main>
+contains multiple helpful vignettes giving a more detailed explanation
+of <code>GatingSets</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h4>
+<p><code>flowFun</code> implements an end-to-end pipeline for cytometry
+analysis, including data import, pre-processing, cell type
+identification, differential analysis, data visualization, and data
+export. Notably, <code>flowFun</code> was designed to allow users to
+easily import and export data at any stage of the analysis.</p>
+<p>For example, if a user has a dataset which has already been
+pre-processed, they may import their data and skip to cell type
+identification. Similarly, they may use this pipeline only for
+pre-processing, then export the results to use in another program. This
+feature is advantageous for users who have access to and more
+familiarity with certain cytometry analysis software like FlowJo or
+Diva. More details will be given later.</p>
+<p>The diagram below summarizes the workflow of a typical analysis, and
+the functions relevant to each step. Blue boxes contain functions native
+to <code>flowFun</code>, and red boxes contain necessary functions
+native to other packages. Green boxes contain optional functions for
+importing or exporting data in-between steps.</p>
+<p><img src="images/getting_started/flowfun_diagram_no_legend.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
