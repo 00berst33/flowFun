@@ -65,8 +65,6 @@
 
     
     
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://00berst33.github.io/flowFun/">flowFun</a></span><span class="op">)</span></span></code></pre></div>
 <p>To improve the accessibility of the package, <code>flowFun</code>
 provides a number of template scripts for users to make getting started
 less daunting. When viewing the GitHub page, these may be found in the
@@ -75,11 +73,11 @@ walkthroughs of a typical analysis may also be found by clicking the
 ‘Articles’ tab above. On this page, we will give a brief overview of the
 package, and recommend how users can best use its documentation to
 inform their analyses.</p>
-<div class="section level3">
-<h3 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
-</h3>
+<div class="section level2">
+<h2 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
+</h2>
 <p>There are four data types crucial to this pipeline that users should
-familiarize themselves with. The following tables summarizes them:</p>
+familiarize themselves with. The following table summarizes them:</p>
 <div class="border" style="padding: 10px; border: 1px solid #dee2e6 !important;">
 <table class="table">
 <thead><tr>
@@ -135,9 +133,9 @@ file in R, the same way a <code>data.frame</code> is a representation of
 a CSV file in R. A <code>GatingHierarchy</code> stores the same
 information as a <code>flowFrame</code>, plus the gating scheme for that
 sample.</p>
-<div class="section level4">
-<h4 id="about-the-gatingset">About the GatingSet<a class="anchor" aria-label="anchor" href="#about-the-gatingset"></a>
-</h4>
+<div class="section level3">
+<h3 id="about-the-gatingset">About the GatingSet<a class="anchor" aria-label="anchor" href="#about-the-gatingset"></a>
+</h3>
 <p>For this pipeline, the most important of these data types is the
 <code>GatingSet</code>, which holds a set of
 <code>GatingHierarchies</code>. Users who have performed flow analysis
@@ -173,9 +171,9 @@ pre-processing, then export the results to use in another program. This
 feature is advantageous for users who have access to and more
 familiarity with certain cytometry analysis software like FlowJo or
 Diva. More details will be given later.</p>
-<div class="section level4">
-<h4 id="workflow-diagram">Workflow diagram<a class="anchor" aria-label="anchor" href="#workflow-diagram"></a>
-</h4>
+<div class="section level3">
+<h3 id="workflow-diagram">Workflow diagram<a class="anchor" aria-label="anchor" href="#workflow-diagram"></a>
+</h3>
 <p>The diagram below summarizes the workflow of a typical analysis, and
 the functions relevant to each step. Blue boxes contain functions native
 to <code>flowFun</code>, and red boxes contain necessary functions
@@ -183,12 +181,13 @@ native to other packages. Green boxes contain optional functions for
 importing or exporting data in-between steps.</p>
 <p><img src="images/getting_started/flowfun_diagram_no_legend.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="data-import">Data import<a class="anchor" aria-label="anchor" href="#data-import"></a>
+</h2>
 <div class="section level3">
-<h3 id="data-import">Data import<a class="anchor" aria-label="anchor" href="#data-import"></a>
+<h3 id="flowsets">flowSets<a class="anchor" aria-label="anchor" href="#flowsets"></a>
 </h3>
-<div class="section level4">
-<h4 id="flowsets">flowSets<a class="anchor" aria-label="anchor" href="#flowsets"></a>
-</h4>
 <p>The chunk below gives an example of how a set of FCS files can be
 read into R as a <code>flowSet</code>. A <code>flowSet</code> can be
 subset with double brackets <code>[[</code>, so <code>fs[[1]]</code>
@@ -196,7 +195,7 @@ gives the first <code>flowFrame</code> in the set, <code>fs[[2]]</code>
 gives the second <code>flowFrame</code> in the set, etc. This is done
 below to print the first element of the <code>flowSet</code> we read
 in.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">flowCore</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Specify path to .fcs file</span></span>
@@ -226,7 +225,7 @@ in.</p>
 it contains 5000 cells, and data for 35 parameters. To get a table of
 the actual expression data, we use the function <code><a href="https://rdrr.io/pkg/Biobase/man/exprs.html" class="external-link">exprs()</a></code>
 from the <code>flowCore</code> package.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get expression matrix for first sample</span></span>
 <span><span class="va">ff_expr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/Biobase/man/exprs.html" class="external-link">exprs</a></span><span class="op">(</span><span class="va">fs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
@@ -266,7 +265,7 @@ from the <code>flowCore</code> package.</p>
 functions <code><a href="https://rdrr.io/pkg/Biobase/man/phenoData.html" class="external-link">pData()</a></code> and <code><a href="https://rdrr.io/pkg/flowCore/man/parameters-methods.html" class="external-link">parameters()</a></code> together.
 The <code>name</code> column lists channels, and <code>desc</code> lists
 the associated marker, if any.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># View marker/channel pairs and value ranges</span></span>
 <span><span class="fu">pData</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/flowCore/man/parameters-methods.html" class="external-link">parameters</a></span><span class="op">(</span><span class="va">fs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                   name   desc  range   minRange maxRange</span></span>
@@ -307,7 +306,7 @@ the associated marker, if any.</p>
 <span><span class="co">#&gt; $P35              Time   &lt;NA&gt; 262144    0.00000   262144</span></span></code></pre></div>
 <p>The function <code><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames()</a></code> may also be used to quickly view
 the channel names of a <code>flowSet</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get channel names</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">fs</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "FSC-A"             "FSC-H"             "FSC-W"            </span></span>
@@ -324,20 +323,31 @@ the channel names of a <code>flowSet</code>.</p>
 <span><span class="co">#&gt; [34] "PE-Cy7-A"          "Time"</span></span></code></pre></div>
 <p>Finally, to view all filenames for the samples in a
 <code>flowSet</code>, use <code><a href="https://rdrr.io/pkg/Biobase/man/featureNames.html" class="external-link">sampleNames()</a></code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get sample names</span></span>
 <span><span class="fu">sampleNames</span><span class="op">(</span><span class="va">fs</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "sample_1.fcs" "sample_2.fcs" "sample_3.fcs" "sample_4.fcs" "sample_5.fcs"</span></span>
 <span><span class="co">#&gt; [6] "sample_6.fcs"</span></span></code></pre></div>
 </div>
+<div class="section level3">
+<h3 id="gatingsets">GatingSets<a class="anchor" aria-label="anchor" href="#gatingsets"></a>
+</h3>
+<p>Interacting with a <code>GatingSet</code> is quite similar to the
+examples above. The <code>flowWorkspace</code> has a thorough vignette
+on this topic that may be brought up by typing
+<code><a href="https://bioconductor.org/packages/release/bioc/vignettes/flowWorkspace/inst/doc/flowWorkspace-Introduction.html" class="external-link">vignette(package = "flowWorkspace", "flowWorkspace-Introduction")</a></code>
+into the RStudio console, assuming the package has been installed and
+loaded. Here we will summarize the details essential to this pipeline,
+but if users feel in need of further clarification this vignette is
+highly recommended.</p>
 <div class="section level4">
-<h4 id="gatingsets">GatingSets<a class="anchor" aria-label="anchor" href="#gatingsets"></a>
+<h4 id="create-from-fcs-files">Create from FCS files<a class="anchor" aria-label="anchor" href="#create-from-fcs-files"></a>
 </h4>
-<p>Working with a <code>GatingSet</code> is quite similar to the
-examples above. The main differences come up when importing data. The
-chunk below gives an example of how a set of FCS files may be read into
-a <code>GatingSet</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>There are multiple ways to create a <code>GatingSet</code>. The first
+is to generate one from a set of FCS files, like what was done for the
+<code>flowSet</code> above. The chunk below gives an example of how a
+set of FCS files may be read into a <code>GatingSet</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">flowWorkspace</span><span class="op">)</span></span>
 <span><span class="co">#&gt; As part of improvements to flowWorkspace, some behavior of</span></span>
 <span><span class="co">#&gt; GatingSet objects has changed. For details, please read the section</span></span>
@@ -359,7 +369,46 @@ a <code>GatingSet</code>.</p>
 <span><span class="co">#&gt; Sample:  sample_1.fcs </span></span>
 <span><span class="co">#&gt; GatingHierarchy with  1  gates</span></span></code></pre></div>
 <p>Instead of a call to <code><a href="https://rdrr.io/pkg/flowCore/man/read.flowSet.html" class="external-link">read.flowSet()</a></code>, we use
-<code><a href="https://rdrr.io/pkg/flowWorkspace/man/load_cytoset_from_fcs.html" class="external-link">load_cytoset_from_fcs()</a></code>, then <code><a href="https://rdrr.io/pkg/flowWorkspace/man/GatingSet-class.html" class="external-link">GatingSet()</a></code>.</p>
+<code><a href="https://rdrr.io/pkg/flowWorkspace/man/load_cytoset_from_fcs.html" class="external-link">load_cytoset_from_fcs()</a></code>, then <code><a href="https://rdrr.io/pkg/flowWorkspace/man/GatingSet-class.html" class="external-link">GatingSet()</a></code>.
+Note that <code>gs[[1]]</code> prints different results than
+<code>fs[[1]]</code>; more on that later.</p>
+</div>
+<div class="section level4">
+<h4 id="import-from-flowjo-workspace">Import from FlowJo workspace<a class="anchor" aria-label="anchor" href="#import-from-flowjo-workspace"></a>
+</h4>
+<p>With the help of the package <code>CytoML</code>, it is also possible
+to import a FlowJo workspace directly into R as a
+<code>GatingSet</code>. This package is not essential to
+<code>flowFun</code> and thus is not installed as a dependency. Users
+interested in this functionality must install it separately as
+follows:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Use devtools package to install from GitHub</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://devtools.r-lib.org/" class="external-link">devtools</a></span><span class="op">)</span></span>
+<span><span class="fu">install_github</span><span class="op">(</span><span class="st">"RGLab/openCyto"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># If this fails, try running:</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu">install</span><span class="op">(</span><span class="st">"openCyto"</span><span class="op">)</span> </span>
+<span><span class="co"># then try again</span></span></code></pre></div>
+<p>The package’s GitHub repository may also be viewed <a href="https://github.com/RGLab/CytoML" class="external-link">here</a>.</p>
+<p>Once <code>CytoML</code> has been installed, importing a workspace is
+straightforward. Two things are required: a WSP file exported from
+FlowJo, and the filepath to the set of corresponding FCS files. The
+function <code>open_flowjo_xml()</code> opens the WSP file in R (despite
+the function name, it accepts a WSP file just fine), and
+<code>flowjo_to_gatingset()</code> generates the
+<code>GatingSet</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">CytoML</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Get path to .wsp file</span></span>
+<span><span class="va">flowjo_file</span> <span class="op">&lt;-</span> <span class="st">"path/to/flowjo.wsp"</span></span>
+<span></span>
+<span><span class="co"># Import file</span></span>
+<span><span class="va">ws</span> <span class="op">&lt;-</span> <span class="fu">open_flowjo_xml</span><span class="op">(</span><span class="va">flowjo_file</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Make GatingSet from FlowJo workspace</span></span>
+<span><span class="va">gs</span> <span class="op">&lt;-</span> <span class="fu">flowjo_to_gatingset</span><span class="op">(</span><span class="va">ws</span>, path <span class="op">=</span> <span class="st">"path/to/fcs_files"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 </div>

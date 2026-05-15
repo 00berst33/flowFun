@@ -1,10 +1,5 @@
 # flowFun
 
-``` r
-
-library(flowFun)
-```
-
 To improve the accessibility of the package, `flowFun` provides a number
 of template scripts for users to make getting started less daunting.
 When viewing the GitHub page, these may be found in the `\scripts`
@@ -13,10 +8,10 @@ analysis may also be found by clicking the ‘Articles’ tab above. On this
 page, we will give a brief overview of the package, and recommend how
 users can best use its documentation to inform their analyses.
 
-### Data types
+## Data types
 
 There are four data types crucial to this pipeline that users should
-familiarize themselves with. The following tables summarizes them:
+familiarize themselves with. The following table summarizes them:
 
 | Data Type | Description |
 |:---|:---|
@@ -30,7 +25,7 @@ same way a `data.frame` is a representation of a CSV file in R. A
 `GatingHierarchy` stores the same information as a `flowFrame`, plus the
 gating scheme for that sample.
 
-#### About the GatingSet
+### About the GatingSet
 
 For this pipeline, the most important of these data types is the
 `GatingSet`, which holds a set of `GatingHierarchies`. Users who have
@@ -66,7 +61,7 @@ feature is advantageous for users who have access to and more
 familiarity with certain cytometry analysis software like FlowJo or
 Diva. More details will be given later.
 
-#### Workflow diagram
+### Workflow diagram
 
 The diagram below summarizes the workflow of a typical analysis, and the
 functions relevant to each step. Blue boxes contain functions native to
@@ -76,9 +71,9 @@ exporting data in-between steps.
 
 ![](images/getting_started/flowfun_diagram_no_legend.png)
 
-### Data import
+## Data import
 
-#### flowSets
+### flowSets
 
 The chunk below gives an example of how a set of FCS files can be read
 into R as a `flowSet`. A `flowSet` can be subset with double brackets
@@ -241,11 +236,23 @@ sampleNames(fs)
 #> [6] "sample_6.fcs"
 ```
 
-#### GatingSets
+### GatingSets
 
-Working with a `GatingSet` is quite similar to the examples above. The
-main differences come up when importing data. The chunk below gives an
-example of how a set of FCS files may be read into a `GatingSet`.
+Interacting with a `GatingSet` is quite similar to the examples above.
+The `flowWorkspace` has a thorough vignette on this topic that may be
+brought up by typing
+[`vignette(package = "flowWorkspace", "flowWorkspace-Introduction")`](https://bioconductor.org/packages/release/bioc/vignettes/flowWorkspace/inst/doc/flowWorkspace-Introduction.html)
+into the RStudio console, assuming the package has been installed and
+loaded. Here we will summarize the details essential to this pipeline,
+but if users feel in need of further clarification this vignette is
+highly recommended.
+
+#### Create from FCS files
+
+There are multiple ways to create a `GatingSet`. The first is to
+generate one from a set of FCS files, like what was done for the
+`flowSet` above. The chunk below gives an example of how a set of FCS
+files may be read into a `GatingSet`.
 
 ``` r
 
@@ -277,3 +284,47 @@ we use
 [`load_cytoset_from_fcs()`](https://rdrr.io/pkg/flowWorkspace/man/load_cytoset_from_fcs.html),
 then
 [`GatingSet()`](https://rdrr.io/pkg/flowWorkspace/man/GatingSet-class.html).
+Note that `gs[[1]]` prints different results than `fs[[1]]`; more on
+that later.
+
+#### Import from FlowJo workspace
+
+With the help of the package `CytoML`, it is also possible to import a
+FlowJo workspace directly into R as a `GatingSet`. This package is not
+essential to `flowFun` and thus is not installed as a dependency. Users
+interested in this functionality must install it separately as follows:
+
+``` r
+
+# Use devtools package to install from GitHub
+library(devtools)
+install_github("RGLab/openCyto")
+
+# If this fails, try running:
+BiocManager::install("openCyto") 
+# then try again
+```
+
+The package’s GitHub repository may also be viewed
+[here](https://github.com/RGLab/CytoML).
+
+Once `CytoML` has been installed, importing a workspace is
+straightforward. Two things are required: a WSP file exported from
+FlowJo, and the filepath to the set of corresponding FCS files. The
+function `open_flowjo_xml()` opens the WSP file in R (despite the
+function name, it accepts a WSP file just fine), and
+`flowjo_to_gatingset()` generates the `GatingSet`.
+
+``` r
+
+library(CytoML)
+
+# Get path to .wsp file
+flowjo_file <- "path/to/flowjo.wsp"
+
+# Import file
+ws <- open_flowjo_xml(flowjo_file)
+
+# Make GatingSet from FlowJo workspace
+gs <- flowjo_to_gatingset(ws, path = "path/to/fcs_files")
+```
