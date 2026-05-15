@@ -4,6 +4,9 @@ template:
   bootswatch: pulse
 
 navbar:
+  structure:
+    left: [intro, articles, reference]
+    right: [search, github]
   components:
     articles:
       text: Articles
@@ -15,3 +18,7 @@ navbar:
       - text: Miscellaneous
       - text: Making and editing plots
         href: doc/visualizationVignette.html
+    github:
+      icon: fa-github
+      href: https://github.com/00berst33/flowFun
+      aria-label: GitHub
