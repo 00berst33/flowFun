@@ -1,4 +1,17 @@
 url: https://00berst33.github.io/flowFun/
 template:
   bootstrap: 5
+  bootswatch: pulse
 
+navbar:
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: Core workflows
+      - text: Main workflow
+        href: articles/workflowVignetteUpdated.html
+      - text: -------
+      - text: Miscellaneous
+      - text: Making and editing plots
+        href: doc/visualizationVignette.html

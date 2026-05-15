@@ -118,7 +118,7 @@ Interacting with a `GatingSet` is quite similar to the examples above. The `flow
 
 There are multiple ways to create a `GatingSet`. The first is to generate one from a set of FCS files, like what was done for the `flowSet` above. The chunk below gives an example of how a set of FCS files may be read into a `GatingSet`.
 
-```{r import-gatingset-from-fcs}
+```{r import-gatingset-from-fcs, message=FALSE}
 library(flowWorkspace)
 
 # Specify path to .fcs file
