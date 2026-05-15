@@ -257,11 +257,6 @@ files may be read into a `GatingSet`.
 ``` r
 
 library(flowWorkspace)
-#> As part of improvements to flowWorkspace, some behavior of
-#> GatingSet objects has changed. For details, please read the section
-#> titled "The cytoframe and cytoset classes" in the package vignette:
-#> 
-#>   vignette("flowWorkspace-Introduction", "flowWorkspace")
 
 # Specify path to .fcs file
 dir <- system.file("extdata", "samples", package = "flowFunData")

@@ -16,7 +16,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">flowFun</a>
 
@@ -34,8 +34,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>Core workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/workflowVignetteUpdated.html">Main workflow</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Miscellaneous</h6></li>
+    <li><a class="dropdown-item" href="../doc/visualizationVignette.html">Making and editing plots</a></li>
   </ul>
 </li>
       </ul>
@@ -349,11 +352,6 @@ is to generate one from a set of FCS files, like what was done for the
 set of FCS files may be read into a <code>GatingSet</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">flowWorkspace</span><span class="op">)</span></span>
-<span><span class="co">#&gt; As part of improvements to flowWorkspace, some behavior of</span></span>
-<span><span class="co">#&gt; GatingSet objects has changed. For details, please read the section</span></span>
-<span><span class="co">#&gt; titled "The cytoframe and cytoset classes" in the package vignette:</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   vignette("flowWorkspace-Introduction", "flowWorkspace")</span></span>
 <span></span>
 <span><span class="co"># Specify path to .fcs file</span></span>
 <span><span class="va">dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"samples"</span>, package <span class="op">=</span> <span class="st">"flowFunData"</span><span class="op">)</span></span>
