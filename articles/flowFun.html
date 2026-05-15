@@ -75,22 +75,12 @@ walkthroughs of a typical analysis may also be found by clicking the
 ‘Articles’ tab above. On this page, we will give a brief overview of the
 package, and recommend how users can best use its documentation to
 inform their analyses.</p>
-<div class="section level4">
-<h4 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
-</h4>
+<div class="section level3">
+<h3 id="data-types">Data types<a class="anchor" aria-label="anchor" href="#data-types"></a>
+</h3>
 <p>There are four data types crucial to this pipeline that users should
-be somewhat familiar with. The following tables summarizes them:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Data.Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"flowFrame"</span>, <span class="st">"flowSet"</span>, <span class="st">"GatingHierarchy"</span>, <span class="st">"GatingSet"</span><span class="op">)</span>,</span>
-<span>                 Description <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A class belonging to the flowCore package. It stores the data contained in a single FCS file, including annotations and raw measurement values."</span>, </span>
-<span>                                 <span class="st">"A class belonging to the flowCore package. A list of named flowFrames."</span>, </span>
-<span>                                 <span class="st">"A class belonging to the flowWorkspace package. Analogous to the flowFrame, with two key differences: it holds the corresponding gating scheme in addition to the raw data, and is more space efficient."</span>, </span>
-<span>                                 <span class="st">"A class belonging to the flowWorkspace package. Analogous to the flowSet. Holds a set of GatingHierarchies."</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">df</span>, </span>
-<span>             format <span class="op">=</span> <span class="st">"html"</span>, </span>
-<span>             align <span class="op">=</span> <span class="st">"l"</span>, </span>
-<span>             col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Data Type"</span>, <span class="st">"Description"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+familiarize themselves with. The following tables summarizes them:</p>
+<div class="border" style="padding: 10px; border: 1px solid #dee2e6 !important;">
 <table class="table">
 <thead><tr>
 <th style="text-align:left;">
@@ -139,11 +129,15 @@ flowSet. Holds a set of GatingHierarchies.
 </tr>
 </tbody>
 </table>
+</div>
 <p>Essentially, a <code>flowFrame</code> is a representation of an FCS
 file in R, the same way a <code>data.frame</code> is a representation of
 a CSV file in R. A <code>GatingHierarchy</code> stores the same
 information as a <code>flowFrame</code>, plus the gating scheme for that
 sample.</p>
+<div class="section level4">
+<h4 id="about-the-gatingset">About the GatingSet<a class="anchor" aria-label="anchor" href="#about-the-gatingset"></a>
+</h4>
 <p>For this pipeline, the most important of these data types is the
 <code>GatingSet</code>, which holds a set of
 <code>GatingHierarchies</code>. Users who have performed flow analysis
@@ -163,9 +157,10 @@ more should see the <code>flowWorkspace</code> documentation, which
 contains multiple helpful vignettes giving a more detailed explanation
 of <code>GatingSets</code>.</p>
 </div>
-<div class="section level4">
-<h4 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h4>
+</div>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
 <p><code>flowFun</code> implements an end-to-end pipeline for cytometry
 analysis, including data import, pre-processing, cell type
 identification, differential analysis, data visualization, and data
@@ -178,12 +173,195 @@ pre-processing, then export the results to use in another program. This
 feature is advantageous for users who have access to and more
 familiarity with certain cytometry analysis software like FlowJo or
 Diva. More details will be given later.</p>
+<div class="section level4">
+<h4 id="workflow-diagram">Workflow diagram<a class="anchor" aria-label="anchor" href="#workflow-diagram"></a>
+</h4>
 <p>The diagram below summarizes the workflow of a typical analysis, and
 the functions relevant to each step. Blue boxes contain functions native
 to <code>flowFun</code>, and red boxes contain necessary functions
 native to other packages. Green boxes contain optional functions for
 importing or exporting data in-between steps.</p>
 <p><img src="images/getting_started/flowfun_diagram_no_legend.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="data-import">Data import<a class="anchor" aria-label="anchor" href="#data-import"></a>
+</h3>
+<div class="section level4">
+<h4 id="flowsets">flowSets<a class="anchor" aria-label="anchor" href="#flowsets"></a>
+</h4>
+<p>The chunk below gives an example of how a set of FCS files can be
+read into R as a <code>flowSet</code>. A <code>flowSet</code> can be
+subset with double brackets <code>[[</code>, so <code>fs[[1]]</code>
+gives the first <code>flowFrame</code> in the set, <code>fs[[2]]</code>
+gives the second <code>flowFrame</code> in the set, etc. This is done
+below to print the first element of the <code>flowSet</code> we read
+in.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">flowCore</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Specify path to .fcs file</span></span>
+<span><span class="va">dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"samples"</span>, package <span class="op">=</span> <span class="st">"flowFunData"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Read in as flowSet</span></span>
+<span><span class="va">fs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/flowCore/man/read.flowSet.html" class="external-link">read.flowSet</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">dir</span>, pattern <span class="op">=</span> <span class="st">"\\.fcs"</span>, truncate_max_range <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print summary of first flowFrame/sample</span></span>
+<span><span class="va">fs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; flowFrame object 'sample_1.fcs'</span></span>
+<span><span class="co">#&gt; with 5000 cells and 35 observables:</span></span>
+<span><span class="co">#&gt;            name   desc     range  minRange  maxRange</span></span>
+<span><span class="co">#&gt; $P1       FSC-A     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; $P2       FSC-H     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; $P3       FSC-W     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; $P4       SSC-A     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; $P5       SSC-H     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; ...         ...    ...       ...       ...       ...</span></span>
+<span><span class="co">#&gt; $P31 PE-CF594-A    IgD    262144      -111    262144</span></span>
+<span><span class="co">#&gt; $P32   PE-Cy5-A   CD25    262144      -111    262144</span></span>
+<span><span class="co">#&gt; $P33 PE-Cy5.5-A     NA    262144      -111    262144</span></span>
+<span><span class="co">#&gt; $P34   PE-Cy7-A    Fas    262144      -111    262144</span></span>
+<span><span class="co">#&gt; $P35       Time     NA    262144         0    262144</span></span>
+<span><span class="co">#&gt; 469 keywords are stored in the 'description' slot</span></span></code></pre></div>
+<p>We see a summary of the first sample; its filename is “sample_1.fcs”,
+it contains 5000 cells, and data for 35 parameters. To get a table of
+the actual expression data, we use the function <code><a href="https://rdrr.io/pkg/Biobase/man/exprs.html" class="external-link">exprs()</a></code>
+from the <code>flowCore</code> package.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get expression matrix for first sample</span></span>
+<span><span class="va">ff_expr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/Biobase/man/exprs.html" class="external-link">exprs</a></span><span class="op">(</span><span class="va">fs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print first 4 rows</span></span>
+<span><span class="va">ff_expr</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="op">]</span></span>
+<span><span class="co">#&gt;          FSC-A      FSC-H    FSC-W      SSC-A     SSC-H     SSC-W    FITC-A</span></span>
+<span><span class="co">#&gt; [1,] 172421.77 159635.250 141903.8  43938.047  40146.55  91053.63  4798.914</span></span>
+<span><span class="co">#&gt; [2,] 130561.10 108919.961 143228.1 152532.750 122979.55 111328.62 12137.295</span></span>
+<span><span class="co">#&gt; [3,]  59750.52  52227.129 124318.2  34754.867  32083.29  86860.19  1849.123</span></span>
+<span><span class="co">#&gt; [4,]   7355.91   7259.885  77052.2   7285.214   7117.29  63835.60  1019.070</span></span>
+<span><span class="co">#&gt;        BB630-A  BB660-P-A  BB700-P-A BB790-P-A       APC-A Alexa Fluor 700-A</span></span>
+<span><span class="co">#&gt; [1,]  786.2920  452.64316  397.99857 1318.6589    20.11475          128.2221</span></span>
+<span><span class="co">#&gt; [2,] 3522.0049 2404.10498 5396.73242 7419.7061 11051.69922        32283.5469</span></span>
+<span><span class="co">#&gt; [3,]  493.7941  305.93362  913.11847 5790.0962    83.77976         2193.0068</span></span>
+<span><span class="co">#&gt; [4,]  194.5944   15.99989   45.98434  477.9663   -41.39278          110.5113</span></span>
+<span><span class="co">#&gt;       APC-Cy7-A    BV421-A    BV480-A      BV570-A     BV605-A     BV650-A</span></span>
+<span><span class="co">#&gt; [1,]   605.0908   91.80707   185.2335   120.617897    66.70843    87.03339</span></span>
+<span><span class="co">#&gt; [2,]  8314.0439 4905.69727 52768.1562 10745.570312 18197.67188 34821.87109</span></span>
+<span><span class="co">#&gt; [3,] 12747.9346 1770.47498   461.8841   226.722931   221.99844   230.76936</span></span>
+<span><span class="co">#&gt; [4,]   418.3218  -59.16986  -145.9443    -7.981329    58.99016   -44.28738</span></span>
+<span><span class="co">#&gt;         BV711-A   BV750-P-A    BV786-A   BUV395-A    BUV496-A   BUV563-A</span></span>
+<span><span class="co">#&gt; [1,]   266.3862   124.24052   264.8026   72.70756  383.005554  209.00862</span></span>
+<span><span class="co">#&gt; [2,] 37474.3906 18857.96289 20743.8301 5667.64209 7551.632324 4003.01172</span></span>
+<span><span class="co">#&gt; [3,]  1878.3730 22423.04883 40234.0000  149.08226  316.002411  261.43042</span></span>
+<span><span class="co">#&gt; [4,]   159.9085    -0.84014   533.7647   20.97909    9.185216   63.60031</span></span>
+<span><span class="co">#&gt;        BUV615-P-A    BUV661-A    BUV737-A   BUV805-A       PE-A PE-CF594-A</span></span>
+<span><span class="co">#&gt; [1,]  144.0625458   112.85854   262.50281   935.4973   69.18753   51.06232</span></span>
+<span><span class="co">#&gt; [2,] 5124.7939453 10772.74805 34518.89453 28976.0605 7547.36328 7097.62354</span></span>
+<span><span class="co">#&gt; [3,]  150.9850464   179.67509 11367.02051 19290.5312 1297.53540  316.13800</span></span>
+<span><span class="co">#&gt; [4,]    0.7703382    49.72784    26.84687   328.1612   52.24570  -42.42495</span></span>
+<span><span class="co">#&gt;         PE-Cy5-A  PE-Cy5.5-A  PE-Cy7-A     Time</span></span>
+<span><span class="co">#&gt; [1,]   163.59433    9.276711  4148.093 8742.340</span></span>
+<span><span class="co">#&gt; [2,] 11920.41406 2834.209229 14326.565 5863.763</span></span>
+<span><span class="co">#&gt; [3,]   253.09689  165.409515 12095.505 8203.134</span></span>
+<span><span class="co">#&gt; [4,]   -22.67742 -165.246353   980.696 1575.163</span></span></code></pre></div>
+<p>We can also view information about the experiment’s panel using the
+functions <code><a href="https://rdrr.io/pkg/Biobase/man/phenoData.html" class="external-link">pData()</a></code> and <code><a href="https://rdrr.io/pkg/flowCore/man/parameters-methods.html" class="external-link">parameters()</a></code> together.
+The <code>name</code> column lists channels, and <code>desc</code> lists
+the associated marker, if any.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># View marker/channel pairs and value ranges</span></span>
+<span><span class="fu">pData</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/flowCore/man/parameters-methods.html" class="external-link">parameters</a></span><span class="op">(</span><span class="va">fs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                   name   desc  range   minRange maxRange</span></span>
+<span><span class="co">#&gt; $P1              FSC-A   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P2              FSC-H   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P3              FSC-W   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P4              SSC-A   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P5              SSC-H   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P6              SSC-W   &lt;NA&gt; 262144    0.00000   262144</span></span>
+<span><span class="co">#&gt; $P7             FITC-A  PHA-L 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P8            BB630-A   &lt;NA&gt; 262144  -71.32294   262144</span></span>
+<span><span class="co">#&gt; $P9          BB660-P-A   &lt;NA&gt; 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P10         BB700-P-A  CD123 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P11         BB790-P-A   &lt;NA&gt; 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P12             APC-A   CD16 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P13 Alexa Fluor 700-A    CD8 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P14         APC-Cy7-A    CD3 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P15           BV421-A  IL10R 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P16           BV480-A HLA-DR 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P17           BV570-A   &lt;NA&gt; 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P18           BV605-A   CD14 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P19           BV650-A  CD11c 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P20           BV711-A   TIM3 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P21         BV750-P-A   CCR7 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P22           BV786-A   CD38 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P23          BUV395-A CD45RA 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P24          BUV496-A     LD 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P25          BUV563-A  TCRgd 262144 -106.69566   262144</span></span>
+<span><span class="co">#&gt; $P26        BUV615-P-A   CD56 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P27          BUV661-A   CD19 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P28          BUV737-A   CD39 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P29          BUV805-A    CD4 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P30              PE-A    PD1 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P31        PE-CF594-A    IgD 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P32          PE-Cy5-A   CD25 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P33        PE-Cy5.5-A   &lt;NA&gt; 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P34          PE-Cy7-A    Fas 262144 -111.00000   262144</span></span>
+<span><span class="co">#&gt; $P35              Time   &lt;NA&gt; 262144    0.00000   262144</span></span></code></pre></div>
+<p>The function <code><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames()</a></code> may also be used to quickly view
+the channel names of a <code>flowSet</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get channel names</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">fs</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "FSC-A"             "FSC-H"             "FSC-W"            </span></span>
+<span><span class="co">#&gt;  [4] "SSC-A"             "SSC-H"             "SSC-W"            </span></span>
+<span><span class="co">#&gt;  [7] "FITC-A"            "BB630-A"           "BB660-P-A"        </span></span>
+<span><span class="co">#&gt; [10] "BB700-P-A"         "BB790-P-A"         "APC-A"            </span></span>
+<span><span class="co">#&gt; [13] "Alexa Fluor 700-A" "APC-Cy7-A"         "BV421-A"          </span></span>
+<span><span class="co">#&gt; [16] "BV480-A"           "BV570-A"           "BV605-A"          </span></span>
+<span><span class="co">#&gt; [19] "BV650-A"           "BV711-A"           "BV750-P-A"        </span></span>
+<span><span class="co">#&gt; [22] "BV786-A"           "BUV395-A"          "BUV496-A"         </span></span>
+<span><span class="co">#&gt; [25] "BUV563-A"          "BUV615-P-A"        "BUV661-A"         </span></span>
+<span><span class="co">#&gt; [28] "BUV737-A"          "BUV805-A"          "PE-A"             </span></span>
+<span><span class="co">#&gt; [31] "PE-CF594-A"        "PE-Cy5-A"          "PE-Cy5.5-A"       </span></span>
+<span><span class="co">#&gt; [34] "PE-Cy7-A"          "Time"</span></span></code></pre></div>
+<p>Finally, to view all filenames for the samples in a
+<code>flowSet</code>, use <code><a href="https://rdrr.io/pkg/Biobase/man/featureNames.html" class="external-link">sampleNames()</a></code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get sample names</span></span>
+<span><span class="fu">sampleNames</span><span class="op">(</span><span class="va">fs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "sample_1.fcs" "sample_2.fcs" "sample_3.fcs" "sample_4.fcs" "sample_5.fcs"</span></span>
+<span><span class="co">#&gt; [6] "sample_6.fcs"</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="gatingsets">GatingSets<a class="anchor" aria-label="anchor" href="#gatingsets"></a>
+</h4>
+<p>Working with a <code>GatingSet</code> is quite similar to the
+examples above. The main differences come up when importing data. The
+chunk below gives an example of how a set of FCS files may be read into
+a <code>GatingSet</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">flowWorkspace</span><span class="op">)</span></span>
+<span><span class="co">#&gt; As part of improvements to flowWorkspace, some behavior of</span></span>
+<span><span class="co">#&gt; GatingSet objects has changed. For details, please read the section</span></span>
+<span><span class="co">#&gt; titled "The cytoframe and cytoset classes" in the package vignette:</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   vignette("flowWorkspace-Introduction", "flowWorkspace")</span></span>
+<span></span>
+<span><span class="co"># Specify path to .fcs file</span></span>
+<span><span class="va">dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"samples"</span>, package <span class="op">=</span> <span class="st">"flowFunData"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Load cytoset from .fcs files</span></span>
+<span><span class="va">cs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/flowWorkspace/man/load_cytoset_from_fcs.html" class="external-link">load_cytoset_from_fcs</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">dir</span>, pattern <span class="op">=</span> <span class="st">"\\.fcs"</span>, truncate_max_range <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Make GatingSet</span></span>
+<span><span class="va">gs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/flowWorkspace/man/GatingSet-class.html" class="external-link">GatingSet</a></span><span class="op">(</span><span class="va">cs</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print summary of first GatingHierachy in set</span></span>
+<span><span class="va">gs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; Sample:  sample_1.fcs </span></span>
+<span><span class="co">#&gt; GatingHierarchy with  1  gates</span></span></code></pre></div>
+<p>Instead of a call to <code><a href="https://rdrr.io/pkg/flowCore/man/read.flowSet.html" class="external-link">read.flowSet()</a></code>, we use
+<code><a href="https://rdrr.io/pkg/flowWorkspace/man/load_cytoset_from_fcs.html" class="external-link">load_cytoset_from_fcs()</a></code>, then <code><a href="https://rdrr.io/pkg/flowWorkspace/man/GatingSet-class.html" class="external-link">GatingSet()</a></code>.</p>
+</div>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
