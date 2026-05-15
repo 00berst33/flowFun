@@ -154,7 +154,7 @@ The package's GitHub repository may also be viewed [here](https://github.com/RGL
 
 Once `CytoML` has been installed, importing a workspace is straightforward. Two things are required: a WSP file exported from FlowJo, and the filepath to the set of corresponding FCS files. The function `open_flowjo_xml()` opens the WSP file in R (despite the function name, it accepts a WSP file just fine), and `flowjo_to_gatingset()` generates the `GatingSet`.
 
-```{r import-gatingset-from-flowjo}
+```{r import-gatingset-from-flowjo, eval=FALSE}
 library(CytoML)
 
 # Get path to .wsp file
