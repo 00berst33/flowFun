@@ -64,7 +64,6 @@ knitr::kable(df,
              format = "html", 
              align = "l")
 ```
-
 :::
 
 This table corresponds to an experiment with 6 samples, and has 3 more columns than the previous example: `age.group`, `sex`, and `pregnancy`. Note that in the column `pregnancy`, possible values are `"pregnant"`, `"not.pregnant"`, or, when `sex == "male"`, `"X"`. Use an `"X"` (or leave the cell empty, if making the table in Excel) when a category is not applicable to a sample. 
@@ -102,7 +101,6 @@ knitr::kable(df,
              format = "html", 
              align = "l")
 ```
-
 :::
 
 For comparison 2, by setting `treatment = "Treatment"`, we indicate that we only want to test within the treatment group, and by setting `sex = list("female", "male")` we indicate that within that group we want to test for differences between males and females (this would be sample 1 and 2 vs. 4 and 6). 
@@ -119,5 +117,4 @@ knitr::kable(df,
              format = "html", 
              align = "l")
 ```
-
 :::
