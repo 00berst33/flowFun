@@ -797,7 +797,8 @@ number. Below, this function is called on these five clusters.</p>
 <span><span class="fu"><a href="../reference/plotLabeled2DScatter.html">plotLabeled2DScatter</a></span><span class="op">(</span><span class="va">fsom_dt</span>, </span>
 <span>                     channelpair <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"APC-Cy7-A"</span>, <span class="st">"BUV563-A"</span><span class="op">)</span>, </span>
 <span>                     clusters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">55</span>, <span class="fl">57</span>, <span class="fl">58</span>, <span class="fl">69</span>, <span class="fl">70</span><span class="op">)</span>,</span>
-<span>                     metaclusters <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span>                     metaclusters <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "CD3 &lt;APC-Cy7-A&gt;"  "TCRgd &lt;BUV563-A&gt;"</span></span></code></pre></div>
 <p><img src="workflowVignetteUpdated_files/figure-html/2d-scatter-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>Cluster 55 clearly does not have a high enough expression of TCRgd to
 justify classifying it as gdT cells. Additionally, although it has
@@ -1084,8 +1085,22 @@ belongs to (e.g. control vs. treatment). This information may be
 provided as a .csv file or <code>data.frame</code> to the function
 <code><a href="../reference/prepareSampleInfo.html">prepareSampleInfo()</a></code>, which will prepare the table for
 further use by the workflow and ensure that its values are R-friendly
-(no special characters like @ or #, no empty values, etc.). Below is an
-example of what an appropriate .csv file might look like.</p>
+(no special characters like @ or #, no empty values, etc.).</p>
+<p>Further explanation may be found in the “Setting up differential
+analysis” article, but in short it is most important that the table has
+at least these two columns, with the same names:</p>
+<ul>
+<li>
+<code>sample.name</code>, which specifies the name of each
+sample</li>
+<li>
+<code>filename</code>, which specifies the filename of each sample.
+These names should appear as they do when calling
+<code><a href="https://rdrr.io/pkg/Biobase/man/featureNames.html" class="external-link">sampleNames()</a></code> on your <code>GatingSet</code> or
+<code>flowSet</code>.</li>
+</ul>
+<p>Below is an example of what an appropriate .csv file might look
+like.</p>
 <table class="table">
 <thead><tr>
 <th style="text-align:center;">

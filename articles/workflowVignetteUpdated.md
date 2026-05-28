@@ -731,6 +731,7 @@ plotLabeled2DScatter(fsom_dt,
                      channelpair = c("APC-Cy7-A", "BUV563-A"), 
                      clusters = c(55, 57, 58, 69, 70),
                      metaclusters = NULL)
+#> [1] "CD3 <APC-Cy7-A>"  "TCRgd <BUV563-A>"
 ```
 
 ![](workflowVignetteUpdated_files/figure-html/2d-scatter-1.png)
@@ -1098,8 +1099,19 @@ file or `data.frame` to the function
 [`prepareSampleInfo()`](https://00berst33.github.io/flowFun/reference/prepareSampleInfo.md),
 which will prepare the table for further use by the workflow and ensure
 that its values are R-friendly (no special characters like @ or \#, no
-empty values, etc.). Below is an example of what an appropriate .csv
-file might look like.
+empty values, etc.).
+
+Further explanation may be found in the “Setting up differential
+analysis” article, but in short it is most important that the table has
+at least these two columns, with the same names:
+
+- `sample.name`, which specifies the name of each sample
+- `filename`, which specifies the filename of each sample. These names
+  should appear as they do when calling
+  [`sampleNames()`](https://rdrr.io/pkg/Biobase/man/featureNames.html)
+  on your `GatingSet` or `flowSet`.
+
+Below is an example of what an appropriate .csv file might look like.
 
 |   filename   | sample.name | disease |  NAC   |       FMO        |     Isotype      |
 |:------------:|:-----------:|:-------:|:------:|:----------------:|:----------------:|
