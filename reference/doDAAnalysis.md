@@ -60,5 +60,4 @@ via likelihood ratio tests using functions from edgeR.
 [`DGEList()`](https://rdrr.io/pkg/edgeR/man/DGEList.html),
 [`estimateDisp()`](https://rdrr.io/pkg/edgeR/man/estimateDisp.html),
 [`glmFit()`](https://rdrr.io/pkg/edgeR/man/glmfit.html),
-[`glmLRT()`](https://rdrr.io/pkg/edgeR/man/glmLRT.html),
-[`topTags()`](https://rdrr.io/pkg/edgeR/man/topTags.html).
+[`glmLRT()`](https://rdrr.io/pkg/edgeR/man/glmLRT.html), `topTags()`.

@@ -29,6 +29,12 @@ plot1DMarkerDensities(
 
   A `character` indicating which subpopulation to use
 
+- facet_by:
+
+  A `character` indicating whether plots should be faceted by samples or
+  subpopulations (these subpopulations are typically cell types
+  identified during metacluster merging)
+
 - inverse:
 
   A boolean, whether or not the data should be inverse transformed
