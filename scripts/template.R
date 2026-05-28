@@ -292,7 +292,7 @@ contrasts <- makeContrastsMatrix(sample_info, comparisons)
 
 # Generate matrix of sample/metacluster cell counts
 counts <- makeCountMatrix(fsom_dt,
-                          #meta_names = meta_of_interest,
+                          populations = meta_of_interest,
                           min_cells = 3,
                           min_samples = 4)
 

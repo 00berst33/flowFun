@@ -14,10 +14,12 @@ navbar:
       - text: Core workflows
       - text: Main workflow
         href: articles/workflowVignetteUpdated.html
+      - text: Setting up differential analysis
+        href: articles/differentialAnalysis.html
       - text: -------
       - text: Miscellaneous
       - text: Making and editing plots
-        href: doc/visualizationVignette.html
+        href: articles/visualizationVignette.html
     github:
       icon: fa-github
       href: https://github.com/00berst33/flowFun

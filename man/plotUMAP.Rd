@@ -26,16 +26,3 @@ A UMAP plot drawn with ggplot2.
 \description{
 Plots UMAP colored by metacluster.
 }
-\examples{
-file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-fsom <- FlowSOM::FlowSOM(file,
-                         colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-                         nClus = 10,
-                         seed = 42,
-                         xdim = 6,
-                         ydim = 6)
-
-plotUMAP(fsom)
-
-plotUMAP(fsom)
-}

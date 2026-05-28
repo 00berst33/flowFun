@@ -1,3 +1,14 @@
+#' @keywords internal
+#' @export
+getFullNames <- function(substr, target_names) {
+  # Match elements of `substr` to `target_names`
+  full_names <- sapply(substr, \(x) grep(x, target_names, value = TRUE))
+  full_names <- unname(full_names)
+
+  return(full_names)
+}
+
+
 #' addMetaToTable
 #'
 #' @param table Table containing expression data for all samples

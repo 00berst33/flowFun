@@ -622,83 +622,6 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 }
 
 
-#' @keywords internal
-#' @export
-plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL, # needs edit for one case
-                                         metaclusters = NULL,
-                                         label_type = c("cluster", "metacluster")) {
-
-  if (is.null(clusters) && is.null(metaclusters)) {
-    stop("clusters and/or metaclusters must be a vector of indices.")
-
-  } else if (is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    all_clust <- which(input$metaclustering %in% metaclusters)
-
-  } else if (!is.null(clusters) && is.null(metaclusters)) {
-    # color by cluster
-    all_clust <- clusters
-
-  } else if (!is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    meta_nodes <- which(input$metaclustering %in% metaclusters)
-    all_clust <- unique(c(meta_nodes, clusters))
-
-  }
-
-  # edit !!!
-  # values in `metaclusters` and levels(input$metaclustering) can conflict
-  if (is.character(metaclusters)) {
-    metaclusters <- which(levels(input$metaclustering) %in% metaclusters)
-  } else if (is.numeric(metaclusters)) {
-    metaclusters <- list(metaclusters)
-  }
-
-  # Get all label coordinates
-  if (length(all_clust) == 1) {
-    mfis <- matrix(FlowSOM::GetClusterMFIs(input)[all_clust, channelpair],
-                  nrow = 1,
-                  dimnames = list(all_clust, channelpair))
-  } else {
-    mfis <- FlowSOM::GetClusterMFIs(input)[all_clust, channelpair]
-  }
-
-  df <- as.data.frame(mfis)
-
-  # Get label names
-  switch(label_type,
-         cluster = {labs <- rownames(df)},
-         metacluster = {labs <- input$metaclustering[all_clust]},
-         stop("label_type must be either 'cluster' or 'metacluster'")
-  )
-
-  print(df)
-
-  # Generate unlabeled ggplot2 plot list
-  p <- FlowSOM::Plot2DScatters(fsom = input,
-                              channelpairs = list(channelpair),
-                              clusters = clusters,
-                              metaclusters = metaclusters,
-                              plotFile = NULL,
-                              density = FALSE,
-                              centers = FALSE)
-
-  if (!is.null(metaclusters)) { # generates single plot  # color is normally 'black' but want to color label based on metacluster
-    p <- p[[length(p)]] + ggplot2::geom_label(data = df,
-                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                              color = labs, size = 2.5, fontface = "bold")
-  } else { # generates list of plots
-    for (i in 1:length(p)) {
-      p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
-                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                             color = "black", size = 2.5, fontface = "bold")
-    }
-  }
-
-  return(p)
-}
-
-
 #' plotUMAP
 #'
 #' Plots UMAP colored by metacluster.
@@ -716,19 +639,6 @@ plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL, # 
 #' A UMAP plot drawn with ggplot2.
 #'
 #' @export
-#'
-#' @examples
-#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 10,
-#'                          seed = 42,
-#'                          xdim = 6,
-#'                          ydim = 6)
-#'
-#' plotUMAP(fsom)
-#'
-#' plotUMAP(fsom)
 plotUMAP <- function(input, num_cells = 5000, labels = NULL, colors = NULL, seed = NULL) {
   result <- UseMethod("plotUMAP")
   return(result)
@@ -900,6 +810,9 @@ plotSampleProportions <- function(count_mat) {
 #' @param gs A `GatingSet`
 #' @param channel The channel to plot densities for
 #' @param population A `character` indicating which subpopulation to use
+#' @param facet_by A `character` indicating whether plots should be faceted by
+#' samples or subpopulations (these subpopulations are typically cell types
+#' identified during metacluster merging)
 #' @param inverse A boolean, whether or not the data should be inverse transformed
 #' before plotting. `FALSE` by default
 #' @param verbose Boolean specifying whether or not to print progress updates as
