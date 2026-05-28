@@ -42,15 +42,6 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
   # Run clustering algorithm
   fsom <- do.call(FlowSOM::FlowSOM, c(list(input = input), all_options))
 
-  # Get metacluster and cluster labels
-  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
-
-  # Append labels as columns to the data.table
-  # input <- input %>%
-  #   tidytable::mutate(Cluster = clust_labels,
-  #                     Metacluster = meta_labels,
-  #                     .keep = "all")
   table <- flowSOMToTable(fsom)
 
   # Set FlowSOM RDS filename as table attribute
@@ -66,28 +57,9 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
     saveRDS(fsom, fsom_file)
   }
 
-  # Get metacluster and cluster labels
-  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
-  #
-  # # Append labels as columns to the data.table
-  # table <- table %>%
-  #   tidytable::mutate(Cluster = clust_labels,
-  #                     Metacluster = meta_labels,
-  #                     .keep = "all")
-  #
-  # # Add attribute specifying the columns used for clustering
-  # attr(table, "clustered") <- cols_to_cluster
-  # # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
-
   return(table)
 }
 
-prepareControls <- function(gs, ref_sample = 1) {
-  # gs_pop_get_gate(), gh_apply_to_cs()
-  gh <- gs[[ref_sample]]
-
-}
 
 #' overwriteMetaclusterNames
 #'

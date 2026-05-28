@@ -1,8 +1,25 @@
 #' @keywords internal
 #' @export
 getFullNames <- function(substr, target_names) {
-  # Match elements of `substr` to `target_names`
-  full_names <- sapply(substr, \(x) grep(x, target_names, value = TRUE))
+  # Helper to escape regex metacharacters
+  escape_regex <- function(x) {
+    gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
+  }
+
+  # Get new names of input
+  full_names <- sapply(substr, function(x) {
+    x_esc <- escape_regex(x)
+
+    # token-style matching
+    pattern <- paste0(
+      "(?<![[:alnum:]])",
+      x_esc,
+      "(?![[:alnum:]])"
+    )
+    grep(pattern, target_names, value = TRUE, perl = TRUE)
+  })
+
+  # Remove names given by grep()
   full_names <- unname(full_names)
 
   return(full_names)
@@ -957,7 +974,7 @@ addMarkersToMetaData <- function(input, cols_to_cluster) {
 #' @param sample_df A `data.frame`, where each row corresponds to a sample and
 #' each column corresponds to metadata about the samples, such as experimental group,
 #' or the filename of a corresponding control sample. Must contain a column for
-#' filename, called `File.Name`.
+#' filename, called `filename`.
 #'
 #' @export
 addMetadataToGatingSet <- function(gs, sample_df) {

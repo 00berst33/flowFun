@@ -535,10 +535,14 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 
   # If channelpair not found in table column names
   if (!any(channelpair %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(channelpair, marker_cols)
-    # Set channelpair to pretty column names
-    channelpair <- colnames(input)[match_idx]
+    parent_strs <- colnames(input)
+
+    channelpair <- getFullNames(channelpair, parent_strs)
+    print(channelpair)
+    # marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    # match_idx <- match(channelpair, marker_cols)
+    # # Set channelpair to pretty column names
+    # channelpair <- colnames(input)[match_idx]
   }
 
   # Get all label coordinates

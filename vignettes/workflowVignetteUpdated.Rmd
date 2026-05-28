@@ -851,7 +851,14 @@ The resulting plot shows each cluster defined so far, and any parent-child relat
 
 The final analysis step in this workflow is differential analysis. Differential marker expression is implemented using limma, and differential count analysis using edgeR, both R packages found on Bioconductor. 
 
-Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). Below is an example of what an appropriate .csv file might look like.
+Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). 
+
+Further explanation may be found in the "Setting up differential analysis" article, but in short it is most important that the table has at least these two columns, with the same names:
+
+- `sample.name`, which specifies the name of each sample
+- `filename`, which specifies the filename of each sample. These names should appear as they do when calling `sampleNames()` on your `GatingSet` or `flowSet`.
+
+Below is an example of what an appropriate .csv file might look like.
 
 ```{r sample-info, echo=FALSE} 
 # Get filepath
