@@ -970,9 +970,7 @@ the cells identified as CD8 T cells.</p>
 <span><span class="va">new_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/createFilteredAggregate.html">createFilteredAggregate</a></span><span class="op">(</span><span class="va">fsom_dt</span>, </span>
 <span>                                     num_cells <span class="op">=</span> <span class="cn">Inf</span>, </span>
 <span>                                     metaclusters <span class="op">=</span> <span class="st">"CD8 T cells"</span>,</span>
-<span>                                     clusters <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "sample_1.fcs" "sample_2.fcs" "sample_3.fcs" "sample_4.fcs" "sample_5.fcs"</span></span>
-<span><span class="co">#&gt; [6] "sample_6.fcs"</span></span></code></pre></div>
+<span>                                     clusters <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p>One an appropriate subset has been created, the next step is to
 create a scree plot, which may be used to determine which principal
 components should be used in the analysis. Typically, there is a
@@ -1451,14 +1449,30 @@ some are of no interest, it is useful to specify this parameter.</p>
 <code class="sourceCode R"><span><span class="co"># Generate design matrix</span></span>
 <span><span class="va">design</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeDesignMatrix.html">makeDesignMatrix</a></span><span class="op">(</span><span class="va">sample_info</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Generate contrasts matrix</span></span>
+<span><span class="co"># Print result</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">design</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Ctrl_X MIBC_NAC MIBC_No.NAC</span></span>
+<span><span class="co">#&gt; 1      1        0           0</span></span>
+<span><span class="co">#&gt; 2      1        0           0</span></span>
+<span><span class="co">#&gt; 3      0        0           1</span></span>
+<span><span class="co">#&gt; 4      0        0           1</span></span>
+<span><span class="co">#&gt; 5      0        1           0</span></span>
+<span><span class="co">#&gt; 6      0        1           0</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Generate contrasts matrix</span></span>
 <span><span class="va">contrasts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeContrastsMatrix.html">makeContrastsMatrix</a></span><span class="op">(</span><span class="va">sample_info</span>, <span class="va">comparisons</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Generate matrix of sample/metacluster cell counts</span></span>
+<span><span class="co"># Print</span></span>
+<span><span class="va">contrasts</span></span>
+<span><span class="co">#&gt;              Contrasts</span></span>
+<span><span class="co">#&gt; Levels        MIBC_No.NAC_OR_MIBC_NAC__vs__Ctrl_X MIBC_NAC__vs__MIBC_No.NAC</span></span>
+<span><span class="co">#&gt;   Ctrl_X                                     -1.0                         0</span></span>
+<span><span class="co">#&gt;   MIBC_NAC                                    0.5                         1</span></span>
+<span><span class="co">#&gt;   MIBC_No.NAC                                 0.5                        -1</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Generate matrix of sample/metacluster cell counts</span></span>
 <span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeCountMatrix.html">makeCountMatrix</a></span><span class="op">(</span><span class="va">fsom_dt</span>, </span>
 <span>                          min_cells <span class="op">=</span> <span class="fl">3</span>, </span>
 <span>                          min_samples <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
-<p>The table of counts is printed below:</p>
 <table class="table">
 <thead><tr>
 <th style="text-align:left;">
@@ -1719,7 +1733,7 @@ gdT cells
 <code><a href="https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_count_fast.html" class="external-link">flowWorkspace::gs_pop_get_count_fast()</a></code> with argument
 <code>format</code> set to <code>"wide"</code> can also quickly obtain a
 count matrix in the necessary format.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get counts from GatingSet</span></span>
 <span><span class="va">gs_counts</span> <span class="op">&lt;-</span> <span class="fu">flowWorkspace</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_count_fast.html" class="external-link">gs_pop_get_count_fast</a></span><span class="op">(</span><span class="va">gs1</span>, format <span class="op">=</span> <span class="st">"wide"</span><span class="op">)</span> </span>
 <span><span class="va">gs_counts</span></span>
@@ -1853,7 +1867,7 @@ function <code><a href="https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_childre
 to retrieve the paths for each cell type found in the first round of
 clustering, as they all share the same parent. The count matrix is then
 subsetted to the appropriate populations.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get paths to cluster populations</span></span>
 <span><span class="va">subpops</span> <span class="op">&lt;-</span> <span class="fu">flowWorkspace</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_children.html" class="external-link">gs_pop_get_children</a></span><span class="op">(</span><span class="va">gs1</span>, y <span class="op">=</span> <span class="st">"live"</span><span class="op">)</span></span>
 <span></span>
@@ -1890,7 +1904,7 @@ subsetted to the appropriate populations.</p>
 <span><span class="co">#&gt; pDC                   15</span></span></code></pre></div>
 <p>Given any matrix of counts, <code><a href="../reference/plotSampleProportions.html">plotSampleProportions()</a></code>
 visualizes cell type proportions across samples.</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotSampleProportions.html">plotSampleProportions</a></span><span class="op">(</span><span class="va">clust_counts</span><span class="op">)</span></span></code></pre></div>
 <p><img src="workflowVignetteUpdated_files/figure-html/visualize-counts-1.png" class="r-plt" alt="" width="672"></p>
 <div class="section level5">
@@ -1910,7 +1924,7 @@ analysis on multiple objects, or running the script multiple times for
 any reason, the user may wish to create sub-directories within
 <code>Analysis Results/edgeR</code> to stay organized. To do this,
 simply set the parameter to a preferred sub-directory name.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Perform differential abundance analysis</span></span>
 <span><span class="va">da_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doDAAnalysis.html">doDAAnalysis</a></span><span class="op">(</span>design <span class="op">=</span> <span class="va">design</span>, </span>
 <span>                           counts <span class="op">=</span> <span class="va">counts</span>, </span>
@@ -2379,73 +2393,481 @@ NK cells
 <h5 id="differential-expression">Differential Expression<a class="anchor" aria-label="anchor" href="#differential-expression"></a>
 </h5>
 <p>To test for differential expression, the design and contrast matrices
-must again be specified, in addition to the markers to be tested. Recall
-that in most cases, these markers should not be the same as those used
-for clustering.</p>
-<p>Before testing, median fluorescent intensities (MFIs) must be found
-for the markers of interest. If expression data is in a
-<code>data.table</code> format, the function <code><a href="../reference/getExprMatDE.html">getExprMatDE()</a></code>
-may be used to do so. If using a <code>GatingSet</code> object, the
-function <code><a href="../reference/gs_makeMFIMatrix.html">gs_makeMFIMatrix()</a></code> should be used instead.</p>
-<p>By default, the data is kept on the scale it was transformed to
-during preprocessing. If the user prefers output to match the scale of
-the raw data, inverse transformations should be applied before
-calculating any aggregate statistics and/or performing tests.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+must again be specified, in addition to the channels/markers to be
+tested. Recall that in most cases, these markers should NOT be the same
+as those used for clustering.</p>
+<p>Once the required information is prepared, performing a basic
+differential expression analysis requires little input from the user, as
+all necessary operations are wrapped up within the function
+<code><a href="../reference/doDEAnalysis.html">doDEAnalysis()</a></code>. This function accepts either a
+<code>data.table</code> or <code>GatingSet</code>.</p>
+<p>When calling the function, users have the option to give a count
+matrix, which will be used to assign weights to each cluster-marker pair
+before testing. We show two examples of this function below, called on
+our <code>GatingSet</code> complete with all the nodes we defined during
+clustering.</p>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define channels of interest</span></span>
-<span><span class="va">marker_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"FITC-A"</span>, <span class="st">"BV711-A"</span><span class="op">)</span></span>
+<span><span class="va">cols_to_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"FITC-A"</span>, <span class="st">"BV711-A"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Set subpopulations of interest to variable </span></span>
+<span><span class="va">subpops</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_children.html" class="external-link">gs_pop_get_children</a></span><span class="op">(</span><span class="va">gs1</span>, </span>
+<span>                               <span class="st">"live"</span>, <span class="co"># this retrieves all clusters that are  </span></span>
+<span>                                       <span class="co"># children of the "live" node</span></span>
+<span>                               path <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span> <span class="co"># this argument concatenates population names</span></span>
+<span><span class="co"># Remove `Undefined` from populations of interest</span></span>
+<span><span class="va">subpops</span> <span class="op">&lt;-</span> <span class="va">subpops</span><span class="op">[</span><span class="op">!</span><span class="va">subpops</span> <span class="op"><a href="https://rdrr.io/pkg/flowCore/man/filter-in-methods.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Undefined"</span><span class="op">)</span><span class="op">]</span></span>
 <span></span>
 <span><span class="co"># Perform differential expression analysis</span></span>
-<span><span class="va">de_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doDEAnalysis.html">doDEAnalysis</a></span><span class="op">(</span><span class="va">fsom_dt</span>, </span>
-<span>                       cols_to_test <span class="op">=</span> <span class="va">marker_cols</span>, </span>
+<span><span class="va">de_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doDEAnalysis.html">doDEAnalysis</a></span><span class="op">(</span><span class="va">gs1</span>, </span>
+<span>                       cols_to_test <span class="op">=</span> <span class="va">cols_to_test</span>, </span>
 <span>                       design <span class="op">=</span> <span class="va">design</span>, </span>
-<span>                       contrasts <span class="op">=</span> <span class="va">contrasts</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># View results</span></span>
-<span><span class="fu">limma</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/limma/man/toptable.html" class="external-link">topTable</a></span><span class="op">(</span><span class="va">de_res</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                       feature MIBC_No.NAC_OR_MIBC_NAC__vs__Ctrl_X</span></span>
-<span><span class="co">#&gt; 10  NK T cells.TIM3 &lt;BV711-A&gt;                         -0.21732188</span></span>
-<span><span class="co">#&gt; 17   gdT cells.PHA-L &lt;FITC-A&gt;                         -0.20426559</span></span>
-<span><span class="co">#&gt; 9   NK T cells.PHA-L &lt;FITC-A&gt;                         -0.09168521</span></span>
-<span><span class="co">#&gt; 4  CD4 T cells.TIM3 &lt;BV711-A&gt;                          0.10286847</span></span>
-<span><span class="co">#&gt; 16         cDC.TIM3 &lt;BV711-A&gt;                         -0.24827906</span></span>
-<span><span class="co">#&gt; 12    NK cells.TIM3 &lt;BV711-A&gt;                         -0.02201422</span></span>
-<span><span class="co">#&gt; 20         pDC.TIM3 &lt;BV711-A&gt;                          0.01893114</span></span>
-<span><span class="co">#&gt; 2      B cells.TIM3 &lt;BV711-A&gt;                          0.04169904</span></span>
-<span><span class="co">#&gt; 15         cDC.PHA-L &lt;FITC-A&gt;                         -0.14705205</span></span>
-<span><span class="co">#&gt; 11    NK cells.PHA-L &lt;FITC-A&gt;                         -0.11186719</span></span>
-<span><span class="co">#&gt;    MIBC_NAC__vs__MIBC_No.NAC  AveExpr         F    P.Value adj.P.Val</span></span>
-<span><span class="co">#&gt; 10                0.32466246 1.363133 4.5323285 0.02619657 0.5239314</span></span>
-<span><span class="co">#&gt; 17               -0.28085816 2.532910 1.9951677 0.16617913 0.8426767</span></span>
-<span><span class="co">#&gt; 9                -0.24852449 2.715640 1.2115466 0.32186197 0.8426767</span></span>
-<span><span class="co">#&gt; 4                -0.02965683 1.055500 1.0567659 0.36904211 0.8426767</span></span>
-<span><span class="co">#&gt; 16                0.05382806 1.852949 1.0391065 0.37489880 0.8426767</span></span>
-<span><span class="co">#&gt; 12                0.23954436 1.668804 0.8527753 0.44344263 0.8426767</span></span>
-<span><span class="co">#&gt; 20                0.38041863 1.905086 0.7483075 0.48792439 0.8426767</span></span>
-<span><span class="co">#&gt; 2                 0.10172796 1.013840 0.7029336 0.50877799 0.8426767</span></span>
-<span><span class="co">#&gt; 15               -0.03708100 2.762316 0.6766949 0.52128999 0.8426767</span></span>
-<span><span class="co">#&gt; 11               -0.13311684 2.704831 0.6679475 0.52553722 0.8426767</span></span></code></pre></div>
-<p>Difference in marker expression between group may also be visualized
-with the function <code><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars()</a></code>. To use it, a matrix
-of MFIs for the marker of interest should be generated; if data is a
-<code>FlowSOM</code> object or <code>data.table</code> do so with
-<code><a href="../reference/getSampleMetaclusterMFIs.html">getSampleMetaclusterMFIs()</a></code>, if data is a
-<code>GatingSet</code> do so with
-<code>gs_getSampleMetaclusterMFIs()</code>.</p>
-<p>Note that if input is a <code>GatingSet</code> with transformations
-attached, the data may be back-transformed to the linear scale before
-the calculation of MFIs or statistical tests.</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<span>                       contrasts <span class="op">=</span> <span class="va">contrasts</span>, <span class="co"># subset contrasts matrix to column of interest</span></span>
+<span>                       counts <span class="op">=</span> <span class="va">counts</span>, <span class="co"># optional parameter, used to calculate weights when given</span></span>
+<span>                       subpopulations <span class="op">=</span> <span class="va">subpops</span>,</span>
+<span>                       inverse <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                       print_table <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># TRUE by default</span></span></code></pre></div>
+<p>The output is a list, whose length corresponds to the number of
+comparisons defined by <code>contrasts</code>. Each element is a
+formatted table with features, average expression, and p-values (if
+desired, the raw output from <code><a href="https://rdrr.io/pkg/limma/man/ebayes.html" class="external-link">limma::eBayes()</a></code> may be
+returned instead of tables by setting <code>print_table=FALSE</code>).
+These tables are printed neatly below.</p>
+<table class="table">
+<caption>
+Ctrl vs. MIBC
+</caption>
+<thead><tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+feature
+</th>
+<th style="text-align:center;">
+AveExpr
+</th>
+<th style="text-align:center;">
+P.Value
+</th>
+<th style="text-align:center;">
+adj.P.Val
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:center;">
+gdT cells.FITC-A
+</td>
+<td style="text-align:center;">
+3152.2144
+</td>
+<td style="text-align:center;">
+0.0356709
+</td>
+<td style="text-align:center;">
+0.6420762
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+16
+</td>
+<td style="text-align:center;">
+CD4 T cells.BV711-A
+</td>
+<td style="text-align:center;">
+132.8720
+</td>
+<td style="text-align:center;">
+0.0850752
+</td>
+<td style="text-align:center;">
+0.7116543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+14
+</td>
+<td style="text-align:center;">
+cDC.BV711-A
+</td>
+<td style="text-align:center;">
+893.1079
+</td>
+<td style="text-align:center;">
+0.1291676
+</td>
+<td style="text-align:center;">
+0.7116543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+6
+</td>
+<td style="text-align:center;">
+NK T cells.BV711-A
+</td>
+<td style="text-align:center;">
+342.8633
+</td>
+<td style="text-align:center;">
+0.1581454
+</td>
+<td style="text-align:center;">
+0.7116543
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:center;">
+NK cells.FITC-A
+</td>
+<td style="text-align:center;">
+4485.5206
+</td>
+<td style="text-align:center;">
+0.2206313
+</td>
+<td style="text-align:center;">
+0.7942728
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+15
+</td>
+<td style="text-align:center;">
+CD4 T cells.FITC-A
+</td>
+<td style="text-align:center;">
+4970.3840
+</td>
+<td style="text-align:center;">
+0.3363353
+</td>
+<td style="text-align:center;">
+0.8208017
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:center;">
+pDC.BV711-A
+</td>
+<td style="text-align:center;">
+1351.9790
+</td>
+<td style="text-align:center;">
+0.3991978
+</td>
+<td style="text-align:center;">
+0.8208017
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:center;">
+cDC.FITC-A
+</td>
+<td style="text-align:center;">
+5086.5162
+</td>
+<td style="text-align:center;">
+0.4024130
+</td>
+<td style="text-align:center;">
+0.8208017
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2
+</td>
+<td style="text-align:center;">
+CD8 T cells.BV711-A
+</td>
+<td style="text-align:center;">
+137.7742
+</td>
+<td style="text-align:center;">
+0.4104009
+</td>
+<td style="text-align:center;">
+0.8208017
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+8
+</td>
+<td style="text-align:center;">
+Monocytes.BV711-A
+</td>
+<td style="text-align:center;">
+1392.1179
+</td>
+<td style="text-align:center;">
+0.5183697
+</td>
+<td style="text-align:center;">
+0.9268327
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table">
+<caption>
+NAC vs. No NAC
+</caption>
+<thead><tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+feature
+</th>
+<th style="text-align:center;">
+AveExpr
+</th>
+<th style="text-align:center;">
+P.Value
+</th>
+<th style="text-align:center;">
+adj.P.Val
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:center;">
+gdT cells.FITC-A
+</td>
+<td style="text-align:center;">
+3152.2144
+</td>
+<td style="text-align:center;">
+0.0310140
+</td>
+<td style="text-align:center;">
+0.5582529
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+6
+</td>
+<td style="text-align:center;">
+NK T cells.BV711-A
+</td>
+<td style="text-align:center;">
+342.8633
+</td>
+<td style="text-align:center;">
+0.1029908
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:center;">
+NK cells.BV711-A
+</td>
+<td style="text-align:center;">
+631.6907
+</td>
+<td style="text-align:center;">
+0.1708808
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+5
+</td>
+<td style="text-align:center;">
+NK T cells.FITC-A
+</td>
+<td style="text-align:center;">
+4800.7528
+</td>
+<td style="text-align:center;">
+0.2823609
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:center;">
+NK cells.FITC-A
+</td>
+<td style="text-align:center;">
+4485.5206
+</td>
+<td style="text-align:center;">
+0.2854281
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+8
+</td>
+<td style="text-align:center;">
+Monocytes.BV711-A
+</td>
+<td style="text-align:center;">
+1392.1179
+</td>
+<td style="text-align:center;">
+0.3893413
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+9
+</td>
+<td style="text-align:center;">
+pDC.FITC-A
+</td>
+<td style="text-align:center;">
+4747.0844
+</td>
+<td style="text-align:center;">
+0.4205384
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:center;">
+gdT cells.BV711-A
+</td>
+<td style="text-align:center;">
+242.8314
+</td>
+<td style="text-align:center;">
+0.4371267
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:center;">
+B cells.FITC-A
+</td>
+<td style="text-align:center;">
+9861.6803
+</td>
+<td style="text-align:center;">
+0.4415959
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:center;">
+B cells.BV711-A
+</td>
+<td style="text-align:center;">
+109.4180
+</td>
+<td style="text-align:center;">
+0.4815376
+</td>
+<td style="text-align:center;">
+0.7344375
+</td>
+</tr>
+</tbody>
+</table>
+<p><code><a href="../reference/doDEAnalysis.html">doDEAnalysis()</a></code> creates a table of cluster-sample MFIs
+internally, but some users may wish to have this table for use outside
+of differential analysis. Two functions are available for this purpose.
+If expression data is in a <code>data.table</code> format, the function
+<code><a href="../reference/getExprMatDE.html">getExprMatDE()</a></code> may be used. If using a
+<code>GatingSet</code> object, the function
+<code><a href="../reference/gs_makeMFIMatrix.html">gs_makeMFIMatrix()</a></code> should be used instead. The result is a
+table with rows corresponding to each cluster-marker pair, and columns
+for each sample.</p>
+<p>Below we show an example of the output from
+<code><a href="../reference/gs_makeMFIMatrix.html">gs_makeMFIMatrix()</a></code>. Note that <code>inverse = TRUE</code>
+is only applicable for <code>GatingSets</code> with associated
+transformations; <code><a href="../reference/getExprMatDE.html">getExprMatDE()</a></code> is faster but unable to
+back-transform data.</p>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Print table</span></span>
+<span><span class="fu"><a href="../reference/gs_makeMFIMatrix.html">gs_makeMFIMatrix</a></span><span class="op">(</span><span class="va">gs1</span>,</span>
+<span>                 cols <span class="op">=</span> <span class="va">cols_to_test</span>,</span>
+<span>                 subpopulations <span class="op">=</span> <span class="va">subpops</span>,</span>
+<span>                 inverse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
+<span><span class="co">#&gt;   feature       sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> CD8 T cells.…       <span style="text-decoration: underline;">5</span>165.        <span style="text-decoration: underline;">5</span>269.       <span style="text-decoration: underline;">3</span>616.         <span style="text-decoration: underline;">6</span>695.         <span style="text-decoration: underline;">2</span>742.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> CD8 T cells.…        112.         134.        150.          141.          169.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B cells.FITC…       <span style="text-decoration: underline;">8</span>499.       <span style="text-decoration: underline;">10</span>876.       <span style="text-decoration: underline;">8</span>303.        <span style="text-decoration: underline;">13</span>956.         <span style="text-decoration: underline;">7</span>910.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> B cells.BV71…         94.4         91.0         1.89        177.          120.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NK T cells.F…       <span style="text-decoration: underline;">4</span>880.        <span style="text-decoration: underline;">5</span>364.       <span style="text-decoration: underline;">4</span>117.         <span style="text-decoration: underline;">7</span>369.         <span style="text-decoration: underline;">1</span>989.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NK T cells.B…        411.         484.        287.           75.4         397.</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: sample_6.fcs &lt;dbl&gt;</span></span></span></code></pre></div>
+<p>Difference in marker expression between groups may be visualized with
+the function <code><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars()</a></code>. As above, if input is a
+<code>GatingSet</code> with transformations attached, the data may be
+back-transformed to the linear scale before the calculation of MFIs or
+statistical tests.</p>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate bar plot</span></span>
-<span><span class="fu"><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars</a></span><span class="op">(</span><span class="va">fsom_dt</span>,</span>
-<span>                 col <span class="op">=</span> <span class="st">"BV711-A"</span>,</span>
+<span><span class="fu"><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars</a></span><span class="op">(</span><span class="va">gs1</span>,</span>
+<span>                 col <span class="op">=</span> <span class="st">"FITC-A"</span>,</span>
 <span>                 sample_df <span class="op">=</span> <span class="va">sample_info</span>, </span>
-<span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<span>                 comparison <span class="op">=</span> <span class="va">comparisons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>                 populations <span class="op">=</span> <span class="va">subpops</span>,</span>
+<span>                 inverse <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="workflowVignetteUpdated_files/figure-html/plot-mfis-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 <p>Finally, grouped dimension reduction plots may be generated, colored
 either by density or marker expression, then compared against their
 parent plot if one exists.</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make new parent umap</span></span>
 <span><span class="va">umap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plotUMAP.html">plotUMAP</a></span><span class="op">(</span><span class="va">fsom_dt</span>, num_cells <span class="op">=</span> <span class="fl">7500</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
 <span></span>

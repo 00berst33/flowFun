@@ -951,8 +951,6 @@ new_table <- createFilteredAggregate(fsom_dt,
                                      num_cells = Inf, 
                                      metaclusters = "CD8 T cells",
                                      clusters = NULL)
-#> [1] "sample_1.fcs" "sample_2.fcs" "sample_3.fcs" "sample_4.fcs" "sample_5.fcs"
-#> [6] "sample_6.fcs"
 ```
 
 One an appropriate subset has been created, the next step is to create a
@@ -1188,16 +1186,37 @@ some are of no interest, it is useful to specify this parameter.
 # Generate design matrix
 design <- makeDesignMatrix(sample_info)
 
+# Print result
+data.frame(design)
+#>   Ctrl_X MIBC_NAC MIBC_No.NAC
+#> 1      1        0           0
+#> 2      1        0           0
+#> 3      0        0           1
+#> 4      0        0           1
+#> 5      0        1           0
+#> 6      0        1           0
+```
+
+``` r
+
 # Generate contrasts matrix
 contrasts <- makeContrastsMatrix(sample_info, comparisons)
+# Print
+contrasts
+#>              Contrasts
+#> Levels        MIBC_No.NAC_OR_MIBC_NAC__vs__Ctrl_X MIBC_NAC__vs__MIBC_No.NAC
+#>   Ctrl_X                                     -1.0                         0
+#>   MIBC_NAC                                    0.5                         1
+#>   MIBC_No.NAC                                 0.5                        -1
+```
+
+``` r
 
 # Generate matrix of sample/metacluster cell counts
 counts <- makeCountMatrix(fsom_dt, 
                           min_cells = 3, 
                           min_samples = 4)
 ```
-
-The table of counts is printed below:
 
 |  | sample_1.fcs | sample_2.fcs | sample_3.fcs | sample_4.fcs | sample_5.fcs | sample_6.fcs |
 |:---|:--:|:--:|:--:|:--:|:--:|:--:|
@@ -1471,79 +1490,137 @@ NAC vs. No NAC {.table}
 ##### Differential Expression
 
 To test for differential expression, the design and contrast matrices
-must again be specified, in addition to the markers to be tested. Recall
-that in most cases, these markers should not be the same as those used
-for clustering.
+must again be specified, in addition to the channels/markers to be
+tested. Recall that in most cases, these markers should NOT be the same
+as those used for clustering.
 
-Before testing, median fluorescent intensities (MFIs) must be found for
-the markers of interest. If expression data is in a `data.table` format,
-the function
-[`getExprMatDE()`](https://00berst33.github.io/flowFun/reference/getExprMatDE.md)
-may be used to do so. If using a `GatingSet` object, the function
-[`gs_makeMFIMatrix()`](https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.md)
-should be used instead.
+Once the required information is prepared, performing a basic
+differential expression analysis requires little input from the user, as
+all necessary operations are wrapped up within the function
+[`doDEAnalysis()`](https://00berst33.github.io/flowFun/reference/doDEAnalysis.md).
+This function accepts either a `data.table` or `GatingSet`.
 
-By default, the data is kept on the scale it was transformed to during
-preprocessing. If the user prefers output to match the scale of the raw
-data, inverse transformations should be applied before calculating any
-aggregate statistics and/or performing tests.
+When calling the function, users have the option to give a count matrix,
+which will be used to assign weights to each cluster-marker pair before
+testing. We show two examples of this function below, called on our
+`GatingSet` complete with all the nodes we defined during clustering.
 
 ``` r
 
 # Define channels of interest
-marker_cols <- c("FITC-A", "BV711-A")
+cols_to_test <- c("FITC-A", "BV711-A")
+
+# Set subpopulations of interest to variable 
+subpops <- gs_pop_get_children(gs1, 
+                               "live", # this retrieves all clusters that are  
+                                       # children of the "live" node
+                               path = "auto") # this argument concatenates population names
+# Remove `Undefined` from populations of interest
+subpops <- subpops[!subpops %in% c("Undefined")]
 
 # Perform differential expression analysis
-de_res <- doDEAnalysis(fsom_dt, 
-                       cols_to_test = marker_cols, 
+de_res <- doDEAnalysis(gs1, 
+                       cols_to_test = cols_to_test, 
                        design = design, 
-                       contrasts = contrasts)
-
-# View results
-limma::topTable(de_res)
-#>                       feature MIBC_No.NAC_OR_MIBC_NAC__vs__Ctrl_X
-#> 10  NK T cells.TIM3 <BV711-A>                         -0.21732188
-#> 17   gdT cells.PHA-L <FITC-A>                         -0.20426559
-#> 9   NK T cells.PHA-L <FITC-A>                         -0.09168521
-#> 4  CD4 T cells.TIM3 <BV711-A>                          0.10286847
-#> 16         cDC.TIM3 <BV711-A>                         -0.24827906
-#> 12    NK cells.TIM3 <BV711-A>                         -0.02201422
-#> 20         pDC.TIM3 <BV711-A>                          0.01893114
-#> 2      B cells.TIM3 <BV711-A>                          0.04169904
-#> 15         cDC.PHA-L <FITC-A>                         -0.14705205
-#> 11    NK cells.PHA-L <FITC-A>                         -0.11186719
-#>    MIBC_NAC__vs__MIBC_No.NAC  AveExpr         F    P.Value adj.P.Val
-#> 10                0.32466246 1.363133 4.5323285 0.02619657 0.5239314
-#> 17               -0.28085816 2.532910 1.9951677 0.16617913 0.8426767
-#> 9                -0.24852449 2.715640 1.2115466 0.32186197 0.8426767
-#> 4                -0.02965683 1.055500 1.0567659 0.36904211 0.8426767
-#> 16                0.05382806 1.852949 1.0391065 0.37489880 0.8426767
-#> 12                0.23954436 1.668804 0.8527753 0.44344263 0.8426767
-#> 20                0.38041863 1.905086 0.7483075 0.48792439 0.8426767
-#> 2                 0.10172796 1.013840 0.7029336 0.50877799 0.8426767
-#> 15               -0.03708100 2.762316 0.6766949 0.52128999 0.8426767
-#> 11               -0.13311684 2.704831 0.6679475 0.52553722 0.8426767
+                       contrasts = contrasts, # subset contrasts matrix to column of interest
+                       counts = counts, # optional parameter, used to calculate weights when given
+                       subpopulations = subpops,
+                       inverse = TRUE,
+                       print_table = TRUE) # TRUE by default
 ```
 
-Difference in marker expression between group may also be visualized
-with the function
-[`plotGroupMFIBars()`](https://00berst33.github.io/flowFun/reference/plotGroupMFIBars.md).
-To use it, a matrix of MFIs for the marker of interest should be
-generated; if data is a `FlowSOM` object or `data.table` do so with
-[`getSampleMetaclusterMFIs()`](https://00berst33.github.io/flowFun/reference/getSampleMetaclusterMFIs.md),
-if data is a `GatingSet` do so with `gs_getSampleMetaclusterMFIs()`.
+The output is a list, whose length corresponds to the number of
+comparisons defined by `contrasts`. Each element is a formatted table
+with features, average expression, and p-values (if desired, the raw
+output from
+[`limma::eBayes()`](https://rdrr.io/pkg/limma/man/ebayes.html) may be
+returned instead of tables by setting `print_table=FALSE`). These tables
+are printed neatly below.
 
-Note that if input is a `GatingSet` with transformations attached, the
+|     |       feature       |  AveExpr  |  P.Value  | adj.P.Val |
+|:----|:-------------------:|:---------:|:---------:|:---------:|
+| 17  |  gdT cells.FITC-A   | 3152.2144 | 0.0356709 | 0.6420762 |
+| 16  | CD4 T cells.BV711-A | 132.8720  | 0.0850752 | 0.7116543 |
+| 14  |     cDC.BV711-A     | 893.1079  | 0.1291676 | 0.7116543 |
+| 6   | NK T cells.BV711-A  | 342.8633  | 0.1581454 | 0.7116543 |
+| 11  |   NK cells.FITC-A   | 4485.5206 | 0.2206313 | 0.7942728 |
+| 15  | CD4 T cells.FITC-A  | 4970.3840 | 0.3363353 | 0.8208017 |
+| 10  |     pDC.BV711-A     | 1351.9790 | 0.3991978 | 0.8208017 |
+| 13  |     cDC.FITC-A      | 5086.5162 | 0.4024130 | 0.8208017 |
+| 2   | CD8 T cells.BV711-A | 137.7742  | 0.4104009 | 0.8208017 |
+| 8   |  Monocytes.BV711-A  | 1392.1179 | 0.5183697 | 0.9268327 |
+
+Ctrl vs. MIBC {.table}
+
+|     |      feature       |  AveExpr  |  P.Value  | adj.P.Val |
+|:----|:------------------:|:---------:|:---------:|:---------:|
+| 17  |  gdT cells.FITC-A  | 3152.2144 | 0.0310140 | 0.5582529 |
+| 6   | NK T cells.BV711-A | 342.8633  | 0.1029908 | 0.7344375 |
+| 12  |  NK cells.BV711-A  | 631.6907  | 0.1708808 | 0.7344375 |
+| 5   | NK T cells.FITC-A  | 4800.7528 | 0.2823609 | 0.7344375 |
+| 11  |  NK cells.FITC-A   | 4485.5206 | 0.2854281 | 0.7344375 |
+| 8   | Monocytes.BV711-A  | 1392.1179 | 0.3893413 | 0.7344375 |
+| 9   |     pDC.FITC-A     | 4747.0844 | 0.4205384 | 0.7344375 |
+| 18  | gdT cells.BV711-A  | 242.8314  | 0.4371267 | 0.7344375 |
+| 3   |   B cells.FITC-A   | 9861.6803 | 0.4415959 | 0.7344375 |
+| 4   |  B cells.BV711-A   | 109.4180  | 0.4815376 | 0.7344375 |
+
+NAC vs. No NAC {.table}
+
+[`doDEAnalysis()`](https://00berst33.github.io/flowFun/reference/doDEAnalysis.md)
+creates a table of cluster-sample MFIs internally, but some users may
+wish to have this table for use outside of differential analysis. Two
+functions are available for this purpose. If expression data is in a
+`data.table` format, the function
+[`getExprMatDE()`](https://00berst33.github.io/flowFun/reference/getExprMatDE.md)
+may be used. If using a `GatingSet` object, the function
+[`gs_makeMFIMatrix()`](https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.md)
+should be used instead. The result is a table with rows corresponding to
+each cluster-marker pair, and columns for each sample.
+
+Below we show an example of the output from
+[`gs_makeMFIMatrix()`](https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.md).
+Note that `inverse = TRUE` is only applicable for `GatingSets` with
+associated transformations;
+[`getExprMatDE()`](https://00berst33.github.io/flowFun/reference/getExprMatDE.md)
+is faster but unable to back-transform data.
+
+``` r
+
+# Print table
+gs_makeMFIMatrix(gs1,
+                 cols = cols_to_test,
+                 subpopulations = subpops,
+                 inverse = TRUE) %>%
+  head()
+#> # A tibble: 6 × 7
+#>   feature       sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs
+#>   <chr>                <dbl>        <dbl>        <dbl>        <dbl>        <dbl>
+#> 1 CD8 T cells.…       5165.        5269.       3616.         6695.         2742.
+#> 2 CD8 T cells.…        112.         134.        150.          141.          169.
+#> 3 B cells.FITC…       8499.       10876.       8303.        13956.         7910.
+#> 4 B cells.BV71…         94.4         91.0         1.89        177.          120.
+#> 5 NK T cells.F…       4880.        5364.       4117.         7369.         1989.
+#> 6 NK T cells.B…        411.         484.        287.           75.4         397.
+#> # ℹ 1 more variable: sample_6.fcs <dbl>
+```
+
+Difference in marker expression between groups may be visualized with
+the function
+[`plotGroupMFIBars()`](https://00berst33.github.io/flowFun/reference/plotGroupMFIBars.md).
+As above, if input is a `GatingSet` with transformations attached, the
 data may be back-transformed to the linear scale before the calculation
 of MFIs or statistical tests.
 
 ``` r
 
 # Generate bar plot
-plotGroupMFIBars(fsom_dt,
-                 col = "BV711-A",
+plotGroupMFIBars(gs1,
+                 col = "FITC-A",
                  sample_df = sample_info, 
-                 comparison = comparisons[[1]])
+                 comparison = comparisons[[1]],
+                 populations = subpops,
+                 inverse = TRUE)
 ```
 
 ![](workflowVignetteUpdated_files/figure-html/plot-mfis-1.png)

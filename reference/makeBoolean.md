@@ -1,6 +1,6 @@
 # makeBoolean
 
-makeBoolean
+Helper for addClustersToGatingSet
 
 ## Usage
 

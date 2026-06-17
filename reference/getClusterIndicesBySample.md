@@ -1,6 +1,6 @@
 # getClusterIndicesBySample
 
-getClusterIndicesBySample
+Helper for addClustersToGatingSet
 
 ## Usage
 

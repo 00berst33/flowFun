@@ -30,6 +30,8 @@ plotAllSamples(gs, xdim, ydim, subset, node)
 
   The gate to be visualized
 
+  Note that to use this function, `gs` must have at least one gate.
+
 ## Value
 
 A `ggplot` drawn with `ggcyto`

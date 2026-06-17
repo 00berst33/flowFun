@@ -20,7 +20,8 @@ addMetaToTable(table, sample_dt, join_col)
 
 - join_col:
 
-  Column on which to join the two tables described above
+  Column on which to join the two tables described above. Or, to join on
+  different variables between tables, an expression (e.g. `a == b`).
 
 ## Value
 

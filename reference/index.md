@@ -84,6 +84,8 @@
   : plotSampleProportions
 - [`plotUMAP()`](https://00berst33.github.io/flowFun/reference/plotUMAP.md)
   : plotUMAP
+- [`prepareCompensationMatrix()`](https://00berst33.github.io/flowFun/reference/prepareCompensationMatrix.md)
+  : prepareCompensationMatrix
 - [`prepareSampleInfo()`](https://00berst33.github.io/flowFun/reference/prepareSampleInfo.md)
   : prepareSampleInfo
 - [`saveFlowSOMEmbedding()`](https://00berst33.github.io/flowFun/reference/saveFlowSOMEmbedding.md)

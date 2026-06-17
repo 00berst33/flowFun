@@ -6,7 +6,7 @@ Prepare sample information for DE and DA analysis via a .csv file.
 
 ``` r
 prepareSampleInfo(
-  filepath,
+  input,
   name_col,
   filename_col,
   comparisons,
@@ -16,9 +16,10 @@ prepareSampleInfo(
 
 ## Arguments
 
-- filepath:
+- input:
 
-  A filepath to a .csv file containing sample info.
+  Either a filepath to a .csv file, or a data.frame, containing sample
+  info.
 
 - name_col:
 

@@ -41,6 +41,7 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/getClusterMFIs.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getDensity.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getExprMatDE.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/reference/getFullNames.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getMarker.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getMetaclusterMFIs.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getSampleMetaclusterMFIs.html</loc></url>
@@ -68,6 +69,7 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/plotPCAScree.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/plotSampleProportions.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/plotUMAP.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/reference/prepareCompensationMatrix.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/prepareSampleInfo.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/reexports.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/revertPCAFlowSOM.html</loc></url>
