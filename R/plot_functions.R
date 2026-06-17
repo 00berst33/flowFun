@@ -12,6 +12,12 @@ getMetaclusterMFIs <- function(input, cols_to_use = NULL) {
 
   if (is.null(cols_to_use)) {
     cols_to_use <- attr(input, "clustered")
+  } else if (!any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   medians <- input %>%
@@ -28,6 +34,7 @@ getMetaclusterMFIs <- function(input, cols_to_use = NULL) {
   return(medians)
 }
 
+
 #' getClusterMFIs
 #'
 #' @param input A data frame or table, with column \code{"Cluster"}.
@@ -42,6 +49,12 @@ getClusterMFIs <- function(input, cols_to_use = NULL) {
 
   if (is.null(cols_to_use)) {
     cols_to_use <- attr(input, "clustered")
+  } else if (!any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   medians <- input %>%
@@ -57,6 +70,7 @@ getClusterMFIs <- function(input, cols_to_use = NULL) {
 
   return(medians)
 }
+
 
 #' plotMetaclusterMFIs
 #'
@@ -94,7 +108,14 @@ plotMetaclusterMFIs <- function(input, cols_to_use = NULL, ...) {
 plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
   if (is.null(cols_to_use)) {
     cols_to_use <- input$map$colsUsed
+  } else if (!any(cols_to_use %in% colnames(input$data))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input$data))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
+
 
   # Get metacluster MFIs for each marker/channel of interest
   mfi_mat <- FlowSOM::GetMetaclusterMFIs(fsom = input, colsUsed = FALSE, prettyColnames = FALSE)
@@ -130,19 +151,19 @@ plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
 plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   Metacluster <- NULL
 
-  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
     if (!is.null(attr(input, "clustered"))) {
       cols_to_use <- attr(input, "clustered")
     } else {
       stop("Default not found, please specify `cols_to_use`")
     }
-  }
-  # If input is only channel name
-  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(cols_to_use, marker_cols)
-    # Set channelpair to pretty column names
-    cols_to_use <- colnames(input)[match_idx]
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -259,19 +280,19 @@ plotClusterMFIs.data.frame <- function(input, cols_to_use = NULL,
                                        metaclusters = NULL, ...) {
   Metacluster <- Cluster <- NULL
 
-  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
     if (!is.null(attr(input, "clustered"))) {
       cols_to_use <- attr(input, "clustered")
     } else {
       stop("Default not found, please specify `cols_to_use`")
     }
-  }
-  # If input is only channel name
-  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(cols_to_use, marker_cols)
-    # Set channelpair to pretty column names
-    cols_to_use <- colnames(input)[match_idx]
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get cluster MFIs for each marker/channel of interest
@@ -386,9 +407,19 @@ annotateMFIHeatmap.FlowSOM <- function(merged_input, original_input, cols_to_use
 annotateMFIHeatmap.data.frame <- function(merged_input, original_input = NULL, cols_to_use = NULL, ...) {
   Meta_original <- NULL
 
-  # Get columns to use if necessary
-  if (methods::is(merged_input, "data.table") & is.null(cols_to_use)) {
-    cols_to_use <- attributes(merged_input)$clustered
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
+    if (!is.null(attr(merged_input, "clustered"))) {
+      cols_to_use <- attr(merged_input, "clustered")
+    } else {
+      stop("Default not found, please specify `cols_to_use`")
+    }
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(merged_input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(merged_input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -539,10 +570,6 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 
     channelpair <- getFullNames(channelpair, parent_strs)
     print(channelpair)
-    # marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    # match_idx <- match(channelpair, marker_cols)
-    # # Set channelpair to pretty column names
-    # channelpair <- colnames(input)[match_idx]
   }
 
   # Get all label coordinates

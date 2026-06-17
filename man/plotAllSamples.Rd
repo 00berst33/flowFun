@@ -15,7 +15,9 @@ plotAllSamples(gs, xdim, ydim, subset, node)
 
 \item{subset}{The population whose cells should be displayed on the plot}
 
-\item{node}{The gate to be visualized}
+\item{node}{The gate to be visualized
+
+Note that to use this function, \code{gs} must have at least one gate.}
 }
 \value{
 A \code{ggplot} drawn with \code{ggcyto}

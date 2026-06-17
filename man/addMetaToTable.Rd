@@ -11,7 +11,8 @@ addMetaToTable(table, sample_dt, join_col)
 
 \item{sample_dt}{Table containing sample info}
 
-\item{join_col}{Column on which to join the two tables described above}
+\item{join_col}{Column on which to join the two tables described above. Or,
+to join on different variables between tables, an expression (e.g. \code{a == b}).}
 }
 \value{
 The data.table provided as input, with columns for sample information

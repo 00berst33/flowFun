@@ -12,7 +12,7 @@ addMetadataToGatingSet(gs, sample_df)
 \item{sample_df}{A \code{data.frame}, where each row corresponds to a sample and
 each column corresponds to metadata about the samples, such as experimental group,
 or the filename of a corresponding control sample. Must contain a column for
-filename, called \code{File.Name}.}
+filename, called \code{filename}.}
 }
 \description{
 addMetadataToGatingSet

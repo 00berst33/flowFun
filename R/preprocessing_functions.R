@@ -14,6 +14,7 @@ generateGatingTable <- function(gs, collapse_data = TRUE, ld_stain = NULL) {
   # Get number of samples in experiment
   num_samples <- length(gs)
 
+  # Set values to collapse samples, if desired
   group_by <- NA
   if(collapse_data) {
     group_by <- num_samples
@@ -62,6 +63,8 @@ generateGatingTable <- function(gs, collapse_data = TRUE, ld_stain = NULL) {
 #' @param ydim The channel to plot on the y-axis
 #' @param subset The population whose cells should be displayed on the plot
 #' @param node The gate to be visualized
+#'
+#' Note that to use this function, `gs` must have at least one gate.
 #'
 #' @return A \code{ggplot} drawn with \code{ggcyto}
 #' @export

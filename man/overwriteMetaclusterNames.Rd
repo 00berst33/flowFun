@@ -4,14 +4,22 @@
 \alias{overwriteMetaclusterNames}
 \title{overwriteMetaclusterNames}
 \usage{
-overwriteMetaclusterNames(fsom_dt, fsom_sub)
+overwriteMetaclusterNames(fsom_parent, fsom_sub)
 }
 \arguments{
-\item{fsom_dt}{Table with all cells of interest}
+\item{fsom_parent}{Table with all cells of interest}
 
 \item{fsom_sub}{Subset of table used for reclustering
 
-Both tables should have a \code{cell_id} and \code{Metacluster} column.}
+The rows in \code{fsom_parent} and \code{fsom_sub} are matched to each other based on
+the \code{cell_id} column. Note that the numbers in the \code{cell_id} column of \code{fsom_sub}
+correspond to row indices of the root clustering. i.e. if \code{cell_id} is equal to
+27 in \code{fsom_sub}, then that cell/row corresponds to row 27 in the clustering containing
+all subsets of cells (which unless you are doing multiple reclusterings, will
+most often be \code{fsom_parent}).
+
+Thus if \code{fsom_parent} does not have the column \code{cell_id}, a temporary one is made
+using its row indices.}
 }
 \value{
 A table with updated metacluster names from the reclustering.
