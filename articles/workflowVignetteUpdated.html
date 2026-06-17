@@ -1072,6 +1072,9 @@ parent-child relationships.</p>
 <div class="section level2">
 <h2 id="differential-analysis">Differential Analysis<a class="anchor" aria-label="anchor" href="#differential-analysis"></a>
 </h2>
+<div class="section level4">
+<h4 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
+</h4>
 <p>The final analysis step in this workflow is differential analysis.
 Differential marker expression is implemented using limma, and
 differential count analysis using edgeR, both R packages found on
@@ -1907,9 +1910,10 @@ visualizes cell type proportions across samples.</p>
 <div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotSampleProportions.html">plotSampleProportions</a></span><span class="op">(</span><span class="va">clust_counts</span><span class="op">)</span></span></code></pre></div>
 <p><img src="workflowVignetteUpdated_files/figure-html/visualize-counts-1.png" class="r-plt" alt="" width="672"></p>
-<div class="section level5">
-<h5 id="differential-abundance">Differential Abundance<a class="anchor" aria-label="anchor" href="#differential-abundance"></a>
-</h5>
+</div>
+<div class="section level4">
+<h4 id="differential-abundance">Differential Abundance<a class="anchor" aria-label="anchor" href="#differential-abundance"></a>
+</h4>
 <p>Once these matrices have been acquired, to perform differential
 abundance analysis, the user only needs to pass them to
 <code><a href="../reference/doDAAnalysis.html">doDAAnalysis()</a></code>, and specify a normalization method, if any.
@@ -1918,12 +1922,6 @@ corresponding to a comparison. The tables are named after the comparison
 they correspond to, and contain results of likelihood ratio tests
 performed by edgeR, with each test being ranked by its adjusted
 p-value.</p>
-<p>Results are also saved as a .csv file for each comparison in the
-directory <code>Analysis Results/edgeR</code>. If running an edgeR
-analysis on multiple objects, or running the script multiple times for
-any reason, the user may wish to create sub-directories within
-<code>Analysis Results/edgeR</code> to stay organized. To do this,
-simply set the parameter to a preferred sub-directory name.</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Perform differential abundance analysis</span></span>
 <span><span class="va">da_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/doDAAnalysis.html">doDAAnalysis</a></span><span class="op">(</span>design <span class="op">=</span> <span class="va">design</span>, </span>
@@ -2389,9 +2387,9 @@ NK cells
 </tbody>
 </table>
 </div>
-<div class="section level5">
-<h5 id="differential-expression">Differential Expression<a class="anchor" aria-label="anchor" href="#differential-expression"></a>
-</h5>
+<div class="section level4">
+<h4 id="differential-expression">Differential Expression<a class="anchor" aria-label="anchor" href="#differential-expression"></a>
+</h4>
 <p>To test for differential expression, the design and contrast matrices
 must again be specified, in addition to the channels/markers to be
 tested. Recall that in most cases, these markers should NOT be the same

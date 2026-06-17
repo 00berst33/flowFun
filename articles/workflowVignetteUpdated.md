@@ -1084,6 +1084,8 @@ parent-child relationships.
 
 ## Differential Analysis
 
+#### Setup
+
 The final analysis step in this workflow is differential analysis.
 Differential marker expression is implemented using limma, and
 differential count analysis using edgeR, both R packages found on
@@ -1424,7 +1426,7 @@ plotSampleProportions(clust_counts)
 
 ![](workflowVignetteUpdated_files/figure-html/visualize-counts-1.png)
 
-##### Differential Abundance
+#### Differential Abundance
 
 Once these matrices have been acquired, to perform differential
 abundance analysis, the user only needs to pass them to
@@ -1434,13 +1436,6 @@ list, where each entry is a table corresponding to a comparison. The
 tables are named after the comparison they correspond to, and contain
 results of likelihood ratio tests performed by edgeR, with each test
 being ranked by its adjusted p-value.
-
-Results are also saved as a .csv file for each comparison in the
-directory `Analysis Results/edgeR`. If running an edgeR analysis on
-multiple objects, or running the script multiple times for any reason,
-the user may wish to create sub-directories within
-`Analysis Results/edgeR` to stay organized. To do this, simply set the
-parameter to a preferred sub-directory name.
 
 ``` r
 
@@ -1487,7 +1482,7 @@ Ctrl vs. MIBC {.table}
 
 NAC vs. No NAC {.table}
 
-##### Differential Expression
+#### Differential Expression
 
 To test for differential expression, the design and contrast matrices
 must again be specified, in addition to the channels/markers to be

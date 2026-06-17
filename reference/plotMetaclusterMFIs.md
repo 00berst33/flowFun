@@ -42,7 +42,7 @@ fsom <- FlowSOM::FlowSOM(file,
                          xdim = 6,
                          ydim = 6)
 #> Error in if (file.info(input[i])$isdir) {    toAdd <- c(toAdd, list.files(input[i], pattern = pattern,         full.names = TRUE))    toRemove <- c(toRemove, i)}: missing value where TRUE/FALSE needed
-#> Timing stopped at: 0.002 0 0.002
+#> Timing stopped at: 0.001 0.001 0.002
 
 plotMetaclusterMFIs(fsom)
 #> Error: object 'fsom' not found
