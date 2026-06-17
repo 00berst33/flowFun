@@ -849,6 +849,8 @@ The resulting plot shows each cluster defined so far, and any parent-child relat
 
 # Differential Analysis
 
+### Setup
+
 The final analysis step in this workflow is differential analysis. Differential marker expression is implemented using limma, and differential count analysis using edgeR, both R packages found on Bioconductor. 
 
 Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). 
@@ -972,11 +974,9 @@ Given any matrix of counts, `plotSampleProportions()` visualizes cell type propo
 plotSampleProportions(clust_counts)
 ```
 
-#### Differential Abundance
+### Differential Abundance
 
 Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
-
-Results are also saved as a .csv file for each comparison in the directory `Analysis Results/edgeR`. If running an edgeR analysis on multiple objects, or running the script multiple times for any reason, the user may wish to create sub-directories within `Analysis Results/edgeR` to stay organized. To do this, simply set the \code{dir_tables} parameter to a preferred sub-directory name.
 
 ```{r da-analysis}
 # Perform differential abundance analysis
@@ -1007,7 +1007,7 @@ da_results[[2]] %>%
     )
 ```
 
-#### Differential Expression
+### Differential Expression
 
 To test for differential expression, the design and contrast matrices must again be specified, in addition to the channels/markers to be tested. Recall that in most cases, these markers should NOT be the same as those used for clustering.
 

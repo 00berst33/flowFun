@@ -720,6 +720,7 @@ doDEAnalysis <- function(input, cols_to_test, design, contrasts, counts = NULL,
                            design = design,
                            weights = weights)
 
+  # For each comparison to be made, fit contrast and get results
   all_res <- lapply(seq_len(ncol(contrasts)), function(i) {
     # Perform statistical tests.
     contrasts_fit <- limma::contrasts.fit(lm_model, contrasts[,i])
