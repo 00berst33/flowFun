@@ -323,3 +323,5 @@ ws <- open_flowjo_xml(flowjo_file)
 # Make GatingSet from FlowJo workspace
 gs <- flowjo_to_gatingset(ws, path = "path/to/fcs_files")
 ```
+
+#### Notes on importing GatingSets

@@ -1520,7 +1520,6 @@ de_res <- doDEAnalysis(gs1,
                        contrasts = contrasts, # subset contrasts matrix to column of interest
                        counts = counts, # optional parameter, used to calculate weights when given
                        subpopulations = subpops,
-                       inverse = TRUE,
                        print_table = TRUE) # TRUE by default
 ```
 
@@ -1532,33 +1531,33 @@ output from
 returned instead of tables by setting `print_table=FALSE`). These tables
 are printed neatly below.
 
-|     |       feature       |  AveExpr  |  P.Value  | adj.P.Val |
-|:----|:-------------------:|:---------:|:---------:|:---------:|
-| 17  |  gdT cells.FITC-A   | 3152.2144 | 0.0356709 | 0.6420762 |
-| 16  | CD4 T cells.BV711-A | 132.8720  | 0.0850752 | 0.7116543 |
-| 14  |     cDC.BV711-A     | 893.1079  | 0.1291676 | 0.7116543 |
-| 6   | NK T cells.BV711-A  | 342.8633  | 0.1581454 | 0.7116543 |
-| 11  |   NK cells.FITC-A   | 4485.5206 | 0.2206313 | 0.7942728 |
-| 15  | CD4 T cells.FITC-A  | 4970.3840 | 0.3363353 | 0.8208017 |
-| 10  |     pDC.BV711-A     | 1351.9790 | 0.3991978 | 0.8208017 |
-| 13  |     cDC.FITC-A      | 5086.5162 | 0.4024130 | 0.8208017 |
-| 2   | CD8 T cells.BV711-A | 137.7742  | 0.4104009 | 0.8208017 |
-| 8   |  Monocytes.BV711-A  | 1392.1179 | 0.5183697 | 0.9268327 |
+|     |       feature       | AveExpr  |  P.Value  | adj.P.Val |
+|:----|:-------------------:|:--------:|:---------:|:---------:|
+| 16  | CD4 T cells.BV711-A | 1.055500 | 0.0504731 | 0.8443881 |
+| 17  |  gdT cells.FITC-A   | 2.532910 | 0.0938209 | 0.8443881 |
+| 6   | NK T cells.BV711-A  | 1.363133 | 0.1626628 | 0.8614871 |
+| 11  |   NK cells.FITC-A   | 2.704831 | 0.2470728 | 0.8614871 |
+| 14  |     cDC.BV711-A     | 1.852949 | 0.2661420 | 0.8614871 |
+| 15  | CD4 T cells.FITC-A  | 2.748324 | 0.3199298 | 0.8614871 |
+| 2   | CD8 T cells.BV711-A | 1.064478 | 0.3350227 | 0.8614871 |
+| 13  |     cDC.FITC-A      | 2.762316 | 0.4464682 | 0.9004886 |
+| 8   |  Monocytes.BV711-A  | 2.089900 | 0.5069092 | 0.9004886 |
+| 1   | CD8 T cells.FITC-A  | 2.737236 | 0.5862530 | 0.9004886 |
 
 Ctrl vs. MIBC {.table}
 
-|     |      feature       |  AveExpr  |  P.Value  | adj.P.Val |
-|:----|:------------------:|:---------:|:---------:|:---------:|
-| 17  |  gdT cells.FITC-A  | 3152.2144 | 0.0310140 | 0.5582529 |
-| 6   | NK T cells.BV711-A | 342.8633  | 0.1029908 | 0.7344375 |
-| 12  |  NK cells.BV711-A  | 631.6907  | 0.1708808 | 0.7344375 |
-| 5   | NK T cells.FITC-A  | 4800.7528 | 0.2823609 | 0.7344375 |
-| 11  |  NK cells.FITC-A   | 4485.5206 | 0.2854281 | 0.7344375 |
-| 8   | Monocytes.BV711-A  | 1392.1179 | 0.3893413 | 0.7344375 |
-| 9   |     pDC.FITC-A     | 4747.0844 | 0.4205384 | 0.7344375 |
-| 18  | gdT cells.BV711-A  | 242.8314  | 0.4371267 | 0.7344375 |
-| 3   |   B cells.FITC-A   | 9861.6803 | 0.4415959 | 0.7344375 |
-| 4   |  B cells.BV711-A   | 109.4180  | 0.4815376 | 0.7344375 |
+|     |      feature       | AveExpr  |  P.Value  | adj.P.Val |
+|:----|:------------------:|:--------:|:---------:|:---------:|
+| 17  |  gdT cells.FITC-A  | 2.532910 | 0.0571967 | 0.7659479 |
+| 6   | NK T cells.BV711-A | 1.363133 | 0.0876548 | 0.7659479 |
+| 12  |  NK cells.BV711-A  | 1.668804 | 0.1552934 | 0.7659479 |
+| 11  |  NK cells.FITC-A   | 2.704831 | 0.2348162 | 0.7659479 |
+| 5   | NK T cells.FITC-A  | 2.715640 | 0.2632072 | 0.7659479 |
+| 8   | Monocytes.BV711-A  | 2.089900 | 0.3997030 | 0.7659479 |
+| 18  | gdT cells.BV711-A  | 1.230772 | 0.4093425 | 0.7659479 |
+| 4   |  B cells.BV711-A   | 1.013840 | 0.4225397 | 0.7659479 |
+| 3   |   B cells.FITC-A   | 3.059271 | 0.4313804 | 0.7659479 |
+| 10  |    pDC.BV711-A     | 1.905086 | 0.4657147 | 0.7659479 |
 
 NAC vs. No NAC {.table}
 

@@ -39,6 +39,7 @@
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Miscellaneous</h6></li>
     <li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
+    <li><a class="dropdown-item" href="../articles/applyingControls.html">Applying control FCS files</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -2423,7 +2424,6 @@ clustering.</p>
 <span>                       contrasts <span class="op">=</span> <span class="va">contrasts</span>, <span class="co"># subset contrasts matrix to column of interest</span></span>
 <span>                       counts <span class="op">=</span> <span class="va">counts</span>, <span class="co"># optional parameter, used to calculate weights when given</span></span>
 <span>                       subpopulations <span class="op">=</span> <span class="va">subpops</span>,</span>
-<span>                       inverse <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                       print_table <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># TRUE by default</span></span></code></pre></div>
 <p>The output is a list, whose length corresponds to the number of
 comparisons defined by <code>contrasts</code>. Each element is a
@@ -2454,53 +2454,36 @@ adj.P.Val
 <tbody>
 <tr>
 <td style="text-align:left;">
-17
-</td>
-<td style="text-align:center;">
-gdT cells.FITC-A
-</td>
-<td style="text-align:center;">
-3152.2144
-</td>
-<td style="text-align:center;">
-0.0356709
-</td>
-<td style="text-align:center;">
-0.6420762
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 16
 </td>
 <td style="text-align:center;">
 CD4 T cells.BV711-A
 </td>
 <td style="text-align:center;">
-132.8720
+1.055500
 </td>
 <td style="text-align:center;">
-0.0850752
+0.0504731
 </td>
 <td style="text-align:center;">
-0.7116543
+0.8443881
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-14
+17
 </td>
 <td style="text-align:center;">
-cDC.BV711-A
+gdT cells.FITC-A
 </td>
 <td style="text-align:center;">
-893.1079
+2.532910
 </td>
 <td style="text-align:center;">
-0.1291676
+0.0938209
 </td>
 <td style="text-align:center;">
-0.7116543
+0.8443881
 </td>
 </tr>
 <tr>
@@ -2511,13 +2494,13 @@ cDC.BV711-A
 NK T cells.BV711-A
 </td>
 <td style="text-align:center;">
-342.8633
+1.363133
 </td>
 <td style="text-align:center;">
-0.1581454
+0.1626628
 </td>
 <td style="text-align:center;">
-0.7116543
+0.8614871
 </td>
 </tr>
 <tr>
@@ -2528,13 +2511,30 @@ NK T cells.BV711-A
 NK cells.FITC-A
 </td>
 <td style="text-align:center;">
-4485.5206
+2.704831
 </td>
 <td style="text-align:center;">
-0.2206313
+0.2470728
 </td>
 <td style="text-align:center;">
-0.7942728
+0.8614871
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+14
+</td>
+<td style="text-align:center;">
+cDC.BV711-A
+</td>
+<td style="text-align:center;">
+1.852949
+</td>
+<td style="text-align:center;">
+0.2661420
+</td>
+<td style="text-align:center;">
+0.8614871
 </td>
 </tr>
 <tr>
@@ -2545,47 +2545,13 @@ NK cells.FITC-A
 CD4 T cells.FITC-A
 </td>
 <td style="text-align:center;">
-4970.3840
+2.748324
 </td>
 <td style="text-align:center;">
-0.3363353
+0.3199298
 </td>
 <td style="text-align:center;">
-0.8208017
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-10
-</td>
-<td style="text-align:center;">
-pDC.BV711-A
-</td>
-<td style="text-align:center;">
-1351.9790
-</td>
-<td style="text-align:center;">
-0.3991978
-</td>
-<td style="text-align:center;">
-0.8208017
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:center;">
-cDC.FITC-A
-</td>
-<td style="text-align:center;">
-5086.5162
-</td>
-<td style="text-align:center;">
-0.4024130
-</td>
-<td style="text-align:center;">
-0.8208017
+0.8614871
 </td>
 </tr>
 <tr>
@@ -2596,13 +2562,30 @@ cDC.FITC-A
 CD8 T cells.BV711-A
 </td>
 <td style="text-align:center;">
-137.7742
+1.064478
 </td>
 <td style="text-align:center;">
-0.4104009
+0.3350227
 </td>
 <td style="text-align:center;">
-0.8208017
+0.8614871
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:center;">
+cDC.FITC-A
+</td>
+<td style="text-align:center;">
+2.762316
+</td>
+<td style="text-align:center;">
+0.4464682
+</td>
+<td style="text-align:center;">
+0.9004886
 </td>
 </tr>
 <tr>
@@ -2613,13 +2596,30 @@ CD8 T cells.BV711-A
 Monocytes.BV711-A
 </td>
 <td style="text-align:center;">
-1392.1179
+2.089900
 </td>
 <td style="text-align:center;">
-0.5183697
+0.5069092
 </td>
 <td style="text-align:center;">
-0.9268327
+0.9004886
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:center;">
+CD8 T cells.FITC-A
+</td>
+<td style="text-align:center;">
+2.737236
+</td>
+<td style="text-align:center;">
+0.5862530
+</td>
+<td style="text-align:center;">
+0.9004886
 </td>
 </tr>
 </tbody>
@@ -2653,13 +2653,13 @@ adj.P.Val
 gdT cells.FITC-A
 </td>
 <td style="text-align:center;">
-3152.2144
+2.532910
 </td>
 <td style="text-align:center;">
-0.0310140
+0.0571967
 </td>
 <td style="text-align:center;">
-0.5582529
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2670,13 +2670,13 @@ gdT cells.FITC-A
 NK T cells.BV711-A
 </td>
 <td style="text-align:center;">
-342.8633
+1.363133
 </td>
 <td style="text-align:center;">
-0.1029908
+0.0876548
 </td>
 <td style="text-align:center;">
-0.7344375
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2687,30 +2687,13 @@ NK T cells.BV711-A
 NK cells.BV711-A
 </td>
 <td style="text-align:center;">
-631.6907
+1.668804
 </td>
 <td style="text-align:center;">
-0.1708808
+0.1552934
 </td>
 <td style="text-align:center;">
-0.7344375
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-5
-</td>
-<td style="text-align:center;">
-NK T cells.FITC-A
-</td>
-<td style="text-align:center;">
-4800.7528
-</td>
-<td style="text-align:center;">
-0.2823609
-</td>
-<td style="text-align:center;">
-0.7344375
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2721,13 +2704,30 @@ NK T cells.FITC-A
 NK cells.FITC-A
 </td>
 <td style="text-align:center;">
-4485.5206
+2.704831
 </td>
 <td style="text-align:center;">
-0.2854281
+0.2348162
 </td>
 <td style="text-align:center;">
-0.7344375
+0.7659479
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+5
+</td>
+<td style="text-align:center;">
+NK T cells.FITC-A
+</td>
+<td style="text-align:center;">
+2.715640
+</td>
+<td style="text-align:center;">
+0.2632072
+</td>
+<td style="text-align:center;">
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2738,30 +2738,13 @@ NK cells.FITC-A
 Monocytes.BV711-A
 </td>
 <td style="text-align:center;">
-1392.1179
+2.089900
 </td>
 <td style="text-align:center;">
-0.3893413
+0.3997030
 </td>
 <td style="text-align:center;">
-0.7344375
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-9
-</td>
-<td style="text-align:center;">
-pDC.FITC-A
-</td>
-<td style="text-align:center;">
-4747.0844
-</td>
-<td style="text-align:center;">
-0.4205384
-</td>
-<td style="text-align:center;">
-0.7344375
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2772,30 +2755,13 @@ pDC.FITC-A
 gdT cells.BV711-A
 </td>
 <td style="text-align:center;">
-242.8314
+1.230772
 </td>
 <td style="text-align:center;">
-0.4371267
+0.4093425
 </td>
 <td style="text-align:center;">
-0.7344375
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3
-</td>
-<td style="text-align:center;">
-B cells.FITC-A
-</td>
-<td style="text-align:center;">
-9861.6803
-</td>
-<td style="text-align:center;">
-0.4415959
-</td>
-<td style="text-align:center;">
-0.7344375
+0.7659479
 </td>
 </tr>
 <tr>
@@ -2806,13 +2772,47 @@ B cells.FITC-A
 B cells.BV711-A
 </td>
 <td style="text-align:center;">
-109.4180
+1.013840
 </td>
 <td style="text-align:center;">
-0.4815376
+0.4225397
 </td>
 <td style="text-align:center;">
-0.7344375
+0.7659479
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:center;">
+B cells.FITC-A
+</td>
+<td style="text-align:center;">
+3.059271
+</td>
+<td style="text-align:center;">
+0.4313804
+</td>
+<td style="text-align:center;">
+0.7659479
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:center;">
+pDC.BV711-A
+</td>
+<td style="text-align:center;">
+1.905086
+</td>
+<td style="text-align:center;">
+0.4657147
+</td>
+<td style="text-align:center;">
+0.7659479
 </td>
 </tr>
 </tbody>
