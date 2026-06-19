@@ -671,7 +671,7 @@ clusterControls <- function(control_gs, primary_gs, population) {
 #' @return An `MArrayLM` object resulting from [limma::eBayes()]
 #' @export
 doDEAnalysis <- function(input, cols_to_test, design, contrasts, counts = NULL,
-                         subpopulations = NULL, inverse = FALSE, print_table = TRUE) {
+                         subpopulations = NULL, inverse = FALSE, print_table = TRUE) { # add ctrl_gs and metadata_col
   # Find expression matrix: metacluster.marker by sample
   if (is(input, "data.frame")) {
     if (inverse) {

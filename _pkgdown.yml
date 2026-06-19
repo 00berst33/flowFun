@@ -20,6 +20,8 @@ navbar:
       - text: Miscellaneous
       - text: Making and editing plots
         href: articles/visualizationVignette.html
+      - text: Applying control FCS files
+        href: articles/applyingControls.html
     github:
       icon: fa-github
       href: https://github.com/00berst33/flowFun

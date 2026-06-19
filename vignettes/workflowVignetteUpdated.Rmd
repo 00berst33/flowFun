@@ -1034,7 +1034,6 @@ de_res <- doDEAnalysis(gs1,
                        contrasts = contrasts, # subset contrasts matrix to column of interest
                        counts = counts, # optional parameter, used to calculate weights when given
                        subpopulations = subpops,
-                       inverse = TRUE,
                        print_table = TRUE) # TRUE by default
 ```
 

@@ -380,16 +380,13 @@ ctrl_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO"
 # Read in
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
 # Apply transformations, compensations and gates to control gs
-ctrl_gs2 <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
+ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
 
 ctrl_fs <- flowWorkspace::cytoset_to_flowSet(ctrl)
 
 # Apply clustering to controls
 # This may also be done manually using `FlowSOM::NewData`
 fsom_projected <- clusterControls(ctrl_gs, gs1, "live")
-
-# Edit clusters if desired
-# ...
 
 # Get data.table for controls, and add clusters to corresponding GatingSet
 ctrl_dt <- flowSOMToTable(fsom_projected)
