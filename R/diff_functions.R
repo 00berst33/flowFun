@@ -852,9 +852,11 @@ plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NU
   # Get list of groups by file
   grps_of_interest <- getGroups(comparison, sample_df)
 
-  # Get input as data frame
   if (is.matrix(input)) {
     input <- as.data.frame(input, check.names = FALSE)
+  }
+  if (is.null(populations) & is.data.frame(input)) {
+    populations <- unique(input$Metacluster)
   }
 
   # Function to find corresponding list names
@@ -862,7 +864,6 @@ plotGroupMFIBars <- function(input, col, sample_df, comparison, populations = NU
     list_name <- names(list_of_lists)[sapply(list_of_lists, function(lst) filename %in% lst)]
     ifelse(length(list_name) > 0, list_name, "X")
   }
-
   # Add the new column with mutate()
   input <- input %>%
     dplyr::mutate(Group = purrr::map_chr(sample_df[, 2], ~ find_list_name(.x, grps_of_interest))) %>%

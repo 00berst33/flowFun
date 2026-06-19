@@ -455,8 +455,12 @@ getSampleMetaclusterMFIs.GatingSet <- function(input, col, populations = NULL,
                                                transformation = NULL, inverse = FALSE) {
   var <- rlang::ensym(col)
 
+  if (is.null(populations)) {
+    stop("Must specify `populations` parameter when `input` is a GatingSet!")
+  }
+
   # Get MFIs for populations of interest
-  mfis <- flowWorkspace::gs_pop_get_stats(gs1, nodes = populations, type = pop.MFI, inverse = inverse)
+  mfis <- flowWorkspace::gs_pop_get_stats(input, nodes = populations, type = pop.MFI, inverse = inverse)
 
   # If column is a channel, find associated marker
   if (!(col %in% colnames(mfis))) {

@@ -1,31 +1,12 @@
-# Perform clustering on a group of preprocessed flow cytometry data files. The
-# clustering is done with the package FlowSOM, which works by constructing
-# a self-organizing map (SOM), a type of artificial neural network. This SOM is
-# created in a way such that the closer two nodes are to each other, the more
-# similar they are to each other. Through the process of constructing this SOM,
-# each cell in the data is mapped to whichever node (or cluster) in the SOM that
-# represents it best, resulting in the final clustering. Typically, depending on
-# the desired resolution, a very high number of clusters is used - anywhere from
-# 50 - 200 may be reasonable. The clustering is then visualized as a minimum
-# spanning tree (MST).
-#
-# After clustering is complete, the next step is to identify cell type
-# populations. Because we create such a large number of nodes in the first step,
-# it is necessary to cluster them further so that we may interpret our
-# results in a biologically meaningful way. It is possible to use FlowSOM to
-# cluster the nodes, essentially producing clusters of clusters, which we
-# call "metaclusters". For example, if we expected to see CD4 T cells,
-# CD8 T cells, NK T cells, and gdT cells in our data, we might tell FlowSOM that
-# we want to first cluster our cells into 100 nodes, then cluster those 100 nodes
-# into 4 metaclusters. However, FlowSOM lacks any biological knowledge about
-# our data, and does not always reliably distinguish cell types. Because of this,
-# this workflow uses the strategy of overclustering, and requires the user to
-# manually merge metaclusters by examining dimension reduction plots and heatmaps.
-#
-# Finally, this script allows the user to perform backgating and reclustering on
-# any identified cell types of particular interest. This clustering may be done
-# using either a selected number of principal components obtained from PCA,
-# or a new subset of markers defined by the user.
+# This template includes all the steps to run the completed flowFun pipeline,
+# starting with FCS files through to statistical analysis and plotting of data.
+
+# Vignettes and other helpful documentation, including a "Getting Started with
+# flowFun Guide", may be viewed on the package's main page:
+# https://00berst33.github.io/flowFun
+
+# The vignette can also be opened in RStudio by running:
+vignette(package = "flowFun", "workflowVignetteUpdated")
 
 # Load packages.
 library(data.table)
@@ -40,44 +21,47 @@ library(ggplot2)
 set.seed(84)
 
 # Set the directory you would like to store analysis results in.
-work_dir <- file.path("C:/Users/00ber/OneDrive/Desktop/VPC")
+work_dir <- file.path("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/Bioinformatics/High Parameter Flow Data/Testing FlowFun/April 2026/26-04-16_Analysis")
 
-#####
-## Load in raw data for first time
-# The name of the directory containing the .fcs files to analyze
-data_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Data/Raw" ###
+##################
+# PRE-PROCESSING #
+##################
 
-# Get all filenames and create GatingSet
-files <- list.files(data_dir, full.names = TRUE)
+# Note: Instead of FCS files, you can load a previously created GatingSet or
+# cytoset, if needed. See the "Getting Started with flowFun Guide" for instructions
+# on how to do that.
+
+### LOAD FCS FILES ###
+
+# Indicate the name of the directory containing the .fcs files to analyze
+data_dir <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples"
+
+# Get all filenames and create a GatingSet
+files <- list.files(data_dir,
+                    pattern = "\\.fcs$",
+                    full.names = TRUE,
+                    ignore.case = TRUE)
 cs <- flowWorkspace::load_cytoset_from_fcs(files,
-                                           which.lines = 5000) # if NULL, all cells are read in
+                                           which.lines = 50000) # if NULL, all cells are read in
                                                                 # if an integer, a random sample of given size is read in
 gs <- flowWorkspace::GatingSet(cs)
-
-###
-## OR, Load in existing data
-# note: changes made to object created from load_cytoset() do not affect
-#   original data unless `backend_readonly=FALSE`
-# Load previously created GatingSet or cytoset, if needed
-gs <- flowWorkspace::load_gs(file.path(work_dir, "template_gs"))
-# cs <- flowWorkspace::load_cytoset(file.path(work_dir, "template_cs"))
-###
 
 # Make deep clone of GatingSet, to avoid making accidental changes to underlying data
 gs1 <- flowWorkspace::gs_clone(gs)
 
-# Compensate
-comp_mat <- read.csv("C:/Users/00ber/OneDrive/Desktop/VPC/human1/morgans_comp_matrix.csv",
+### APPLY COMPENSTATION ####
+
+# Load the compensation matrix
+comp_mat <- read.csv("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012_Comp_Matrix_noQC_fixed_names.csv",
                      check.names = FALSE) # note check.names
 
-# !!! Note: The column names of your compensation matrix must match those
-#     found in your GatingSet.
-# Check
+# Check column names
 colnames(comp_mat)
 colnames(gs1)
 
 # Print column names in GatingSet not found in column names of compensation matrix
 colnames(gs1)[!(colnames(gs1) %in% colnames(comp_mat))]
+
 # Prepare compensation matrix to be passed to `compensate`
 #   Columns are matched to those in the GatingSet based on the regexpr given to pattern.
 #   Default is `" <.*"`. Setting `pattern = ""` tells the function that column names
@@ -88,16 +72,14 @@ comp_mat <- prepareCompensationMatrix(comp_mat, gs1)
 compensate(gs1, comp_mat)
 
 # Define custom transformation, if desired
+
 # logicle transformation, standard for flow cytometry:
 log_trans <- flowCore::estimateLogicle(gs1[[1]],
                                    channels = colnames(comp_mat))
-# Or inverse hyperbolic sin transform, standard for mass cytometry:
+
+# OR inverse hyperbolic sin transform, standard for mass cytometry:
 asinh_trans <- flowWorkspace::asinhtGml2_trans(equal.space = TRUE)
 asinh_trans <- flowWorkspace::transformerList(colnames(comp_mat), asinh_trans)
-
-# getting inverse
-# asinh_inv <- flowCore::transformList(names(asinh_trans), lapply(asinh_trans, `[[`, "inverse"))
-
 
 # Apply transformation
 flowWorkspace::transform(gs1, log_trans)
@@ -132,7 +114,7 @@ gt_gating(gt, gs1)
 
 ## Make graphs to check results of preprocessing:
 
-## Check one gate for each sample
+## Check the gates on each sample
 # nonDebris gate
 plotAllSamples(gs1, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
 
@@ -143,10 +125,13 @@ plotAllSamples(gs1, "FSC-A", "FSC-H", "nonDebris", "singlets")
 plotAllSamples(gs1, !!enquo(ld_stain), "FSC-A", "singlets", "live_cells")
 
 
-# Adjust gates if necessary, either by editing and reapplying the gating template,
-#   or manually redrawing them.
+# Adjust gates if necessary, either by 1) editing and reapplying the gating template,
+#   and/or 2) manually redrawing them.
 
-### Edit arguments of gating template
+## Option 1: Edit arguments of gating template ##
+
+# specify the row indicating the gate you want to change, using a number (e.g. 2 for nondebris)
+# set the values you want the gate to fall between (e.g. 0-80000)
 gt_table[2, "gating_args"] <- "gate_range=c(0,80000)"
 
 # Remove gate(s) that will be redrawn
@@ -159,7 +144,9 @@ gt <- openCyto::gatingTemplate(gt_table)
 # Apply to data
 openCyto::gt_gating(gt, gs1)
 
-### Redraw gates
+# Use plotAllsamples function from above (line 128-134) to check the new gates
+
+## Option 2: Manually redraw gates ##
 library(CytoExploreR)
 
 # Set desired name to save gating template under
@@ -173,37 +160,35 @@ CytoExploreR::cyto_gate_edit(gs1,
                              parent = "singlets", # parent population
                              alias = "live_cells", # name of the gate to edit
                              channels = c("BUV496-A", "FSC-A"), # channels to gate on
-                             type = "polygon", # type of gate to draw
+                             type = "polygon", # type of gate to draw. For polygon gate, you need to right click to close the gate
                              gatingTemplate = file.path(work_dir, gt_name))
 
 
 # Once you have results, save GatingSet
+# Note: If you previously ran this in the same working directory you need to delete the
+# "template_gs" folder from the working directory before running this again or you will get an error.
 flowWorkspace::save_gs(gs1, path = file.path(work_dir, "template_gs"))
 
 
-##########
-# CytoML #
-##########
+#####################################################################
+# Alternative: Starting with a FlowJo Workspace with Existing Gates #
+#####################################################################
 
-# Open FlowJo workspace in R from .xml file
-flowjo_file <- "path/to/flowjo.xml"
-ws <- CytoML::open_flowjo_xml(file)
+# Instead of using flowFun for pre-processing, you can instead start with a
+# FlowJo workspace which includes pre-existing gates and compensation.
+
+# Open FlowJo workspace in R from .xml file (FIGURE OUT XML vs WSP ISSUE)
+flowjo_file <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Test for flowFun.wsp"
+ws <- CytoML::open_flowjo_xml(flowjo_file)
 
 # Make GatingSet from FlowJo workspace
-gs <- CytoML::flowjo_to_gatingset(ws,
-                                  path = "path/to/fcs_files") # or cytoset = ...
-
+gs1 <- CytoML::flowjo_to_gatingset(ws,
+                                  path = "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples") # or cytoset = ... (?WHAT DOES THIS MEAN?)
 # Get first sample
-gh <- gs[[1]]
+gh <- gs1[[1]]
 
 # Plot gates of first sample
 ggcyto::autoplot(gh)
-
-
-# Must download docker image
-# To save current GatingSet as a FlowJo workspace;
-CytoML::gatingset_to_flowjo(gs, "path/to/saved_ws.wsp")
-
 
 ##############
 # Clustering #
@@ -214,22 +199,37 @@ ex_fs <- flowWorkspace::gs_pop_get_data(gs1, "live_cells")
 ex_fs <- flowWorkspace::cytoset_to_flowSet(ex_fs)
 
 # Perform clustering
-# If you plan to apply controls to your data and calculate delta MFIs, it is
-#   highly recommended that you save the FlowSOM object at this stage by setting
-#   `fsom_file` equal to a filepath.
-fsom_dt <- flowSOMWrapper(ex_fs,
-                          xdim = 10,
-                          ydim = 10,
-                          cols_to_cluster = c(10, 12:14, 16, 18:23, 25:32, 34), # Define markers/columns to use for clustering
-                          num_clus = 23,
-                          seed = 42,
-                          fsom_file = "fsom.rds") # if you intend to use controls, it is helpful to save the clustering
 
-### Iteratively merge clusters until all cell types identified
+# NOTE 1: If you plan to apply controls to your data and calculate delta MFIs, it is
+#      highly recommended that you save the FlowSOM object at this stage by setting
+#      `fsom_file` equal to a filepath (included in the arguments below). If you don't do this, at the very least
+#      make sure to specify a seed and make note of the parameters you use in this
+#      call, so that this particular clustering may be recreated later if needed.
+
+# NOTE 2: flowSOM works by generating clusters which are then merged into metaclusters.
+#       It does not do a great job with metaclustering so it is recommended to set the
+#       numbers of metacluster ('num_clus = #") to more clusters than you think there
+#        should be, and then manually merge them as appropriate.
+fsom_dt <- flowSOMWrapper(ex_fs,
+                          cols_to_cluster = c(10, 12:14, 16, 18:23, 25:32, 34), # Define markers/columns to use for clustering
+                          num_clus = 23, # sets the number of metaclusters - set it for more than you think there are
+                          xdim = 10, # xdim X ydim = number of clusters (e.g. 100 here)
+                          ydim = 10,
+                          seed = 42,
+                          fsom_file = "fsom.rds") # the resulting FlowSOM object will be saved to disk under this name - this is optional but see note above about dMFIs
+
+## Merge Clusters and Annotate Clusters IDs ##
+
 # Generate heatmap
+# MAYBE PUT THIS IN THE VIGNETTE: The default is to include the parameters used for clustering. You can instead specify
+# parameters using a character vector (column numbers or channel names) and passing it to the 'cols_to_use' argument
+# For example: plotMetaclusterMFIs(fsom_dt, cols_to_use = c("BV650-A", "BB700-P-A", "BV605-A"))
+
 plotMetaclusterMFIs(fsom_dt)
+
 # Generate UMAP
 plotUMAP(fsom_dt, num_cells = 2500, seed = 42)
+
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt,
                      channelpair = c("APC-Cy7-A", "BUV563-A"),
@@ -239,16 +239,25 @@ plotLabeled2DScatter(fsom_dt,
 # Merge metaclusters
 fsom_dt <- editTableMetaclusters(fsom_dt,
                                  new_labels = c("9" = "1",
-                                                "2" = "1",
-                                                "8" = "4",
+                                                "2" = "1", # MC (metacluster) 9 and 2 are merged into MC 1
+                                                "8" = "4", # MC 8 is merged in MC 4
                                                 "23" = "15",
                                                 "21" = "15",
                                                 "20" = "15",
-                                                "22" = "15",
-                                                "7" = "6"))
+                                                "22" = "15", # MC 23, 21, 20, and 22 are merged into MC 15
+                                                "7" = "6")) # MC 7 is merged into MC 6
+
+# This function can also be used to rename metaclusters, once you decide the specific
+# names for each cluster
+fsom_dt <- editTableMetaclusters(fsom_dt,
+                                 new_labels = c("1" = "Monocytes",
+                                                "4" = "NK cells",
+                                                "15" = "CD8 T cells",
+                                                "6" = "Undefined"))
+
 
 # Generate annotated heatmap when final clustering reached
-annotateMFIHeatmap(fsom_dt, cols_to_cluster)
+annotateMFIHeatmap(fsom_dt)
 
 
 ### Final clusters may be added to GatingSet as a boolean gate
@@ -259,29 +268,59 @@ flowWorkspace::gs_get_pop_paths(gs1)
 addClustersToGatingSet(fsom_dt,
                        gs1,
                        parent_gate = "live_cells",
-                       fsom_file = NULL) # by default, this argument is NULL and the
-                                         # function checks the Gating
+                       fsom_file = NULL) # by default, this argument is NULL
+
+###
+## The following notes are relevant only if you intend to apply controls later:
+
+# If you specified the parameter `fsom_file` when calling `flowSOMWrapper()`
+# earlier, it is fine to leave `fsom_file` `NULL` here. `addClustersToGatingSet()`
+# will find the file by checking the attributes of its input, in this case `fsom_dt`.
+# The original FlowSOM object's metaclusters will be edited and renamed according to
+# any edits you made, and its filename will be associated with your GatingSet,
+# making later clustering of controls straightforward.
+
+# If you did not specify `fsom_file` earlier, or wish to use a different file,
+# the correct file should be specified in this call to `addClustersToGatingSet()`.
+# The RDS file given must already exist.
+
+# If the RDS file is successfully accessed, its name will be added to the metadata of the
+# GatingSet. More specifically, it will be added to the data frame viewed with `pData(gs1)`,
+# under a column name corresponding to the population/node the clustering was done on
+# (in this case "live_cells").
+###
 
 # Visualize new gating template
 openCyto::plot(gs1)
 
-#############
-# DA and DE #
-#############
+###############################################################
+# Differential Abundance and Differential Expression Analysis #
+###############################################################
 
-# Read in .csv file containing info about samples (must include a column for filename and one for sample name)
-file <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/Info/MR242 Sample Information.csv"
+# Read in a .csv file containing info about samples
+# IMPORTANT: Each row must correspond to a sample. The file must include a
+# column for filename, and one for sample name. Any information about experimental
+# group and/or corresponding control files that are relevant to differential
+# analysis should also be included in the table; see the workflow vignette for
+# more details.
+file <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/Bioinformatics/High Parameter Flow Data/Testing FlowFun/April 2026/SL012 Sample Info.csv"
 
-# Define list of comparisons we would like to make between groups
+# Define list of comparisons you would like to make between groups for either the
+# differential abundance or differential expression analysis.
+# Type `?prepareSampleInfo` in the console and scroll down to the examples to
+# get more information on how `comparisons` should be defined.
 comparisons <- list(
-  ctrl_vs_mibc = list(Disease = list("MIBC", "Ctrl")),
-  nac_vs_no_nac = list(Disease = "MIBC", NAC = list("NAC", "No.NAC"))
+  old_vs_young = list(Age = list("Young", "Old"))
 )
 
-# Prepare metadata for further analysis
+# Prepare metadata for further analysis. Returns a table read in from the given
+# CSV file, with an added column called `group`, which is used to ensure that
+# the correct samples are used in each test. Additionally, the column names given
+# to `name_col` and `filename_col` are renamed to "sample.name" and "filename",
+# respectively.
 sample_info <- prepareSampleInfo(file,
-                                 name_col = "Sample.Name",
-                                 filename_col = "File.Name",
+                                 name_col = "Sample.Name", # name of column containing sample names in your file
+                                 filename_col = "File.Name", # name of column containing file names in your file
                                  comparisons = comparisons)
 
 # Generate design matrix
@@ -290,13 +329,16 @@ design <- makeDesignMatrix(sample_info)
 # Generate contrasts matrix
 contrasts <- makeContrastsMatrix(sample_info, comparisons)
 
+# Select populations to find counts for, if you would like to exclude any cell types found earlier
+meta_of_interest <- c("Monocytes", "NK cells", "CD8 T cells")
+
 # Generate matrix of sample/metacluster cell counts
+### NOTE: I GOT AN ERROR RUNNING THIS --> See the GitHub Issue ###
 counts <- makeCountMatrix(fsom_dt,
-                          populations = meta_of_interest,
+                          populations = meta_of_interest, # if `fsom_dt` is a data frame, the default is all populations
                           min_cells = 3,
                           min_samples = 4)
 
-# getting frequencies instead?
 # If desired, this matrix may be exported as a .csv file (the same goes for any other matrix or data.frame in R)
 write.csv(counts, "table_filename.rds")
 
@@ -319,97 +361,135 @@ da_results[[1]] # display only first comparison, MIBC vs. Ctrl
 da_results[[2]] # display only second comparison, NAC vs. No NAC
 
 # You will see five columns in the resulting tables: logFC, logCPM, LR, PValue, FDR
-# i.e., log-fold change, log counts per million, likelihood ratio, p-value, false discovery rate
-#
+# i.e., log-fold change, log counts per million, likelihood ratio, p-value, false discovery rate (essentially adjusted p-value)
+# The columns PValue and FDR will likely be most notable, as the first three columns are more relevant to RNAseq data.
 
 #
 ### Perform differential expression analysis
 #
 
 # Set markers of interest
+# NOTE: If you are comparing expression of a marker between different cell types, then these
+# should not be markers used for clustering.
 marker_cols <- c("BV711-A", "FITC-A")
 
 # Get clustered populations
-subpops <- gs_pop_get_children(gs1, "live_cells")
+subpops <- gs_pop_get_children(gs1, "live_cells", path = "auto")
 
-# Perform differential expression analysis for given markers
+# Perform differential expression analysis for given markers. This function accepts
+# either a GatingSet or data.table.
 de_res <- doDEAnalysis(gs1,
                        cols_to_test = marker_cols,
                        design = design,
                        contrasts = contrasts,
-                       subpopulations = subpops,
-                       inverse = FALSE)
+                       subpopulations = subpops, # only necessary to specify when input is a GatingSet
+                       inverse = TRUE) # when input is a GatingSet and inverse is TRUE,
+                                       # data is back-transformed before testing
 
 # View results
 limma::topTable(de_res)
 
 # Plots
-# Get table with MFIs where rows are sample and columns are metaclusters
-plot_mat <- getSampleMetaclusterMFIs(fsom_dt, "BV711-A", sample_info)
-
-# Generate bar plot
-plotGroupMFIBars(plot_mat,
+# Generate MFI bar plot
+plotGroupMFIBars(gs1,
+                 col = "BV711-A", # name of channel to plot MFIs for
                  sample_df = sample_info,
-                 comparison = comparisons[[1]])
+                 comparison = comparisons[[1]], # from comparisons listed at the beginning of this section
+                 populations = subpops, # name of populations to plot
+                 inverse = TRUE, # only applicable if input is GatingSet ### NOT SURE WHAT THIS MEANS, what else would you input? ###
+                 upper_lim = NULL)
+
+# If you would like to get a table of sample/metacluster MFIs to use for your own plotting,
+# use `getSampleMetaclusterMFIs()`.
+plot_mat <- getSampleMetaclusterMFIs(gs1, "BV711-A", sample_df = sample_info,
+                                     populations = subpops, inverse = TRUE)
+write.csv(plot_mat, "tim3_mfis.csv")
 
 #### Optionally, apply 1D boundary gates after clustering
 # Plot channel marker densities by sample/metacluster
 plot1DMarkerDensities(gs1,
                       channel = "FITC-A",
-                      population = "live",
+                      population = "live_cells",
                       facet_by = "subpopulations", # may also facet by "samples"
                       inverse = FALSE)
 
 # Add gate to GatingSet with openCyto
 # Add boundary gate on channel; note arguments here are the same as column names for
 #   the earlier gatingTemplate
+# Also note: you can alter where the gate is being drawn by limiting the range the gate
+# can fall in by adding the argument 'gating_args = "gate_range=c(1.5,3)"' to 'gs_add_gating_method; below.
+# in this example I am limiting it to FITC values between between 1.5 and 3.
 openCyto::gs_add_gating_method(gs1,
                                alias = "+FITC-A",
-                               parent = "9",         # add +FITC-A gate to metacluster 9
+                               parent = "10",         # add +FITC-A gate to metacluster 9
                                dims = "FITC-A",
                                gating_method = "gate_mindensity",
                                collapseDataForGating = TRUE,
                                groupBy = length(gs1))
 
+# Check the 1D boundary gate
+### WRITE CODE HERE ###
+
+# Optional: If you want to redraw the 1D boundary gate run the following code then check
+# the gate and repeat until you are happy with it.
+### WRITE CODE HERE ###
+# need to remove the FITC gate first then redraw it with the 'gating_args = "gate_range=c(1.5,3)"' argument
+
+
 ####
 ## Optionally, apply controls to find delta MFIs
 
-# Load in control FCS files
-ctrl_dir <- "C:/Users/00ber/OneDrive/Desktop/VPC/human1/FMO"
+# Specify directory containing the control FCS files you'd like to apply
+ctrl_dir <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples/SL012 Spleen FMO Controls"
 
-# Read in
+# Read FCS files into a cytoset
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
 # Apply transformations, compensations and gates to control gs
 ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
 
-ctrl_fs <- flowWorkspace::cytoset_to_flowSet(ctrl)
+# Apply transformations, compensations and gates created above for main data (the `gs1` object)
+# to this cytoset. Essentially, we are pre-processing the control data exactly
+# as we did for our data earlier
+ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template")
 
-# Apply clustering to controls
-# This may also be done manually using `FlowSOM::NewData`
-fsom_projected <- clusterControls(ctrl_gs, gs1, "live")
+# Check that the gates are appropriate and don't need adjustment
+# non-debris gate
+plotAllSamples(ctrl_gs, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
+# singlets gate
+plotAllSamples(ctrl_gs, "FSC-A", "FSC-H", "nonDebris", "singlets")
+
+
+# Cluster the control samples using same mapping as main data. `clusterControls()` returns a FlowSOM object.
+# NOTE: This function assumes that the object passed to `primary_gs`, in this
+# case `gs1`, has an associated FlowSOM object from calling `addClustersToGatingSet()` earlier.
+# You can check for any associated FlowSOM RDS files with flowWorkspace::pData(gs1).
+fsom_projected <- clusterControls(ctrl_gs, gs1, "live_cells")
 
 # Get data.table for controls, and add clusters to corresponding GatingSet
 ctrl_dt <- flowSOMToTable(fsom_projected)
-addClustersToGatingSet(ctrl_dt, ctrl_gs, "live")
+addClustersToGatingSet(ctrl_dt, ctrl_gs, "live_cells")
 
-# Read in table of sample info, if you have one; see `?addMetadataToGatingSet` for
-# details on how this table should be defined
-# Should have column named 'filename'
+# Read in table of sample info, if you have one. This may be the result of
+# `prepareSampleInfo()`, like the data frame created above for differential analysis.
+# MUST have a column called "filename".
+### NOTE: THIS IS CONFUSING, DO YOU NEED TO DO THIS IF YOU ALREADY READ IN A SAMPLE_INFO FILE ABOVE?"
 sample_info <- read.csv("path/to/sample/info/csv")
+
 # Add metadata to GatingSet
 addMetadataToGatingSet(gs1, sample_info)
-# Check results
+# Check results, the columns in `sample_info` should be added to `pData(gs1)`
 pData(gs1)
-# this also allows us to use functions in ggcyto package to facet by any group defined
-# in this metadata
+# (This also allows us to use functions in ggcyto package to facet by any group defined
+# in this metadata.)
 
-# Define markers to test
-cols_to_test <- c("PHA-L", "IL10R")
+# Define markers to apply controls to
+cols_to_test <- c("PHA-L", "CD8")
 
 # Get delta MFIs
 delta_mfis <- gs_makeDeltaMFIs(gs1,
                                ctrl_gs,
                                subpopulations = subpops,
+                               cols = cols_to_test,
                                metadata_col = "FMO") # the name of the column containing control filenames
                                                      # (must be present in pData(gs1))
 
