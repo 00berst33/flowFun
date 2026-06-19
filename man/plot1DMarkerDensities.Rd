@@ -20,6 +20,10 @@ plot1DMarkerDensities(
 
 \item{population}{A \code{character} indicating which subpopulation to use}
 
+\item{facet_by}{A \code{character} indicating whether plots should be faceted by
+samples or subpopulations (these subpopulations are typically cell types
+identified during metacluster merging)}
+
 \item{inverse}{A boolean, whether or not the data should be inverse transformed
 before plotting. \code{FALSE} by default}
 

@@ -64,9 +64,9 @@ colnames(gs1)[!(colnames(gs1) %in% colnames(comp_mat))]
 
 # Prepare compensation matrix to be passed to `compensate`
 #   Columns are matched to those in the GatingSet based on the regexpr given to pattern.
-#   Default is `" >.*"`. Setting `pattern = ""` tells the function that column names
-#   do not need to be matched. (?? I DON"T UNDESTAND THIS PART - EXPLAIN IN THE VIGNETTE)
-comp_mat <- prepareCompensationMatrix(comp_mat, gs1, pattern = "")
+#   Default is `" <.*"`. Setting `pattern = ""` tells the function that column names
+#   do not need to be matched.
+comp_mat <- prepareCompensationMatrix(comp_mat, gs1)
 
 # Compensate data
 compensate(gs1, comp_mat)

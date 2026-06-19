@@ -1,27 +1,58 @@
+#' Function to match a character vector whose elements are either markers or
+#' channels to a parent vector whose elements contain both markers and
+#' the corresponding channel. i.e. match "CD3" to "CD3 <Alexa Fluor 700-A>".
+#'
+#' @keywords internal
+#' @export
+getFullNames <- function(substr, target_names, keep_names = FALSE) {
+  # Helper to escape regex metacharacters
+  escape_regex <- function(x) {
+    gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
+  }
+
+  # Get new names of input
+  full_names <- sapply(substr, function(x) {
+    x_esc <- escape_regex(x)
+
+    # token-style matching
+    pattern <- paste0(
+      "(?<![[:alnum:]])",
+      x_esc,
+      "(?![[:alnum:]])"
+    )
+    grep(pattern, target_names, value = TRUE, perl = TRUE)
+  })
+
+
+  if (!keep_names) {
+    # Remove names given by grep()
+    full_names <- unname(full_names)
+  }
+  full_names <- unlist(full_names)
+
+  return(full_names)
+}
+
+
 #' addMetaToTable
 #'
 #' @param table Table containing expression data for all samples
 #' @param sample_dt Table containing sample info
-#' @param join_col Column on which to join the two tables described above
-#'
+#' @param join_col Column on which to join the two tables described above. Or,
+#' to join on different variables between tables, an expression (e.g. `a == b`).
 #'
 #'
 #' @return The data.table provided as input, with columns for sample information
 #' added.
 #' @export
 addMetaToTable <- function(table, sample_dt, join_col) {
-  if (join_col %in% colnames(table) && join_col %in% colnames(sample_dt)) {
-    new_table <- dplyr::left_join(table, sample_dt, by = join_col)
-    return(new_table)
-    }
-  else {
-    stop(paste0("The given column name `join_col` = ", join_col, " is not present in both tables."))
-  }
+  var <- rlang::enquo(join_col)
+
+  new_table <- dplyr::left_join(table, sample_dt, by = dplyr::join_by(!!var))
+  return(new_table)
 }
 
 
-# put within GatingSet to table or something
-# change name
 #' @keywords internal
 #' @export
 getPrettyColNamesFromGatingSet <- function(input) {
@@ -55,11 +86,18 @@ getPrettyColNamesFromGatingSet <- function(input) {
   return(new_colnames)
 }
 
-# changes columns of compensation matrix to channels, markers, or both (pretty)
-# and checks order of columns
-#' @keywords internal
+
+#' prepareCompensationMatrix
+#'
+#' Changes columns of compensation matrix to channels, markers, or both (pretty)
+#' and checks order of columns
+#'
+#' @param matrix The compensation matrix to prepare
+#' @param gs The `GatingSet` whose parameter names the compensation matrix's
+#' columns should be matched to
+#'
 #' @export
-prepareCompensationMatrix <- function(matrix, gs, pattern = " <.*") {
+prepareCompensationMatrix <- function(matrix, gs) {
   # Make sure all columns are numeric
   matrix <- matrix %>%
     dplyr::select(dplyr::where(is.numeric))
@@ -80,31 +118,25 @@ prepareCompensationMatrix <- function(matrix, gs, pattern = " <.*") {
   # Reorder matrix columns according to sorted vector names
   sorted_mat <- matrix[names(idx)]
 
-  # recall compensation matrix column names need to match those in GatingSet
-
-  # Get column names that will be used in compensation matrix
-  # if (extend_cols) {
-  #   pretty <- getPrettyColNamesFromGatingSet(gs)
-  #   gs_cols <- pretty
-  # } else {
-  #   gs_cols <- colnames(gs1[[1]])
-  # }
-
+  # compensation matrix column names need to match those in GatingSet
+  # Get GatingSet column names
   gs_cols <- flowWorkspace::colnames(gs[[1]])
 
   # Match compensation matrix column names to those in GatingSet
-  match_idx <- match(colnames(sorted_mat), sub(pattern, "", gs_cols))
+  # Assume gs_cols is regular channel names
+  new_colnames <- getFullNames(gs_cols, colnames(sorted_mat), keep_names = TRUE) %>%
+    names()
 
-  if (any(is.na(match_idx))) {
-    warning("Column names of provided GatingSet and compensation matrix couldn't be matched. Check `pattern` argument.")
+  if (any(is.na(new_colnames))) {
+    warning("Column names of provided GatingSet and compensation matrix couldn't be matched. Check that column names of the GatingSet are substrings of the compensation matrix's column names.")
   } else {
-    result <- gs_cols[match_idx]
-    colnames(sorted_mat) <- result
+    colnames(sorted_mat) <- new_colnames
   }
 
   # Return prepared matrix
   return(sorted_mat)
 }
+
 
 #' gatingSetToTable
 #'
@@ -125,13 +157,7 @@ gatingSetToTable <- function(gs, population = "root") {
   # Set names of list items, so that we may create an id column when combining tables
   names(gs_list) <- sn
 
-
-  # check for column name mismatches here? or GatingSet may already take care of this
-  # !!! instead of requiring tidytable, maybe move the dependency to Suggests, and load it
-  #   if the user has it installed
-
   # add metadata here using pData()
-
 
   # Bind all tables into one, by row
   table <- tidytable::bind_rows(gs_list, .id = ".id")
@@ -148,6 +174,7 @@ gatingSetToTable <- function(gs, population = "root") {
   return(table)
 }
 
+
 #' tableToFlowSet
 #'
 #' Convert a table of single-cell data
@@ -161,6 +188,8 @@ gatingSetToTable <- function(gs, population = "root") {
 tableToFlowSet <- function(table, id_col = .id) {
   id_col <- rlang::enquo(id_col)
 
+  # pull marker <channel> into two different vector with regexpr if there are <>
+
   # Get (file)names of all samples in the table
   sample_names <- table %>%
     dplyr::pull(!!id_col) %>%
@@ -170,8 +199,6 @@ tableToFlowSet <- function(table, id_col = .id) {
   fs <- lapply(sample_names, function(i) {
     ff <- table %>%
       dplyr::filter(!!id_col == i) %>%
-      #select(where(is.double)) %>%
-      #dplyr::mutate(!!id_col := match(!!id_col, sample_names)) %>% # edit channel/marker/key .csv here?
       dplyr::select(-!!id_col) %>%
       dplyr::select(dplyr::where(is.numeric)) %>%
       as.matrix() %>%
@@ -186,11 +213,37 @@ tableToFlowSet <- function(table, id_col = .id) {
   return(fs)
 }
 
+
+#' @keywords internal
+#' @export
 flowSetToTable <- function(fs) {
-  table <- fs %>%
-    dplyr::ungroup() %>%
-    flowCore::exprs()
+  table <- lapply(seq_along(fs), function(i) {
+    df <- flowCore::exprs(fs[[i]]) %>%
+      as.data.frame(make.names = FALSE) %>%
+      dplyr::mutate(.id = flowCore::sampleNames(fs)[[i]],
+                    .before = 1)
+  }) %>%
+    dplyr::bind_rows() %>%
+    tidytable::as_tidytable()
+
+  return(table)
 }
+
+
+#' @keywords internal
+#' @export
+flowSetMakePrettyNames <- function(fs) {
+  channels <- flowCore::colnames(fs)
+  ff <- fs[[1]]
+
+  pretty_names <- sapply(seq_along(channels), function(i) {
+    marker <- getMarker(ff, channels[i])
+    pretty_name <- paste0(marker, " <", channels[i], ">")
+  })
+
+  return(pretty_names)
+}
+
 
 #' flowSOMToTable
 #'
@@ -208,11 +261,7 @@ flowSOMToTable <- function(fsom) {
   # Get data.frame from FlowSOM object and make column names pretty
   dt <- fsom$data
   colnames(dt) <- fsom$prettyColnames
-  # match_idx <- match(fsom$prettyColnames, colnames(dt))
-  # colnames(dt)[match_idx] <- names(fsom$prettyColnames)
-  # if (".id <.id>" %in% colnames(dt)) {
-  #   colnames(dt)[".id <.id>"] <- ".id"
-  # }
+
 
   # Append labels as columns to the data.table
   dt <- dt %>%
@@ -247,29 +296,9 @@ flowSOMToTable <- function(fsom) {
     attr(dt, "clustered") <- clustered
   }
 
-  # Add "codes" attribute
-  # codes <- fsom$map$codes
-  # attr(dt, "codes") <- codes
-
-  # Get needed info from FlowSOM, add as attribute
-  # fsom$data <- NULL
-  # fsom$transformList <- NULL
-  # fsom$prettyColnames <- NULL
-
-  # clustering <- list("minimal_fsom" = fsom,
-  #                    "clustered" = clustered
-  #                    )
-  clustering <- list("colsToUse" = fsom$info$parameters$colsToUse,
-                     "clustered" = clustered,
-                     "xdim" = fsom$info$parameters$xdim,
-                     "ydim" = fsom$info$parameters$ydim,
-                     "nClus" = fsom$info$parameters$nClus,
-                     "clustering" = fsom$metaclustering,
-                     "codes" = fsom$map$codes)
-  attr(dt, "clustering") <- clustering
-
   return(dt)
 }
+
 
 #' getChannelMarkerPairs
 #'
@@ -300,55 +329,50 @@ getChannelMarkerPairs <- function(ff, save_res = TRUE) {
   return(tab)
 }
 
+
 #' NEED TO HANDLE MISSING PARAMETERS FROM TRANSFORMATION
 #'
 #' @keywords internal
 #' @export
-transformTable <- function(input, transformation = NULL,
-                           transform_type = c("logicle", "arcsinh", "other", "none"),
-                           find_inverse = FALSE) {
-  if (find_inverse) {
-    # Get transformation
-    temp <- attr(input, "transformation")
+inverseTransformTable <- function(input, transformation) {
 
-    if (!is.null(temp)) { # If there is a transformation attached to input
-      transformation <- temp
-    }
-    #  <- methods::slot(transformation, "transformationId")
+  # Reverse transformation
+  transforms <- lapply(transformation, `[[`, "inverse")
 
-    # Reverse transformation if necessary
-    if (transform_type == "logicle") { # make switch()?
-      #transformation <- flowCore::inverseLogicleTransform(transformation)
-      transforms <- flowCore::transformList(names(trans), lapply(trans, `[[`, "inverse"))
-      #transforms <- attr(transforms, "transforms")
-    } else if (transform_type == "arcsinh") {
-      stop()
-    } else if (transform_type == "other") {
-      stop()
-    } else if (transform_type == "none") {
-      stop()
-    }
+  if (is.null(transforms)) {
+    stop("No inverse found for `transformation`.")
   }
-
-  # Extract list of transformations from transformList object
-  #transforms <- methods::slot(transformation, "transforms")
-
 
   # If column names don't match
   if (!any(names(transforms) %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", names(transforms))
-    match_idx <- match(names(transforms), marker_cols)
-    # Set channelpair to pretty column names
-    names(transforms) <- colnames(input)[match_idx]
+    # Extract only channel names from input
+    input_channels <- sub(".*<(.*)>.*", "\\1", colnames(input))
+    if (all(names(transforms) %in% input_channels)) {
+      match_idx <- match(names(transforms), input_channels)
+      # Set transform names to pretty column names
+      names(transforms) <- colnames(input)[match_idx]
+    } else {
+      stop("One or more names in the transformation and `input` don't match.")
+    }
   }
 
-  # Apply transformation
-  transformed_input <- input %>%
-    tidytable::as_tidytable() %>%
-    tidytable::mutate(tidytable::across(tidytable::all_of(names(transforms)),
-                                        .fns = function(x) transforms[[as.character(substitute(x))]]@f(x)))
+  # Get channel names in transformation
+  channels <- names(transforms)
 
-  return(transformed_input)
+  # Transform relevant channels in data.table
+  for (i in seq_along(channels)) {
+
+    channel <- channels[[i]]
+    trans_fun <- transforms[[i]]
+
+    input <- input %>%
+      tidytable::as_tidytable() %>%
+      tidytable::mutate(
+        !!channel := tidytable::map_dbl(.data[[channel]], trans_fun)
+      )
+  }
+
+  return(input)
 }
 
 #' saveFlowSOMEmbedding
@@ -408,24 +432,27 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #'
 #' Get a table of MFIs, where each row is a sample and each column is a metacluster.
 #'
-#' @param input description
+#' @param input A `data.table` or `GatingSet`
 #' @param col The channel to find sample-metacluster MFIs for.
-#' @param sample_df If \code{input} is a FlowSOM object, a data frame from
-#' [prepareSampleInfo()].
 #' @param populations A `character` list of the names of metaclusters/populations to calculate MFIs for.
+#' @param transformation A \code{\link[flowCore:transformList]{transformList}} specifying
+#' the transformation applied to the data, if any. Required when `input` is a `data.table`
+#' and `inverse = TRUE`
 #' @param inverse Boolean, whether data should be back-transformed before calculating MFIs.
 #' Only valid when `input` is a `GatingSet` containing a transformation.
 #'
 #' @return A table, where rows are samples and columns are metaclusters.
 #' @export
-getSampleMetaclusterMFIs <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
+getSampleMetaclusterMFIs <- function(input, col, populations = NULL,
+                                     transformation = NULL, inverse = FALSE) {
   result <- UseMethod("getSampleMetaclusterMFIs")
   return(result)
 }
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, populations = NULL, inverse = FALSE) {
+getSampleMetaclusterMFIs.GatingSet <- function(input, col, populations = NULL,
+                                               transformation = NULL, inverse = FALSE) {
   var <- rlang::ensym(col)
 
   # if (is.null(populations)) {
@@ -434,6 +461,14 @@ getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, pop
 
   # Get MFIs for populations of interest
   mfis <- flowWorkspace::gs_pop_get_stats(input, nodes = populations, type = pop.MFI, inverse = inverse)
+
+  # If column is a channel, find associated marker
+  if (!(col %in% colnames(mfis))) {
+    cf <- flowWorkspace::gh_pop_get_data(input[[1]])
+    pdata <- flowWorkspace::pData(flowCore::parameters(cf))
+    idx <- match(col, pdata$name)
+    col <- pdata[idx, "desc"]
+  }
 
   # If column is a channel, find associated marker
   if (!(col %in% colnames(mfis))) {
@@ -460,40 +495,14 @@ getSampleMetaclusterMFIs.GatingSet <- function(input, col, sample_df = NULL, pop
 
 #' @keywords internal
 #' @export
-getSampleMetaclusterMFIs.FlowSOM <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
-  Metacluster <- File <- NULL
-
-  var <- rlang::enquo(col)
-
-  # Get metacluster labels
-  meta_labels <- FlowSOM::GetMetaclusters(input)
-
-  # Append labels as columns to the data.table, and summarise
-  table <- tidytable::as_tidytable(input$data) %>%
-    tidytable::mutate(Metacluster = meta_labels,
-                      .keep = "all") %>%
-    tidytable::group_by(File) %>%
-    tidytable::pivot_wider(names_from = Metacluster, values_from = !!var, id_cols = File, values_fn = median) %>%
-    tidytable::filter(File %in% rownames(sample_df)) %>%
-    as.data.frame()
-
-  # change file number to sample and assign as rownames here
-  rownames(table) <- sample_df[match(table$File, rownames(sample_df)), "File.Name"]
-
-  table <- table %>%
-    dplyr::select(-"File")
-
-  if(!is.null(populations)) {
-    table <- table %>%
-      dplyr::select(populations)
+getSampleMetaclusterMFIs.data.table <- function(input, col, transformation,
+                                                inverse = FALSE, populations = NULL) {
+  # Back transform data, if necessary
+  if (inverse & is.null(transformation)) {
+    stop("Must specify `transformation` when `inverse = TRUE` for `data.tables`!")
+  } else if (inverse & !is.null(transformation)) {
+    input <- inverseTransformTable(input, transformation)
   }
-
-  return(table)
-}
-
-#' @keywords internal
-#' @export
-getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, populations = NULL, inverse = FALSE) {
 
   # If input is only channel name
   if (is.character(col) & !(col %in% colnames(input))) {
@@ -506,41 +515,171 @@ getSampleMetaclusterMFIs.data.table <- function(input, col, sample_df, populatio
   var <- rlang::ensym(col)
 
   # get table where rows are samples, columns are metaclusters, and values are MFIs
-  fitc_mfis <- input %>%
+  mfis <- input %>%
     dplyr::select(.id, !!var, Metacluster) %>%
     dplyr::group_by(.id, Metacluster) %>%
     dplyr::summarise(mfi = median(.data[[rlang::as_string(var)]]), .groups = "drop") %>%
     tidyr::pivot_wider(names_from = Metacluster, values_from = mfi) %>%
     dplyr::mutate(.id = basename(.id))
 
-  fitc_mfis <- fitc_mfis %>%
+  mfis <- mfis %>%
     dplyr::select(!.id) %>%
-    data.frame(row.names = fitc_mfis$.id, check.names = FALSE)
+    data.frame(row.names = mfis$.id, check.names = FALSE)
 
   if (!is.null(populations)) {
-    fitc_mfis <- fitc_mfis %>%
+    mfis <- mfis %>%
       dplyr::select(populations)
   }
 
-  return(fitc_mfis)
-}
-
-
-gs_getSampleMetaclusterMFIs <- function(gs, col, sample_df, subpopulations, inverse = FALSE) {
-  var <- rlang::ensym(col)
-
-  mfis <- flowWorkspace::gs_pop_get_stats(gs,
-                                          nodes = subpopulations,
-                                          type = pop.MFI,
-                                          inverse = inverse) %>%
-    dplyr::select(sample, pop, !!var) %>%
-    tidyr::pivot_wider(names_from = pop, values_from = !!var)
-
-  # Ensure columns are in order corresponding to design matrix
-  sample_idx <- match(sample_df[, 2], mfis$sample)
-  mfis <- mfis[sample_idx,]
   return(mfis)
 }
+
+
+#' makeBoolean
+#'
+#' Helper for addClustersToGatingSet
+#'
+#' @keywords internal
+#' @return A boolean vector where `TRUE` means a cell belongs to the population
+#' @export
+makeBoolean <- function(input, indices, keep_indices = FALSE) {
+  mat <- flowCore::exprs(input)
+
+  row_num <- nrow(mat)
+
+  if (keep_indices) {
+    boolean_vec <- rep(FALSE, row_num)
+    boolean_vec[indices] <- TRUE
+  } else {
+    boolean_vec <- rep(TRUE, row_num)
+    boolean_vec[indices] <- FALSE
+  }
+
+  return(boolean_vec)
+}
+
+
+#' getClusterIndicesBySample
+#'
+#' Helper for addClustersToGatingSet
+#'
+#' @keywords internal
+#' @return A list of tibbles, where each element corresponds to a sample and
+#' contains the indices of cells belonging to each cluster
+#' @export
+getClusterIndicesBySample <- function(table) { # .id and Metacluster column assumed
+  # Get list of tibbles, where each element is a sample
+  sample_tibs <- table %>%
+    dplyr::mutate(.id = factor(.id, levels = unique(.id))) %>%
+    dplyr::group_by(.id) %>% # check column name
+    dplyr::group_split() %>%
+    stats::setNames(unique(table$.id))
+
+  # For each sample, group by metacluster and get indices of their rows (relevant to subsetted table)
+  idx_tables <- lapply(sample_tibs, function(sample)
+  {
+    sample %>%
+      dplyr::group_by(Metacluster) %>%
+      dplyr::group_data()
+  })
+
+  return(idx_tables)
+}
+
+
+#' addClustersToGatingSet
+#'
+#' Uses cluster labels to add corresponding gates to the GatingSet
+#'
+#' @param table A data.table or tibble containing expression data for all samples.
+#' Must have a column named `.id` indicating sample ID, and a column
+#' `Metacluster` with cluster labels.
+#' @param gs The `GatingSet` to add gates to.
+#' @param parent_gate `character` indicating which population is the parent of
+#' the clusters.
+#' @param fsom_file Optional, a character giving a path to an .rds file for a FlowSOM
+#' object. Default is `NULL`, which checks for a filename in `attr(table, "fsom_filename")`
+#'
+#' This function should be used after a satisfactory clustering has been obtained
+#' using the human-in-the-loop approach outlined by the vignette. The resulting
+#' table should contain expression data for each sample, with each cell assigned
+#' a cluster label. These labels will then be used to construct a gate for each
+#' cluster.
+#'
+#' @export
+addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
+  # Get cluster row indices for each sample
+  # Returns a list of tables, one for each sample
+  idx_tables <- getClusterIndicesBySample(table)
+
+  # Subset cytoset to parent population
+  parent_cs <- flowWorkspace::gs_pop_get_data(gs, y = parent_gate)
+
+  # Get metacluster names
+  meta_names <- idx_tables[[1]] %>%
+    dplyr::pull(Metacluster) %>%
+    unique()
+
+  # Initialize list
+  meta_idx <- vector("list", length(meta_names))
+
+  # Get list of indices in metacluster for each sample
+  for (i in seq_along(meta_names)) {
+    # Get list of indices in metacluster for each sample
+    idx_list <- sapply(idx_tables, function(table)
+    {
+      table %>%
+        dplyr::filter(Metacluster == meta_names[i]) %>%
+        dplyr::pull(.rows)
+    })
+
+    # Get list of boolean vectors for current metacluster
+    bool_list <- lapply(seq_len(length(idx_list)), function(j)
+    {
+      makeBoolean(parent_cs[[names(idx_tables)[j]]], unlist(idx_list[[j]]), keep_indices = TRUE)
+    }) # note keep_indices=TRUE b/c indices give cells to keep, not remove
+
+    # Name list elements
+    names(bool_list) <- names(idx_tables)
+
+    # Assign result to list
+    meta_idx[[i]] <- bool_list
+  }
+  # Name new list with metacluster names
+  names(meta_idx) <- meta_names
+
+  ## Add gates to GatingSet
+  lapply(seq_along(meta_idx), function(i) {
+    tryCatch({flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)},
+             error = function(e) { # If gate already exists, remove it and redraw it
+               message(paste0("The gate ", names(meta_idx)[[i]], " already exists. It will be deleted and redrawn."))
+               flowWorkspace::gs_pop_remove(gs, node = names(meta_idx)[i])
+               flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)
+             }) # recompute?
+    })
+
+  ## Add keywords to GatingSet
+  # Get final metaclustering
+  metaclustering <- table %>%
+    dplyr::select(Cluster, Metacluster) %>%
+    dplyr::group_by(Cluster) %>%
+    unique() %>%
+    dplyr::arrange(Cluster) %>% # sort rows by ascending cluster number
+    dplyr::pull(Metacluster)
+
+  if (is.null(fsom_file)) { # if fsom_file is NULL, check if there is a filename in table attributes
+    fsom_file <- attr(table, "fsom_filename")
+  }
+  if (!is.null(fsom_file)) {
+    flowWorkspace::pData(gs)[, parent_gate] <- fsom_file
+
+    # Edit FlowSOM file
+    fsom <- readRDS(fsom_file)
+    fsom$metaclustering <- metaclustering
+    saveRDS(fsom, file = fsom_file)
+  }
+}
+
 
 
 #' flagMarkerNames
@@ -578,8 +717,8 @@ flagMarkerNames <- function(input) {
 
   # For each sample, subset channel/marker pairs to flagged only
   discp_list <- lapply(cm_list, function(cm) {res <- cm %>% dplyr::filter(desc %in% flagged)
-                                              if (nrow(res) == 0) {res <- NULL}
-                                              return(res)})
+  if (nrow(res) == 0) {res <- NULL}
+  return(res)})
 
   return(discp_list)
 }
@@ -624,295 +763,10 @@ flagChannelNames <- function(input) {
 
 
   discp_list <- lapply(cm_list, function(cm) {res <- cm %>% dplyr::filter(name %in% flagged)
-                                              if (nrow(res) == 0) {res <- NULL}
-                                              return(res)})
+  if (nrow(res) == 0) {res <- NULL}
+  return(res)})
 
   return(discp_list)
-}
-
-
-#' makeBoolean
-#'
-#' @keywords internal
-#' @return A boolean vector where `TRUE` means a cell belongs to the population
-#' @export
-makeBoolean <- function(input, indices, keep_indices = FALSE) {
-  # if gatinghierarchy
-  # if flowFrame
-  # if cytoframe
-
-  mat <- flowCore::exprs(input)
-
-  row_num <- nrow(mat)
-
-  if (keep_indices) {
-    boolean_vec <- rep(FALSE, row_num)
-    boolean_vec[indices] <- TRUE
-  } else {
-    boolean_vec <- rep(TRUE, row_num)
-    boolean_vec[indices] <- FALSE
-  }
-
-  return(boolean_vec)
-}
-
-#' getClusterIndicesBySample
-#'
-#' @keywords internal
-#' @return A list of tibbles, where each element corresponds to a sample and
-#' contains the indices of cells belonging to each cluster
-#' @export
-getClusterIndicesBySample <- function(table) { # .id and Metacluster column assumed
-  # Get list of tibbles, where each element is a sample
-  sample_tibs <- table %>%
-    dplyr::mutate(.id = factor(.id, levels = unique(.id))) %>%
-    dplyr::group_by(.id) %>% # check column name
-    dplyr::group_split() %>%
-    stats::setNames(unique(table$.id))
-    #stats::setNames(unique(ifelse(sapply(table$.id, is.character), basename(table$.id), table$.id)))
-
-  # For each sample, group by metacluster and get indices of their rows (relevant to subsetted table)
-  idx_tables <- lapply(sample_tibs, function(sample)
-  {
-    sample %>%
-      dplyr::group_by(Metacluster) %>%
-      dplyr::group_data()
-  })
-
-  return(idx_tables)
-}
-
-#' addClustersToGatingSet
-#'
-#' Uses cluster labels to add corresponding gates to the GatingSet
-#'
-#' @param table A data.table or tibble containing expression data for all samples.
-#' Must have a column named `.id` indicating sample ID, and a column
-#' `Metacluster` with cluster labels.
-#' @param gs The `GatingSet` to add gates to.
-#' @param parent_gate `character` indicating which population is the parent of
-#' the clusters.
-#' @param fsom_file Optional, a character giving a path to an .rds file for a FlowSOM
-#' object. Default is `NULL`, which checks for a filename in `attr(table, "fsom_filename")`
-#'
-#' This function should be used after a satisfactory clustering has been obtained
-#' using the human-in-the-loop approach outlined by the vignette. The resulting
-#' table should contain expression data for each sample, with each cell assigned
-#' a cluster label. These labels will then be used to construct a gate for each
-#' cluster.
-#'
-#' @export
-addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {
-  idx_tables <- getClusterIndicesBySample(table)
-
-  # check if gates already exist?
-
-  # Subset cytoset to parent population
-  parent_cs <- flowWorkspace::gs_pop_get_data(gs, y = parent_gate)
-
-  # Get metacluster names
-  meta_names <- idx_tables[[1]] %>%
-    dplyr::pull(Metacluster) %>%
-    unique()
-
-  # Initialize list
-  meta_idx <- vector("list", length(meta_names))
-
-  # Get list of indices in metacluster for each sample
-  for (i in seq_along(meta_names)) {
-    # Get list of indices in metacluster for each sample
-    idx_list <- sapply(idx_tables, function(table)
-    {
-      table %>%
-        dplyr::filter(Metacluster == meta_names[i]) %>%
-        dplyr::pull(.rows)
-    })
-
-    # Get list of boolean vectors for current metacluster
-    bool_list <- lapply(seq_len(length(idx_list)), function(j)
-    {
-      makeBoolean(parent_cs[[names(idx_tables)[j]]], unlist(idx_list[[j]]), keep_indices = TRUE) # can probably remove unlist()
-    }) # note keep_indices=TRUE b/c indices give cells to keep, not remove
-
-    # Name list elements
-    names(bool_list) <- names(idx_tables)
-
-    # Assign result to list
-    meta_idx[[i]] <- bool_list
-  }
-  # Name new list with metacluster names
-  names(meta_idx) <- meta_names
-
-  ## Add gates to GatingSet
-  # !!! do you need to check if the gate already exists?
-  lapply(seq_along(meta_idx), function(i) {
-    tryCatch({flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)},
-             error = function(e) {
-               flowWorkspace::gs_pop_remove(gs, node = names(meta_idx)[i])
-               flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)
-             }) # recompute?
-    #flowWorkspace::gs_pop_add(gs, meta_idx[[i]], name = names(meta_idx)[i], parent = parent_gate)
-    })
-
-  ## Add keywords to GatingSet
-  # Get final metaclustering
-  metaclustering <- table %>%
-    dplyr::select(Cluster, Metacluster) %>%
-    dplyr::group_by(Cluster) %>%
-    unique() %>%
-    dplyr::arrange(Cluster) %>% # sort rows by ascending cluster number
-    dplyr::pull(Metacluster)
-
-  # Get metadata on clustering from data.table attributes
-  clustering <- attr(table, "clustering")
-  # Edit "clustering" element
-  clustering[["clustering"]] <- metaclustering
-
-  if (is.null(fsom_file)) { # if fsom_file is NULL, check if there is a filename in table attributes
-    fsom_file <- attr(table, "fsom_filename")
-  }
-  if (!is.null(fsom_file)) {
-    flowWorkspace::pData(gs)[, parent_gate] <- fsom_file
-
-    # Edit FlowSOM file
-    fsom <- readRDS(fsom_file)
-    fsom$metaclustering <- metaclustering
-    saveRDS(fsom, file = fsom_file)
-  }
-
-  # Get first GatingHierarchy
-  #gh <- gs[[1]]
-
-  # Check if any clusterings have already been added to GatingHierarchy
-  # gh_clusterings <- tryCatch(
-  #   keyword(gh, "clusterings"),
-  #   error = function(e) {
-  #    list()
-  #   }
-  # )
-
-  # if (is.character(gh_clusterings)) {
-  #   gh_clusterings <- list(eval(str2lang(gh_clusterings)))
-  # }
-
-  # Add new clustering to list
-  #gh_clusterings[[parent_gate]] <- clustering
-
-  # Make keyword a list
-  #clustering <- list(clustering)
-
-  #flowWorkspace::gh_keyword_insert(gh, parent_gate, clustering)
-
-  # # Add edited list of clusterings to GatingSet
-  # if (length(gh_clusterings) == 1) { # if this is the first clustering
-  #   flowWorkspace::gh_keyword_insert(gh, "clusterings", gh_clusterings)
-  # } else { # if this is a secondary clustering
-  #   flowWorkspace::gh_keyword_set(gh, "clusterings", gh_clusterings)
-  # }
-}
-
-
-# instead of this, maybe add column for proposed correction to functions above?
-checkMarkerNames <- function(cm) {
-  # Get channel/marker pairs for each sample as a list
-  cm_list <- lapply(seq_len(length(input)), function(i) {cf <- input[[i]] %>% flowCore::parameters() %>%
-    Biobase::pData() %>%
-    dplyr::select(name, desc) %>%
-    dplyr::mutate(position = i)
-  rownames(cf) <- NULL
-  return(cf)})
-
-  # Bind data.frames in list by row
-  cm <- dplyr::bind_rows(cm_list)
-
-  # Check for typos in markers
-  # probably easiest to only check for markers that don't exist; i.e.
-  # CD14 may be a typo for CD16, but also is a real marker
-  num_samples <- length(input)
-
-  discp <- cm %>%
-    dplyr::group_by(desc) %>%
-    dplyr::summarise(count = dplyr::n()) %>%
-    dplyr::filter(count < num_samples)
-
-  likely_typo <- discp %>%
-    dplyr::filter(count <= 2) %>%
-    dplyr::pull(desc)
-  print(likely_typo)
-
-  likely_match <- discp %>%
-    dplyr::filter(count > 2) %>%
-    dplyr::pull(desc)
-
-  distances <- adist(likely_typo, likely_match)
-  colnames(distances) <- likely_match
-
-  # for each row, find similar marker names that are most likely to be a match
-  closest_match <- lapply(seq_len(nrow(distances)), function(i) {
-    row <- distances[i,]
-    min_dist <- min(row)
-    closest_match <- names(row[row==min_dist])
-    return(closest_match)})
-  names(closest_match) <- likely_typo
-
-  return(closest_match)
-}
-
-
-###
-# get vector of marker names
-# make boolean vector based on whether or not they were used for clustering
-  # know if they were used for clustering based on vector of clustered markers given
-#
-# markers <- markernames(cs)
-#
-# old_pdata <- pData(cs)
-# num_samples <- nrow(old_pdata)
-# # for marker in markers
-# # initialize vector rep(FALSE, nrow(old_pdata))
-# # if marker is in cols_to_cluster (and maybe add check for sample) then change value to TRUE
-# clustered <- lapply(markers, function(marker) {
-#   if (marker %in% cols_to_cluster) { # To check for samples, could loop over them instead of using rep()
-#     init <- rep(TRUE, num_samples) # need to check if cols_to_cluster is character vector
-#   } else {
-#     init <- rep(FALSE, num_samples)
-#   }
-#   df <- data.frame(init)
-#   colnames(df) <- marker
-#   return(df)
-#   })
-#
-# clustered <- dplyr::bind_cols(result)
-# result <- cbind(old_pdata, clustered)
-
-
-# input is GatingSet
-addMarkersToMetaData <- function(input, cols_to_cluster) {
-
-  markers <- markernames(input)
-
-  old_pdata <- pData(input)
-  num_samples <- nrow(old_pdata)
-
-  clustered <- lapply(markers, function(marker) {
-    if (marker %in% cols_to_cluster) { # To check for samples, could loop over them instead of using rep()
-      init <- rep(TRUE, num_samples) # need to check if cols_to_cluster is character vector
-    } else {
-      init <- rep(FALSE, num_samples)
-    }
-    df <- data.frame(init)
-    colnames(df) <- marker
-    return(df)
-  })
-
-  clustered <- dplyr::bind_cols(clustered)
-  result <- cbind(old_pdata, clustered)
-
-  # edit actual pData
-  # pData(input) <- result
-  return(result)
-
-  # no need to return anything in final
 }
 
 
@@ -945,4 +799,34 @@ addMetadataToGatingSet <- function(gs, sample_df) {
 
   # Set pData
   flowCore::pData(cs) <- cs_meta
+}
+
+
+# input is GatingSet
+addMarkersToMetaData <- function(input, cols_to_cluster) {
+
+  markers <- markernames(input)
+
+  old_pdata <- pData(input)
+  num_samples <- nrow(old_pdata)
+
+  clustered <- lapply(markers, function(marker) {
+    if (marker %in% cols_to_cluster) { # To check for samples, could loop over them instead of using rep()
+      init <- rep(TRUE, num_samples) # need to check if cols_to_cluster is character vector
+    } else {
+      init <- rep(FALSE, num_samples)
+    }
+    df <- data.frame(init)
+    colnames(df) <- marker
+    return(df)
+  })
+
+  clustered <- dplyr::bind_cols(clustered)
+  result <- cbind(old_pdata, clustered)
+
+  # edit actual pData
+  # pData(input) <- result
+  return(result)
+
+  # no need to return anything in final
 }

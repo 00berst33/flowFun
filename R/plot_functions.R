@@ -12,6 +12,12 @@ getMetaclusterMFIs <- function(input, cols_to_use = NULL) {
 
   if (is.null(cols_to_use)) {
     cols_to_use <- attr(input, "clustered")
+  } else if (!any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   medians <- input %>%
@@ -28,6 +34,7 @@ getMetaclusterMFIs <- function(input, cols_to_use = NULL) {
   return(medians)
 }
 
+
 #' getClusterMFIs
 #'
 #' @param input A data frame or table, with column \code{"Cluster"}.
@@ -42,6 +49,12 @@ getClusterMFIs <- function(input, cols_to_use = NULL) {
 
   if (is.null(cols_to_use)) {
     cols_to_use <- attr(input, "clustered")
+  } else if (!any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   medians <- input %>%
@@ -57,6 +70,7 @@ getClusterMFIs <- function(input, cols_to_use = NULL) {
 
   return(medians)
 }
+
 
 #' plotMetaclusterMFIs
 #'
@@ -94,7 +108,14 @@ plotMetaclusterMFIs <- function(input, cols_to_use = NULL, ...) {
 plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
   if (is.null(cols_to_use)) {
     cols_to_use <- input$map$colsUsed
+  } else if (!any(cols_to_use %in% colnames(input$data))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input$data))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
+
 
   # Get metacluster MFIs for each marker/channel of interest
   mfi_mat <- FlowSOM::GetMetaclusterMFIs(fsom = input, colsUsed = FALSE, prettyColnames = FALSE)
@@ -130,19 +151,19 @@ plotMetaclusterMFIs.FlowSOM = function(input, cols_to_use = NULL, ...) {
 plotMetaclusterMFIs.data.frame <- function(input, cols_to_use = NULL, ...) {
   Metacluster <- NULL
 
-  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
     if (!is.null(attr(input, "clustered"))) {
       cols_to_use <- attr(input, "clustered")
     } else {
       stop("Default not found, please specify `cols_to_use`")
     }
-  }
-  # If input is only channel name
-  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(cols_to_use, marker_cols)
-    # Set channelpair to pretty column names
-    cols_to_use <- colnames(input)[match_idx]
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -259,19 +280,19 @@ plotClusterMFIs.data.frame <- function(input, cols_to_use = NULL,
                                        metaclusters = NULL, ...) {
   Metacluster <- Cluster <- NULL
 
-  if (methods::is(input, "data.table") & is.null(cols_to_use)) {
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
     if (!is.null(attr(input, "clustered"))) {
       cols_to_use <- attr(input, "clustered")
     } else {
       stop("Default not found, please specify `cols_to_use`")
     }
-  }
-  # If input is only channel name
-  if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(cols_to_use, marker_cols)
-    # Set channelpair to pretty column names
-    cols_to_use <- colnames(input)[match_idx]
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get cluster MFIs for each marker/channel of interest
@@ -386,9 +407,19 @@ annotateMFIHeatmap.FlowSOM <- function(merged_input, original_input, cols_to_use
 annotateMFIHeatmap.data.frame <- function(merged_input, original_input = NULL, cols_to_use = NULL, ...) {
   Meta_original <- NULL
 
-  # Get columns to use if necessary
-  if (methods::is(merged_input, "data.table") & is.null(cols_to_use)) {
-    cols_to_use <- attributes(merged_input)$clustered
+  # Get or edit `cols_to_use` as needed
+  if (is.null(cols_to_use)) { # check if default columns can be found
+    if (!is.null(attr(merged_input, "clustered"))) {
+      cols_to_use <- attr(merged_input, "clustered")
+    } else {
+      stop("Default not found, please specify `cols_to_use`")
+    }
+  } else if (is.character(cols_to_use) & !any(cols_to_use %in% colnames(merged_input))) { # if any given columns aren't exact matches, try to pair with input column names
+    new_names <- getFullNames(cols_to_use, colnames(merged_input))
+    if (length(new_names) < length(cols_to_use)) {
+      stop("Couldn't find all columns given in `cols_to_use`. Double check this parameter and try again.")
+    }
+    cols_to_use <- new_names
   }
 
   # Get metacluster MFIs for each marker/channel of interest
@@ -535,10 +566,10 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 
   # If channelpair not found in table column names
   if (!any(channelpair %in% colnames(input))) {
-    marker_cols <- sub(".*<(.*)>.*", "\\1", colnames(input))
-    match_idx <- match(channelpair, marker_cols)
-    # Set channelpair to pretty column names
-    channelpair <- colnames(input)[match_idx]
+    parent_strs <- colnames(input)
+
+    channelpair <- getFullNames(channelpair, parent_strs)
+    print(channelpair)
   }
 
   # Get all label coordinates
@@ -622,83 +653,6 @@ plotLabeled2DScatter.data.frame <- function(input, channelpair, clusters = NULL,
 }
 
 
-#' @keywords internal
-#' @export
-plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL, # needs edit for one case
-                                         metaclusters = NULL,
-                                         label_type = c("cluster", "metacluster")) {
-
-  if (is.null(clusters) && is.null(metaclusters)) {
-    stop("clusters and/or metaclusters must be a vector of indices.")
-
-  } else if (is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    all_clust <- which(input$metaclustering %in% metaclusters)
-
-  } else if (!is.null(clusters) && is.null(metaclusters)) {
-    # color by cluster
-    all_clust <- clusters
-
-  } else if (!is.null(clusters) && !is.null(metaclusters)) {
-    # color by metacluster, plot colored labels with cluster numbers
-    meta_nodes <- which(input$metaclustering %in% metaclusters)
-    all_clust <- unique(c(meta_nodes, clusters))
-
-  }
-
-  # edit !!!
-  # values in `metaclusters` and levels(input$metaclustering) can conflict
-  if (is.character(metaclusters)) {
-    metaclusters <- which(levels(input$metaclustering) %in% metaclusters)
-  } else if (is.numeric(metaclusters)) {
-    metaclusters <- list(metaclusters)
-  }
-
-  # Get all label coordinates
-  if (length(all_clust) == 1) {
-    mfis <- matrix(FlowSOM::GetClusterMFIs(input)[all_clust, channelpair],
-                  nrow = 1,
-                  dimnames = list(all_clust, channelpair))
-  } else {
-    mfis <- FlowSOM::GetClusterMFIs(input)[all_clust, channelpair]
-  }
-
-  df <- as.data.frame(mfis)
-
-  # Get label names
-  switch(label_type,
-         cluster = {labs <- rownames(df)},
-         metacluster = {labs <- input$metaclustering[all_clust]},
-         stop("label_type must be either 'cluster' or 'metacluster'")
-  )
-
-  print(df)
-
-  # Generate unlabeled ggplot2 plot list
-  p <- FlowSOM::Plot2DScatters(fsom = input,
-                              channelpairs = list(channelpair),
-                              clusters = clusters,
-                              metaclusters = metaclusters,
-                              plotFile = NULL,
-                              density = FALSE,
-                              centers = FALSE)
-
-  if (!is.null(metaclusters)) { # generates single plot  # color is normally 'black' but want to color label based on metacluster
-    p <- p[[length(p)]] + ggplot2::geom_label(data = df,
-                                              ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                              color = labs, size = 2.5, fontface = "bold")
-  } else { # generates list of plots
-    for (i in 1:length(p)) {
-      p[[i]] <- p[[i]] + ggplot2::geom_label(data = df,
-                                             ggplot2::aes(x = df[,1], y = df[,2], label = labs),
-                                             color = "black", size = 2.5, fontface = "bold")
-    }
-  }
-
-  return(p)
-}
-
-
 #' plotUMAP
 #'
 #' Plots UMAP colored by metacluster.
@@ -716,19 +670,6 @@ plotLabeled2DScatter.FlowSOM <- function(input, channelpair, clusters = NULL, # 
 #' A UMAP plot drawn with ggplot2.
 #'
 #' @export
-#'
-#' @examples
-#' file <- system.file("extdata", "sample_aggregate.fcs", package = "flowFun")
-#' fsom <- FlowSOM::FlowSOM(file,
-#'                          colsToUse = c(10, 12:14, 16, 18:23, 25:32, 34),
-#'                          nClus = 10,
-#'                          seed = 42,
-#'                          xdim = 6,
-#'                          ydim = 6)
-#'
-#' plotUMAP(fsom)
-#'
-#' plotUMAP(fsom)
 plotUMAP <- function(input, num_cells = 5000, labels = NULL, colors = NULL, seed = NULL) {
   result <- UseMethod("plotUMAP")
   return(result)
@@ -900,6 +841,9 @@ plotSampleProportions <- function(count_mat) {
 #' @param gs A `GatingSet`
 #' @param channel The channel to plot densities for
 #' @param population A `character` indicating which subpopulation to use
+#' @param facet_by A `character` indicating whether plots should be faceted by
+#' samples or subpopulations (these subpopulations are typically cell types
+#' identified during metacluster merging)
 #' @param inverse A boolean, whether or not the data should be inverse transformed
 #' before plotting. `FALSE` by default
 #' @param verbose Boolean specifying whether or not to print progress updates as

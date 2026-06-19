@@ -1,8 +1,8 @@
 ---
-title: "flowFun"
+title: "Main workflow"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{flowFun}
+  %\VignetteIndexEntry{Workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -849,9 +849,18 @@ The resulting plot shows each cluster defined so far, and any parent-child relat
 
 # Differential Analysis
 
+### Setup
+
 The final analysis step in this workflow is differential analysis. Differential marker expression is implemented using limma, and differential count analysis using edgeR, both R packages found on Bioconductor. 
 
-Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). Below is an example of what an appropriate .csv file might look like.
+Some preparation is necessary before any tests can be performed. First, it is necessary to specify information about each sample, including any FMO or isotype controls, and which groups of interest it belongs to (e.g. control vs. treatment). This information may be provided as a .csv file or `data.frame` to the function `prepareSampleInfo()`, which will prepare the table for further use by the workflow and ensure that its values are R-friendly (no special characters like @ or #, no empty values, etc.). 
+
+Further explanation may be found in the "Setting up differential analysis" article, but in short it is most important that the table has at least these two columns, with the same names:
+
+- `sample.name`, which specifies the name of each sample
+- `filename`, which specifies the filename of each sample. These names should appear as they do when calling `sampleNames()` on your `GatingSet` or `flowSet`.
+
+Below is an example of what an appropriate .csv file might look like.
 
 ```{r sample-info, echo=FALSE} 
 # Get filepath
@@ -901,20 +910,28 @@ sample_info %>%
 
 Next, the design, contrasts, and count matrices are created. The current population of interest (in this case, `fsom_dt`) should be given to `makeCountMatrix()`. Furthermore, the parameter `meta_names` should be used to specify the metaclusters to use for analysis. By default, all metaclusters are included, but if the final merging included an undefined metacluster, or some are of no interest, it is useful to specify this parameter.
 
-```{r matrices}
+```{r design}
 # Generate design matrix
 design <- makeDesignMatrix(sample_info)
 
+# Print result
+data.frame(design)
+```
+
+```{r contrasts}
 # Generate contrasts matrix
 contrasts <- makeContrastsMatrix(sample_info, comparisons)
+# Print
+contrasts
 
+```
+
+```{r count-matrix}
 # Generate matrix of sample/metacluster cell counts
 counts <- makeCountMatrix(fsom_dt, 
                           min_cells = 3, 
                           min_samples = 4)
 ```
-
-The table of counts is printed below:
 
 ```{r print-counts, echo=FALSE}
 colnames(counts) <- sample_info$filename
@@ -957,11 +974,9 @@ Given any matrix of counts, `plotSampleProportions()` visualizes cell type propo
 plotSampleProportions(clust_counts)
 ```
 
-#### Differential Abundance
+### Differential Abundance
 
 Once these matrices have been acquired, to perform differential abundance analysis, the user only needs to pass them to `doDAAnalysis()`, and specify a normalization method, if any. Results are returned as a list, where each entry is a table corresponding to a comparison. The tables are named after the comparison they correspond to, and contain results of likelihood ratio tests performed by edgeR, with each test being ranked by its adjusted p-value. 
-
-Results are also saved as a .csv file for each comparison in the directory `Analysis Results/edgeR`. If running an edgeR analysis on multiple objects, or running the script multiple times for any reason, the user may wish to create sub-directories within `Analysis Results/edgeR` to stay organized. To do this, simply set the \code{dir_tables} parameter to a preferred sub-directory name.
 
 ```{r da-analysis}
 # Perform differential abundance analysis
@@ -992,47 +1007,41 @@ da_results[[2]] %>%
     )
 ```
 
-#### Differential Expression
+### Differential Expression
 
-To test for differential expression, the design and contrast matrices must again be specified, in addition to the markers to be tested. Recall that in most cases, these markers should not be the same as those used for clustering.
+To test for differential expression, the design and contrast matrices must again be specified, in addition to the channels/markers to be tested. Recall that in most cases, these markers should NOT be the same as those used for clustering.
 
-Before testing, median fluorescent intensities (MFIs) must be found for the markers of interest. If expression data is in a `data.table` format, the function `getExprMatDE()` may be used to do so. If using a `GatingSet` object, the function `gs_makeMFIMatrix()` should be used instead. 
+Once the required information is prepared, performing a basic differential expression analysis requires little input from the user, as all necessary operations are wrapped up within the function `doDEAnalysis()`. This function accepts either a `data.table` or `GatingSet`.
 
-By default, the data is kept on the scale it was transformed to during preprocessing. If the user prefers output to match the scale of the raw data, inverse transformations should be applied before calculating any aggregate statistics and/or performing tests. 
-
-```{r gatingset-exp-mat, include=FALSE, eval=FALSE}
-# Define channels of interest
-marker_cols <- c("FITC-A", "BV711-A")
-
-# Get MFIs and prepare for limma
-mfis <- gs_makeMFIMatrix(gs1, 
-                         cols = marker_cols, 
-                         subpopulations = subpops, 
-                         inverse = FALSE) # may set to TRUE to get MFIs on scale of raw data
-
-# Ensure columns are in order corresponding to design matrix
-mfis <- mfis %>% 
-  dplyr::select(feature, dplyr::all_of(samples))
-```
-
+When calling the function, users have the option to give a count matrix, which will be used to assign weights to each cluster-marker pair before testing. We show two examples of this function below, called on our `GatingSet` complete with all the nodes we defined during clustering. 
 
 ```{r de-analysis, include=TRUE, eval=TRUE}
 # Define channels of interest
-marker_cols <- c("FITC-A", "BV711-A")
+cols_to_test <- c("FITC-A", "BV711-A")
+
+# Set subpopulations of interest to variable 
+subpops <- gs_pop_get_children(gs1, 
+                               "live", # this retrieves all clusters that are  
+                                       # children of the "live" node
+                               path = "auto") # this argument concatenates population names
+# Remove `Undefined` from populations of interest
+subpops <- subpops[!subpops %in% c("Undefined")]
 
 # Perform differential expression analysis
-de_res <- doDEAnalysis(fsom_dt, 
-                       cols_to_test = marker_cols, 
+de_res <- doDEAnalysis(gs1, 
+                       cols_to_test = cols_to_test, 
                        design = design, 
-                       contrasts = contrasts)
-
-# View results
-limma::topTable(de_res)
+                       contrasts = contrasts, # subset contrasts matrix to column of interest
+                       counts = counts, # optional parameter, used to calculate weights when given
+                       subpopulations = subpops,
+                       inverse = TRUE,
+                       print_table = TRUE) # TRUE by default
 ```
 
-```{r de-analysis-tables, echo=FALSE, eval=FALSE,include=FALSE}
-de_results[[1]] %>%
-# de_results$tests[[1]] %>%
+The output is a list, whose length corresponds to the number of comparisons defined by `contrasts`. Each element is a formatted table with features, average expression, and p-values (if desired, the raw output from `limma::eBayes()` may be returned instead of tables by setting `print_table=FALSE`). These tables are printed neatly below.
+
+```{r de-analysis-tables, echo=FALSE}
+de_res[[1]] %>%
   knitr::kable(
     format = "html",
     align = "c",
@@ -1040,8 +1049,7 @@ de_results[[1]] %>%
     linesep = "",
     )
 
-de_results[[2]] %>%
-# de_results$tests[[2]] %>%
+de_res[[2]] %>%
   knitr::kable(
     format = "html",
     align = "c",
@@ -1050,16 +1058,30 @@ de_results[[2]] %>%
     )
 ```
 
-Difference in marker expression between group may also be visualized with the function `plotGroupMFIBars()`. To use it, a matrix of MFIs for the marker of interest should be generated; if data is a `FlowSOM` object or `data.table` do so with `getSampleMetaclusterMFIs()`, if data is a `GatingSet` do so with `gs_getSampleMetaclusterMFIs()`. 
+`doDEAnalysis()` creates a table of cluster-sample MFIs internally, but some users may wish to have this table for use outside of differential analysis. Two functions are available for this purpose. If expression data is in a `data.table` format, the function `getExprMatDE()` may be used. If using a `GatingSet` object, the function `gs_makeMFIMatrix()` should be used instead. The result is a table with rows corresponding to each cluster-marker pair, and columns for each sample. 
 
-Note that if input is a `GatingSet` with transformations attached, the data may be back-transformed to the linear scale before the calculation of MFIs or statistical tests.
+Below we show an example of the output from `gs_makeMFIMatrix()`. Note that `inverse = TRUE` is only applicable for `GatingSets` with associated transformations; `getExprMatDE()` is faster but unable to back-transform data.
+
+```{r de-table-ex}
+# Print table
+gs_makeMFIMatrix(gs1,
+                 cols = cols_to_test,
+                 subpopulations = subpops,
+                 inverse = TRUE) %>%
+  head()
+```
+
+
+Difference in marker expression between groups may be visualized with the function `plotGroupMFIBars()`. As above, if input is a `GatingSet` with transformations attached, the data may be back-transformed to the linear scale before the calculation of MFIs or statistical tests.
 
 ```{r plot-mfis, fig.align='center', fig.height=5, fig.width=7}
 # Generate bar plot
-plotGroupMFIBars(fsom_dt,
-                 col = "BV711-A",
+plotGroupMFIBars(gs1,
+                 col = "FITC-A",
                  sample_df = sample_info, 
-                 comparison = comparisons[[1]])
+                 comparison = comparisons[[1]],
+                 populations = subpops,
+                 inverse = TRUE)
 ```
 
 Finally, grouped dimension reduction plots may be generated, colored either by density or marker expression, then compared against their parent plot if one exists.

@@ -42,5 +42,5 @@ likelihood ratio tests using functions from edgeR.
 \code{\link[edgeR:calcNormFactors]{calcNormFactors()}},
 \code{\link[edgeR:DGEList]{DGEList()}}, \code{\link[edgeR:estimateDisp]{estimateDisp()}},
 \code{\link[edgeR:glmFit]{glmFit()}}, \code{\link[edgeR:glmLRT]{glmLRT()}},
-\code{\link[edgeR:topTags]{topTags()}}.
+\code{\link[edgeR:topTags-class]{topTags()}}.
 }

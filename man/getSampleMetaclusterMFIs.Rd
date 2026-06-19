@@ -7,20 +7,21 @@
 getSampleMetaclusterMFIs(
   input,
   col,
-  sample_df,
   populations = NULL,
+  transformation = NULL,
   inverse = FALSE
 )
 }
 \arguments{
-\item{input}{description}
+\item{input}{A \code{data.table} or \code{GatingSet}}
 
 \item{col}{The channel to find sample-metacluster MFIs for.}
 
-\item{sample_df}{If \code{input} is a FlowSOM object, a data frame from
-\code{\link[=prepareSampleInfo]{prepareSampleInfo()}}.}
-
 \item{populations}{A \code{character} list of the names of metaclusters/populations to calculate MFIs for.}
+
+\item{transformation}{A \code{\link[flowCore:transformList]{transformList}} specifying
+the transformation applied to the data, if any. Required when \code{input} is a \code{data.table}
+and \code{inverse = TRUE}}
 
 \item{inverse}{Boolean, whether data should be back-transformed before calculating MFIs.
 Only valid when \code{input} is a \code{GatingSet} containing a transformation.}

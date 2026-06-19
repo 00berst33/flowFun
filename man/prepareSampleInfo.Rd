@@ -5,7 +5,7 @@
 \title{prepareSampleInfo}
 \usage{
 prepareSampleInfo(
-  filepath,
+  input,
   name_col,
   filename_col,
   comparisons,
@@ -13,7 +13,7 @@ prepareSampleInfo(
 )
 }
 \arguments{
-\item{filepath}{A filepath to a .csv file containing sample info.}
+\item{input}{Either a filepath to a .csv file, or a data.frame, containing sample info.}
 
 \item{name_col}{The name of the column containing the experiment's sample names.}
 

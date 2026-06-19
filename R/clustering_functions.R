@@ -42,23 +42,12 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
   # Run clustering algorithm
   fsom <- do.call(FlowSOM::FlowSOM, c(list(input = input), all_options))
 
-  # Get metacluster and cluster labels
-  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
-
-  # Append labels as columns to the data.table
-  # input <- input %>%
-  #   tidytable::mutate(Cluster = clust_labels,
-  #                     Metacluster = meta_labels,
-  #                     .keep = "all")
+  # Convert to table
+  # Note: this adds "clustered" attribute to the table, indicating which columns were used for clustering
   table <- flowSOMToTable(fsom)
 
   # Set FlowSOM RDS filename as table attribute
   attr(table, "fsom_filename") <- fsom_file
-
-  # Add attribute specifying the columns used for clustering
-  #attr(input, "clustered") <- cols_to_cluster
-  # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
 
   # Save FlowSOM object as .rds file if desired.
   if (!is.null(fsom_file)) {
@@ -66,56 +55,49 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
     saveRDS(fsom, fsom_file)
   }
 
-  # Get metacluster and cluster labels
-  # meta_labels <- FlowSOM::GetMetaclusters(fsom)
-  # clust_labels <- factor(FlowSOM::GetClusters(fsom))
-  #
-  # # Append labels as columns to the data.table
-  # table <- table %>%
-  #   tidytable::mutate(Cluster = clust_labels,
-  #                     Metacluster = meta_labels,
-  #                     .keep = "all")
-  #
-  # # Add attribute specifying the columns used for clustering
-  # attr(table, "clustered") <- cols_to_cluster
-  # # if sample name is in input, add keyword indicating which columns were clustered on to GatingSet
-
   return(table)
 }
 
-prepareControls <- function(gs, ref_sample = 1) {
-  # gs_pop_get_gate(), gh_apply_to_cs()
-  gh <- gs[[ref_sample]]
-
-}
 
 #' overwriteMetaclusterNames
 #'
-#' @param fsom_dt Table with all cells of interest
+#' @param fsom_parent Table with all cells of interest
 #' @param fsom_sub Subset of table used for reclustering
 #'
-#' Both tables should have a `cell_id` and `Metacluster` column.
+#' The rows in `fsom_parent` and `fsom_sub` are matched to each other based on
+#' the `cell_id` column. Note that the numbers in the `cell_id` column of `fsom_sub`
+#' correspond to row indices of the root clustering. i.e. if `cell_id` is equal to
+#' 27 in `fsom_sub`, then that cell/row corresponds to row 27 in the clustering containing
+#' all subsets of cells (which unless you are doing multiple reclusterings, will
+#' most often be `fsom_parent`).
+#'
+#' Thus if `fsom_parent` does not have the column `cell_id`, a temporary one is made
+#' using its row indices.
 #'
 #' @return A table with updated metacluster names from the reclustering.
 #' @export
-overwriteMetaclusterNames <- function(fsom_dt, fsom_sub) {
+overwriteMetaclusterNames <- function(fsom_parent, fsom_sub) {
   # Select cell ID and metacluster column from subset
   fsom_sub <- fsom_sub %>%
     dplyr::select(cell_id, Metacluster)
 
-  # Add levels to fsom_dt
-  levels(fsom_dt$Metacluster) <- c(levels(fsom_dt$Metacluster), levels(fsom_sub$Metacluster))
+  # Add levels to fsom_parent
+  levels(fsom_parent$Metacluster) <- c(levels(fsom_parent$Metacluster), levels(fsom_sub$Metacluster))
 
-  # Add temporary column to fsom_dt
-  temp_dt <- fsom_dt %>%
-    dplyr::mutate(cell_id = seq(1, nrow(fsom_dt)))
+  # Add temporary column to fsom_parent if necessary
+  if (!("cell_id" %in% fsom_parent)) {
+    temp_fsom <- fsom_parent %>%
+      dplyr::mutate(cell_id = seq(1, nrow(fsom_parent)))
+  } else {
+    temp_fsom <- fsom_parent
+  }
 
   # Update rows in original table
-  new_fsom <- dplyr::rows_update(temp_dt, fsom_sub, by = "cell_id") %>%
+  new_fsom <- dplyr::rows_update(temp_fsom, fsom_sub, by = "cell_id") %>%
     dplyr::select(-cell_id)
 
   # Ensure attributes are preserved
-  attributes(new_fsom) <- attributes(fsom_dt)
+  attr(new_fsom, "clustered") <- attr(fsom_parent, "clustered")
 
   return(new_fsom)
 }
@@ -230,6 +212,7 @@ filterData <- function(input, clusters = NULL, metaclusters = NULL) {
 filterData.data.frame <- function(input, clusters = NULL, metaclusters = NULL) {
   Metacluster <- Cluster <- NULL
 
+  # Metacluster and Cluster columns should be factors
   if (is.null(clusters)) {
     clusters <- levels(input$Cluster)
   }
@@ -237,8 +220,14 @@ filterData.data.frame <- function(input, clusters = NULL, metaclusters = NULL) {
     metaclusters <- levels(input$Metacluster)
   }
 
+  # Adds cell_id column (corresponding to parent table row indices) before filtering, if necessary
+  if (!("cell_id" %in% colnames(input))) {
+    input <- input %>%
+      tidytable::mutate(cell_id = seq(1, nrow(input)))
+  }
+
+  # Select rows of interest
   filtered <- input %>%
-    tidytable::mutate(cell_id = seq(1, nrow(input))) %>%
     tidytable::filter(Metacluster %in% metaclusters & Cluster %in% clusters)
 
   return(filtered)
@@ -350,13 +339,13 @@ createFilteredAggregate.data.frame <- function(input, num_cells, clusters = NULL
   cells_of_interest <- filterData(input,
                                   clusters = clusters,
                                   metaclusters = metaclusters) %>%
-    tidytable::select(-c("Metacluster", "Cluster", "Meta_original"))
+    dplyr::select(-which(names(.) %in% c("Metacluster", "Cluster", "Meta_original")))
 
   # Get all sample file names
   files <- input %>%
     tidytable::pull(.id) %>%
     unique()
-  print(files)
+
   # Get number of cells to sample per file
   per_sample <- ceiling(num_cells/length(files))
 
@@ -601,7 +590,7 @@ revertPCAFlowSOM.flowFrame <- function(input, fsom, pca_obj, num_components) {
 revertPCAFlowSOM.data.frame <- function(input, fsom, pca_obj, num_components) {
   node <- .id <- cell_id <- NULL
   fsom$data <- input %>%
-    tidytable::select(-c(.id, cell_id))
+    dplyr::select(-which(names(.) %in% c(".id", "cell_id", "Metacluster", "Cluster", "Meta_original")))
 
   # metaclusterMFIs
   fsom$map$metaclusterMFIs <- input %>%
@@ -644,20 +633,9 @@ revertPCAFlowSOM.data.frame <- function(input, fsom, pca_obj, num_components) {
   fsom$map$pctgs <- pctgs
 
   # prettyColnames
-  fcs_cols <- attr(input, "cols_from_fcs")
-  new_pretty_colnames <- colnames(input)
-  for (i in seq_along(fcs_cols)) {
-    col <- fcs_cols[i]
-    marker <- attr(input[[col]], "marker")
-    if(!is.na(marker)) {
-      new_pretty_colnames <- c(new_pretty_colnames, paste0(col, " <", marker, ">"))
-    }
-  }
-  names(new_pretty_colnames) <- colnames(input)
-  fsom$prettyColnames <- new_pretty_colnames
+  fsom$prettyColnames <- colnames(input)
 
   # colsUsed
-  # fsom$map$colsUsed <- FlowSOM::GetChannels(fsom, marker_df$marker)
   fsom$map$colsUsed <- attr(input, "clustered")
 
   #codes
@@ -781,7 +759,7 @@ clusterSubsetWithPCA.data.frame <- function(input, pca_obj, num_components,
 
   # Get labels
   metaclusters <- FlowSOM::GetMetaclusters(fsom_subset)
-  clusters <- FlowSOM::GetClusters(fsom_subset)
+  clusters <- factor(FlowSOM::GetClusters(fsom_subset))
 
   # Add clustering to input
   fsom_table <- input %>%
