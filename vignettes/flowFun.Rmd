@@ -56,8 +56,8 @@ For example, if a user has a dataset which has already been pre-processed, they 
 
 The diagram below summarizes the workflow of a typical analysis, and the functions relevant to each step. Blue boxes contain functions native to `flowFun`, and red boxes contain necessary functions native to other packages. Green boxes contain optional functions for importing or exporting data in-between steps.
 
-```{r print-diagram, echo=FALSE, out.width='100%', fig.align='center'}
-knitr::include_graphics("images/getting_started/flowfun_diagram_no_legend.png")
+```{r print-diagram, echo=FALSE, out.height='75%', fig.align='center'}
+knitr::include_graphics("images/getting_started/flowfun_diagram_ver2.png")
 ```
 
 ## Data import
