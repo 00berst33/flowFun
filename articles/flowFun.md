@@ -69,7 +69,7 @@ functions relevant to each step. Blue boxes contain functions native to
 packages. Green boxes contain optional functions for importing or
 exporting data in-between steps.
 
-![](images/getting_started/flowfun_diagram_no_legend.png)
+![](images/getting_started/flowfun_diagram_ver2.png)
 
 ## Data import
 
