@@ -1,0 +1,75 @@
+---
+title: "Installation and troubleshooting"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{troubleshooting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This article goes over installation of R and RStudio, and how to resolve common issues that may occur when attempting to install `flowFun`.
+
+## Software versions
+
+First and foremost, ensure that you have a version of R greater than 4.3.0. Some of the packages that `flowFun` is dependent on do not have releases available for earlier versions of R. Note that depending on the release, related software like RStudio and Rtools may need to be updated at the same time.
+
+### Where to download software
+
+If you need to download R and RStudio for the first time, where and how to do so is summarized below.
+
+#### Download R:
+R may be downloaded [here](https://cran.r-project.org/mirrors.html). Pick a CRAN mirror close to your location (or the 0-Cloud one), then follow the instructions for your OS (Linux, macOS, or Windows).
+
+#### Download RStudio:
+RStudio is the IDE that you use to interact with R. Go  [here](https://docs.posit.co/ide/user/?_gl=1*ol26ai*_ga*MTI3OTM2NjEzLjE3ODQyNTI4MDc.*_ga_G020NYQMP9*czE3ODQyNTI4MDQkbzEkZzAkdDE3ODQyNTI4MDckajYwJGwwJGgw#rstudio-ide-oss-downloads) and again grab the file based on your OS. If you have Windows, the EXE file is recommended over the ZIP for simplicity.
+
+#### If you are on Windows, download RTools:
+Rtools is an add-on that allows you to install packages only available on GitHub or use C. This is not necessary for macOS users, as the system is already equipped to do this. Go [here](https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html) and install the "Rtools45 installer" (it's highlighted in blue under the "Installing Rtools" header).
+
+## Bad Git credentials
+
+When trying to install from GitHub, you may encounter an error like this:
+
+`Error: HTTP error 401.`
+  `Bad credentials`
+
+This is due to either an expired or lack of a personal access token (PAT). 
+
+A new PAT can be generated most easily with the help of the `usethis` package. Install the package `usethis` if you do not have it already, then run the following line:
+
+```{r usethis-token, eval=FALSE}
+usethis::create_github_token()
+```
+
+A new window within GitHub will be opened in your browser, and the information required to create a PAT will already be filled out. This saves you the trouble of navigating menus and selecting scopes yourself.
+
+(To reach this menu yourself, navigate to your Github home page. Click your profile in the upper right, then click "Settings". A new menu will open; scroll down until you see "Developer settings" on the left side bar, then click it. Select "Personal access tokens", then "Tokens (classic)" in the drop-down menu that appears.)
+
+Write a short note describing the PAT's purpose, and change its expiration if you like. The default is 30 days. Then scroll down and click "Generate token". 
+
+Make sure to save your PAT. Then, navigate to RStudio. To store your new PAT, install the package `gitcreds` if you do not already have it. If you had an old PAT that expired, remove it with `gitcreds_delete()`. 
+
+Finally, call `gitcreds_set()` to set your new PAT; you will be prompted to paste it in full. Once you've done so, you should see the new PAT when running `Sys.getenv("GITHUB_PAT")`.
+
+```{r setting-credentials, eval=FALSE}
+install.packages("gitcreds")
+library(gitcreds) 
+
+# Check for current PAT
+Sys.getenv("GITHUB_PAT")
+
+# If you had an old PAT that expired
+gitcreds_delete()
+
+# Set new PAT that you just generated
+gitcreds_set()
+```
+
+Any errors regarding bad Git credentials should now be resolved. If they persist, double check that R and RStudio (and Rtools, if you have a Windows PC) are up to date before troubleshooting further. 
