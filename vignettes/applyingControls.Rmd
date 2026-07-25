@@ -1,8 +1,8 @@
 ---
-title: "Applying controls to samples"
+title: "Applying control FCS files"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{applyingControls}
+  %\VignetteIndexEntry{Applying control FCS files}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 library(flowFun)
 ```
 
-If you have control samples, they may be used to calculate delta MFIs, which can then be used to plotting and differential expression testing. Doing so requires a few more steps than the basic ones outlined in the main workflow article. 
+If you have control samples, they may be used to calculate delta MFIs, which can then be used for plotting and differential expression testing. Doing so requires a few more steps than the basic ones outlined in the main workflow article. 
 
 Before doing the steps we outline below, users should have a `GatingSet` corresponding to the primary data which the controls will be applied to. This `GatingSet` should be complete with gates created during pre-processing and clustering via the methods outlined in the main workflow article. Recall that `GatingSets` contain information including transformations, compensations, and gating schemes; this feature will be used to quickly process the data of the control files. 
 
