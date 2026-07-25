@@ -2,7 +2,7 @@
 title: "Main workflow"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Workflow}
+  %\VignetteIndexEntry{Main workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -125,9 +125,7 @@ gs1 <- flowWorkspace::gs_clone(gs)
 file <- system.file("extdata", "sample_info.csv", package = "flowFunData")
 samples_df <- read.csv(file)
 
-
 # pick columns to keep 
-
 
 # Add metadata to GatingSet
 pd <- flowWorkspace::pData(gs1)
@@ -208,7 +206,7 @@ ld_stain <- "BUV496-A"
 num_samples <- length(gs1)
 
 # Generate default template
-gt_table <- generateGatingTable(gs1, collapse_data = FALSE, ld_stain)
+gt_table <- generateGatingTable(gs1, collapse_data = TRUE, ld_stain)
 gt_table
 ```
 
@@ -228,7 +226,7 @@ gt_table <- data.table(alias = c("nonMargins", "nonDebris", "singlets", "live"),
                        parent = c("root", "nonMargins", "nonDebris", "singlets"),
                        dims = c("FSC-A,SSC-A", "FSC-A", "FSC-A,FSC-H", ld_stain),
                        gating_method = c("boundary", "gate_mindensity", "singletGate", "gate_mindensity"),
-                       gating_args = c("min=c(0,0),max=c(262143,262143)", "gate_range=c(15000,80000)", NA, "gate_range=c(1,2)"),
+                       gating_args = c("min=c(0,0),max=c(262143,262143)", "gate_range=c(15000,80000)", "gate_range=c(0,80000)", "gate_range=c(1,2)"),
                        collapseDataForGating = c(TRUE, TRUE, TRUE, TRUE),
                        groupBy = rep(num_samples, 4),
                        preprocessing_method = c(NA, NA, NA, NA),
@@ -437,7 +435,7 @@ cols_to_cluster <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV
 # Perform clustering
 fsom_dt <- flowSOMWrapper(fs,
                           cols_to_cluster = cols_to_cluster,
-                          num_clus = 25,
+                          num_clus = 35,
                           xdim = 12,
                           ydim = 12,
                           seed = 42)

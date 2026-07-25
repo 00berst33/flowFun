@@ -2,7 +2,7 @@
 title: "Making and editing plots"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{visualizationVignette}
+  %\VignetteIndexEntry{Making and editing plots}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

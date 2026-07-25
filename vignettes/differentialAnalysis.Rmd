@@ -2,7 +2,7 @@
 title: "Setting up differential analysis"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{differentialAnalysis}
+  %\VignetteIndexEntry{Setting up differential analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -90,6 +90,7 @@ Note that these names may be anything you like, but special characters like `#` 
 Then for each comparison, we have another named list. This is where we instruct which groups should be included in that test. In this case, these lists are `list(age.group = list("<65", "65+"))`, and `list(treatment = "Treatment", sex = list("female", "male"))`. Here we must be more careful about list names. The names must also be column names in your table of sample info, which in this case are `age.group`, `treatment`, and `sex`. This tells R which columns to check to find the info it needs to make that particular comparison. 
 
 Finally, for each column/variable relevant to that comparison, we specify which group(s) are of interest. For comparison 1, by setting `age.group = list("<65", "65+")` we indicate that we'd like to test for differences between old and young groups (referencing the table above, this would be sample 1, 5, and 6 vs. 2, 3, and 4). 
+
 :::{.border style="padding: 10px; border: 1px solid #dee2e6 !important;"}
 ```{r c1, echo=FALSE}
 df <- data.frame(sample.name = c("Sample 1", "Sample 2", "Sample 3", "Sample 4", "Sample 5", "Sample 6"),
