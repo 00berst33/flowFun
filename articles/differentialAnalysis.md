@@ -119,8 +119,7 @@ Finally, for each column/variable relevant to that comparison, we
 specify which group(s) are of interest. For comparison 1, by setting
 `age.group = list("<65", "65+")` we indicate that we’d like to test for
 differences between old and young groups (referencing the table above,
-this would be sample 1, 5, and 6 vs. 2, 3, and 4). :::{.border
-style=“padding: 10px; border: 1px solid \#dee2e6 !important;”}
+this would be sample 1, 5, and 6 vs. 2, 3, and 4).
 
 | sample.name | filename     | age.group |
 |:------------|:-------------|:----------|
@@ -130,8 +129,6 @@ style=“padding: 10px; border: 1px solid \#dee2e6 !important;”}
 | Sample 4    | sample_4.fcs | 65+       |
 | Sample 5    | sample_5.fcs | \<65      |
 | Sample 6    | sample_6.fcs | \<65      |
-
-:::
 
 For comparison 2, by setting `treatment = "Treatment"`, we indicate that
 we only want to test within the treatment group, and by setting

@@ -38,6 +38,7 @@
     <li><a class="dropdown-item" href="../articles/differentialAnalysis.html">Setting up differential analysis</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Miscellaneous</h6></li>
+    <li><a class="dropdown-item" href="../articles/troubleshooting.html">Installation and troubleshooting</a></li>
     <li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
     <li><a class="dropdown-item" href="../articles/applyingControls.html">Applying control FCS files</a></li>
   </ul>
@@ -294,7 +295,7 @@ sample.</p>
 <span><span class="va">num_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">gs1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Generate default template</span></span>
-<span><span class="va">gt_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generateGatingTable.html">generateGatingTable</a></span><span class="op">(</span><span class="va">gs1</span>, collapse_data <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">ld_stain</span><span class="op">)</span></span>
+<span><span class="va">gt_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/generateGatingTable.html">generateGatingTable</a></span><span class="op">(</span><span class="va">gs1</span>, collapse_data <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">ld_stain</span><span class="op">)</span></span>
 <span><span class="va">gt_table</span></span>
 <span><span class="co">#&gt;         alias    pop     parent        dims   gating_method</span></span>
 <span><span class="co">#&gt;        &lt;char&gt; &lt;char&gt;     &lt;char&gt;      &lt;char&gt;          &lt;char&gt;</span></span>
@@ -304,10 +305,10 @@ sample.</p>
 <span><span class="co">#&gt; 4:       live      -   singlets    BUV496-A gate_mindensity</span></span>
 <span><span class="co">#&gt;                        gating_args collapseDataForGating groupBy</span></span>
 <span><span class="co">#&gt;                             &lt;char&gt;                &lt;lgcl&gt;   &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1: min=c(0,0),max=c(262143,262143)                 FALSE      NA</span></span>
-<span><span class="co">#&gt; 2:                            &lt;NA&gt;                 FALSE      NA</span></span>
-<span><span class="co">#&gt; 3:                            &lt;NA&gt;                 FALSE      NA</span></span>
-<span><span class="co">#&gt; 4:                            &lt;NA&gt;                 FALSE      NA</span></span>
+<span><span class="co">#&gt; 1: min=c(0,0),max=c(262143,262143)                  TRUE       6</span></span>
+<span><span class="co">#&gt; 2:                            &lt;NA&gt;                  TRUE       6</span></span>
+<span><span class="co">#&gt; 3:                            &lt;NA&gt;                  TRUE       6</span></span>
+<span><span class="co">#&gt; 4:                            &lt;NA&gt;                  TRUE       6</span></span>
 <span><span class="co">#&gt;    preprocessing_method preprocessing_args</span></span>
 <span><span class="co">#&gt;                  &lt;lgcl&gt;             &lt;lgcl&gt;</span></span>
 <span><span class="co">#&gt; 1:                   NA                 NA</span></span>
@@ -564,7 +565,7 @@ then be passed to <code><a href="../reference/flowSOMWrapper.html">flowSOMWrappe
 <span><span class="co"># Perform clustering</span></span>
 <span><span class="va">fsom_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/flowSOMWrapper.html">flowSOMWrapper</a></span><span class="op">(</span><span class="va">fs</span>,</span>
 <span>                          cols_to_cluster <span class="op">=</span> <span class="va">cols_to_cluster</span>,</span>
-<span>                          num_clus <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>                          num_clus <span class="op">=</span> <span class="fl">35</span>,</span>
 <span>                          xdim <span class="op">=</span> <span class="fl">12</span>,</span>
 <span>                          ydim <span class="op">=</span> <span class="fl">12</span>,</span>
 <span>                          seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></code></pre></div>
@@ -580,7 +581,7 @@ Cluster
 <tbody>
 <tr>
 <td style="text-align:center;">
-8
+12
 </td>
 <td style="text-align:center;">
 66
@@ -588,7 +589,7 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-25
+34
 </td>
 <td style="text-align:center;">
 138
@@ -596,7 +597,7 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-3
+5
 </td>
 <td style="text-align:center;">
 23
@@ -604,7 +605,7 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-6
+8
 </td>
 <td style="text-align:center;">
 35
@@ -612,7 +613,7 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-10
+18
 </td>
 <td style="text-align:center;">
 85
@@ -711,10 +712,10 @@ Cluster
 <tbody>
 <tr>
 <td style="text-align:center;">
-8
+12
 </td>
 <td style="text-align:center;">
-8
+12
 </td>
 <td style="text-align:center;">
 66
@@ -722,10 +723,10 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-25
+34
 </td>
 <td style="text-align:center;">
-25
+34
 </td>
 <td style="text-align:center;">
 138
@@ -733,7 +734,7 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-3
+5
 </td>
 <td style="text-align:center;">
 3
@@ -744,10 +745,10 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-6
+8
 </td>
 <td style="text-align:center;">
-3
+8
 </td>
 <td style="text-align:center;">
 35
@@ -755,10 +756,10 @@ Cluster
 </tr>
 <tr>
 <td style="text-align:center;">
-10
+18
 </td>
 <td style="text-align:center;">
-10
+18
 </td>
 <td style="text-align:center;">
 85
@@ -923,18 +924,18 @@ frequencies of CD4 T cells and CD8 T cells in each sample.</p>
 <span><span class="co">#&gt; 12: sample_6.fcs /nonMargins/nonDebris/singlets/live/CD4 T cells</span></span>
 <span><span class="co">#&gt;                                  Parent Frequency ParentFrequency</span></span>
 <span><span class="co">#&gt;                                  &lt;char&gt;     &lt;num&gt;           &lt;num&gt;</span></span>
-<span><span class="co">#&gt;  1: /nonMargins/nonDebris/singlets/live    0.0106          0.3138</span></span>
-<span><span class="co">#&gt;  2: /nonMargins/nonDebris/singlets/live    0.0690          0.3138</span></span>
-<span><span class="co">#&gt;  3: /nonMargins/nonDebris/singlets/live    0.0124          0.4768</span></span>
-<span><span class="co">#&gt;  4: /nonMargins/nonDebris/singlets/live    0.0646          0.4768</span></span>
-<span><span class="co">#&gt;  5: /nonMargins/nonDebris/singlets/live    0.1206          0.7378</span></span>
-<span><span class="co">#&gt;  6: /nonMargins/nonDebris/singlets/live    0.1354          0.7378</span></span>
-<span><span class="co">#&gt;  7: /nonMargins/nonDebris/singlets/live    0.2000          0.5032</span></span>
-<span><span class="co">#&gt;  8: /nonMargins/nonDebris/singlets/live    0.1028          0.5032</span></span>
-<span><span class="co">#&gt;  9: /nonMargins/nonDebris/singlets/live    0.1612          0.5550</span></span>
-<span><span class="co">#&gt; 10: /nonMargins/nonDebris/singlets/live    0.1356          0.5550</span></span>
-<span><span class="co">#&gt; 11: /nonMargins/nonDebris/singlets/live    0.1962          0.5216</span></span>
-<span><span class="co">#&gt; 12: /nonMargins/nonDebris/singlets/live    0.1358          0.5216</span></span></code></pre></div>
+<span><span class="co">#&gt;  1: /nonMargins/nonDebris/singlets/live    0.0138          0.3138</span></span>
+<span><span class="co">#&gt;  2: /nonMargins/nonDebris/singlets/live    0.0386          0.3138</span></span>
+<span><span class="co">#&gt;  3: /nonMargins/nonDebris/singlets/live    0.0106          0.4768</span></span>
+<span><span class="co">#&gt;  4: /nonMargins/nonDebris/singlets/live    0.0422          0.4768</span></span>
+<span><span class="co">#&gt;  5: /nonMargins/nonDebris/singlets/live    0.1074          0.7378</span></span>
+<span><span class="co">#&gt;  6: /nonMargins/nonDebris/singlets/live    0.0730          0.7378</span></span>
+<span><span class="co">#&gt;  7: /nonMargins/nonDebris/singlets/live    0.2244          0.5032</span></span>
+<span><span class="co">#&gt;  8: /nonMargins/nonDebris/singlets/live    0.0670          0.5032</span></span>
+<span><span class="co">#&gt;  9: /nonMargins/nonDebris/singlets/live    0.1610          0.5550</span></span>
+<span><span class="co">#&gt; 10: /nonMargins/nonDebris/singlets/live    0.1154          0.5550</span></span>
+<span><span class="co">#&gt; 11: /nonMargins/nonDebris/singlets/live    0.2104          0.5216</span></span>
+<span><span class="co">#&gt; 12: /nonMargins/nonDebris/singlets/live    0.0672          0.5216</span></span></code></pre></div>
 <p>It is also simple to extract a subset of data using one of these
 gates, and use it to write new FCS files. For example:</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
@@ -1506,22 +1507,22 @@ sample_6.fcs
 CD8 T cells
 </td>
 <td style="text-align:center;">
+69
+</td>
+<td style="text-align:center;">
 53
 </td>
 <td style="text-align:center;">
-62
+537
 </td>
 <td style="text-align:center;">
-603
+1122
 </td>
 <td style="text-align:center;">
-1000
+805
 </td>
 <td style="text-align:center;">
-806
-</td>
-<td style="text-align:center;">
-981
+1052
 </td>
 </tr>
 <tr>
@@ -1529,22 +1530,22 @@ CD8 T cells
 B cells
 </td>
 <td style="text-align:center;">
-176
+36
 </td>
 <td style="text-align:center;">
-246
+26
 </td>
 <td style="text-align:center;">
-80
+430
 </td>
 <td style="text-align:center;">
-54
+49
 </td>
 <td style="text-align:center;">
-140
+73
 </td>
 <td style="text-align:center;">
-167
+61
 </td>
 </tr>
 <tr>
@@ -1552,22 +1553,22 @@ B cells
 NK T cells
 </td>
 <td style="text-align:center;">
-26
+127
 </td>
 <td style="text-align:center;">
-82
+35
 </td>
 <td style="text-align:center;">
-185
+74
 </td>
 <td style="text-align:center;">
-14
+40
 </td>
 <td style="text-align:center;">
-51
+23
 </td>
 <td style="text-align:center;">
-19
+20
 </td>
 </tr>
 <tr>
@@ -1575,22 +1576,22 @@ NK T cells
 Monocytes
 </td>
 <td style="text-align:center;">
-450
+368
 </td>
 <td style="text-align:center;">
-961
+812
 </td>
 <td style="text-align:center;">
-376
+912
 </td>
 <td style="text-align:center;">
-498
+291
 </td>
 <td style="text-align:center;">
-278
+786
 </td>
 <td style="text-align:center;">
-427
+377
 </td>
 </tr>
 <tr>
@@ -1598,22 +1599,22 @@ Monocytes
 pDC
 </td>
 <td style="text-align:center;">
-56
+123
+</td>
+<td style="text-align:center;">
+43
+</td>
+<td style="text-align:center;">
+304
+</td>
+<td style="text-align:center;">
+6
 </td>
 <td style="text-align:center;">
 18
 </td>
 <td style="text-align:center;">
-23
-</td>
-<td style="text-align:center;">
-28
-</td>
-<td style="text-align:center;">
-20
-</td>
-<td style="text-align:center;">
-15
+14
 </td>
 </tr>
 <tr>
@@ -1621,27 +1622,234 @@ pDC
 NK cells
 </td>
 <td style="text-align:center;">
-261
+57
 </td>
 <td style="text-align:center;">
-615
+92
 </td>
 <td style="text-align:center;">
-1117
+197
 </td>
 <td style="text-align:center;">
-234
+60
 </td>
 <td style="text-align:center;">
-675
+59
 </td>
 <td style="text-align:center;">
-246
+25
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 cDC
+</td>
+<td style="text-align:center;">
+63
+</td>
+<td style="text-align:center;">
+8
+</td>
+<td style="text-align:center;">
+8
+</td>
+<td style="text-align:center;">
+1
+</td>
+<td style="text-align:center;">
+3
+</td>
+<td style="text-align:center;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+26
+</td>
+<td style="text-align:center;">
+9
+</td>
+<td style="text-align:center;">
+4
+</td>
+<td style="text-align:center;">
+13
+</td>
+<td style="text-align:center;">
+1
+</td>
+<td style="text-align:center;">
+7
+</td>
+<td style="text-align:center;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+27
+</td>
+<td style="text-align:center;">
+166
+</td>
+<td style="text-align:center;">
+234
+</td>
+<td style="text-align:center;">
+124
+</td>
+<td style="text-align:center;">
+41
+</td>
+<td style="text-align:center;">
+74
+</td>
+<td style="text-align:center;">
+117
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+28
+</td>
+<td style="text-align:center;">
+21
+</td>
+<td style="text-align:center;">
+50
+</td>
+<td style="text-align:center;">
+35
+</td>
+<td style="text-align:center;">
+22
+</td>
+<td style="text-align:center;">
+45
+</td>
+<td style="text-align:center;">
+57
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+29
+</td>
+<td style="text-align:center;">
+105
+</td>
+<td style="text-align:center;">
+364
+</td>
+<td style="text-align:center;">
+109
+</td>
+<td style="text-align:center;">
+254
+</td>
+<td style="text-align:center;">
+76
+</td>
+<td style="text-align:center;">
+129
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+CD4 T cells
+</td>
+<td style="text-align:center;">
+193
+</td>
+<td style="text-align:center;">
+211
+</td>
+<td style="text-align:center;">
+365
+</td>
+<td style="text-align:center;">
+335
+</td>
+<td style="text-align:center;">
+577
+</td>
+<td style="text-align:center;">
+336
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+30
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+19
+</td>
+<td style="text-align:center;">
+8
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+25
+</td>
+<td style="text-align:center;">
+33
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+31
+</td>
+<td style="text-align:center;">
+51
+</td>
+<td style="text-align:center;">
+221
+</td>
+<td style="text-align:center;">
+53
+</td>
+<td style="text-align:center;">
+124
+</td>
+<td style="text-align:center;">
+47
+</td>
+<td style="text-align:center;">
+71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+32
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+13
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+14
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+10
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+33
 </td>
 <td style="text-align:center;">
 24
@@ -1664,25 +1872,48 @@ cDC
 </tr>
 <tr>
 <td style="text-align:left;">
-CD4 T cells
+34
 </td>
 <td style="text-align:center;">
-345
+8
 </td>
 <td style="text-align:center;">
-323
+31
 </td>
 <td style="text-align:center;">
-677
+10
 </td>
 <td style="text-align:center;">
-514
+16
 </td>
 <td style="text-align:center;">
-678
+8
 </td>
 <td style="text-align:center;">
-679
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+35
+</td>
+<td style="text-align:center;">
+10
+</td>
+<td style="text-align:center;">
+42
+</td>
+<td style="text-align:center;">
+12
+</td>
+<td style="text-align:center;">
+36
+</td>
+<td style="text-align:center;">
+15
+</td>
+<td style="text-align:center;">
+28
 </td>
 </tr>
 <tr>
@@ -1690,22 +1921,22 @@ CD4 T cells
 Undefined
 </td>
 <td style="text-align:center;">
-165
+115
 </td>
 <td style="text-align:center;">
-48
+106
 </td>
 <td style="text-align:center;">
-208
+372
 </td>
 <td style="text-align:center;">
-96
+58
 </td>
 <td style="text-align:center;">
-43
+100
 </td>
 <td style="text-align:center;">
-33
+222
 </td>
 </tr>
 <tr>
@@ -1713,22 +1944,22 @@ Undefined
 gdT cells
 </td>
 <td style="text-align:center;">
-13
+4
 </td>
 <td style="text-align:center;">
-10
+1
 </td>
 <td style="text-align:center;">
-396
+92
 </td>
 <td style="text-align:center;">
-49
+7
 </td>
 <td style="text-align:center;">
-64
+4
 </td>
 <td style="text-align:center;">
-14
+7
 </td>
 </tr>
 </tbody>
@@ -1746,120 +1977,180 @@ count matrix in the necessary format.</p>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  2338</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         2138</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    1569</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                             176</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         345</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                          53</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            9</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           20</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            3</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           21</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           450</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           26</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            261</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           165</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  24</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            13</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  56</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                    9</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                  166</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   21</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                  105</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                   51</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   24</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                    8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              36</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         193</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                          69</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            7</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           43</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            4</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           15</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           368</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                          127</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                             57</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           115</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  63</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                             4</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                 123</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span>
 <span><span class="co">#&gt;                                                                sample_2.fcs</span></span>
 <span><span class="co">#&gt; /nonMargins                                                            4971</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  3411</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         3164</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    2384</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                             246</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         323</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                          62</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           18</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           26</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            3</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                    4</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                  234</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   50</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                  364</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                   19</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                  221</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   13</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   19</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                   31</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   42</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              26</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         211</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                          53</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           29</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            1</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           15</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           961</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           82</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            615</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                            48</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  19</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            10</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  18</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           812</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           35</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                             92</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           106</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                   8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                             1</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  43</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span>
 <span><span class="co">#&gt;                                                                sample_3.fcs</span></span>
 <span><span class="co">#&gt; /nonMargins                                                            4943</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  4438</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         4230</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    3689</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              80</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         677</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                         603</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           62</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          388</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           16</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          137</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           376</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                          185</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                           1117</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           208</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  24</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                           396</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  23</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                   13</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                  124</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   35</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                  109</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                    8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                   53</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   24</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   12</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                             430</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         365</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                         537</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           98</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          244</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           40</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          155</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           912</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           74</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            197</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           372</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                   8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            92</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                 304</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span>
 <span><span class="co">#&gt;                                                                sample_4.fcs</span></span>
 <span><span class="co">#&gt; /nonMargins                                                            4961</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  3077</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         2770</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    2516</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              54</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         514</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                        1000</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           43</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          870</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            6</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           81</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           498</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           14</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            234</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                            96</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  29</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            49</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  28</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                    1</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                   41</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   22</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                  254</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                  124</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   14</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   29</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                   16</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   36</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              49</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         335</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                        1122</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+          124</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          390</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+          239</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          369</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           291</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           40</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                             60</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                            58</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                   1</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                             7</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                   6</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span>
 <span><span class="co">#&gt;                                                                sample_5.fcs</span></span>
 <span><span class="co">#&gt; /nonMargins                                                            4896</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  3791</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         3513</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    2775</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                             140</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         678</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                         806</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           51</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          554</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           13</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          188</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           278</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           51</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            675</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                            43</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  20</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            64</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  20</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                    7</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                   74</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   45</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                   76</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                   25</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                   47</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   20</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                    8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   15</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              73</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         577</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                         805</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           29</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          389</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           88</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          299</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           786</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           23</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                             59</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           100</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                   3</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                             4</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  18</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span>
 <span><span class="co">#&gt;                                                                sample_6.fcs</span></span>
 <span><span class="co">#&gt; /nonMargins                                                            4922</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris                                                  3648</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets                                         3464</span></span>
 <span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live                                    2608</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                             167</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         679</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                         981</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           60</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          879</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            7</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           35</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           427</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           19</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                            246</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                            33</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                  27</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                            14</span></span>
-<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  15</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/26                                    8</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/27                                  117</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/28                                   57</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/29                                  129</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/30                                   33</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/31                                   71</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/32                                   10</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/33                                   27</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/34                                   13</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/35                                   28</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/B cells                              61</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD4 T cells                         336</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells                        1052</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           63</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          291</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+          169</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          529</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Monocytes                           377</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK T cells                           20</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/NK cells                             25</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/Undefined                           222</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/cDC                                   1</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/gdT cells                             7</span></span>
+<span><span class="co">#&gt; /nonMargins/nonDebris/singlets/live/pDC                                  14</span></span>
 <span><span class="co">#&gt; root                                                                   5000</span></span></code></pre></div>
 <p>By default, counts for all populations in the gating scheme are
 found. However, for differential analysis, only the populations to be
@@ -1885,27 +2176,47 @@ subsetted to the appropriate populations.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">clust_counts</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"^.*/"</span>, <span class="st">""</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">clust_counts</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">clust_counts</span></span>
 <span><span class="co">#&gt;             sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs</span></span>
-<span><span class="co">#&gt; B cells              176          246           80           54          140</span></span>
-<span><span class="co">#&gt; CD4 T cells          345          323          677          514          678</span></span>
-<span><span class="co">#&gt; CD8 T cells           53           62          603         1000          806</span></span>
-<span><span class="co">#&gt; Monocytes            450          961          376          498          278</span></span>
-<span><span class="co">#&gt; NK T cells            26           82          185           14           51</span></span>
-<span><span class="co">#&gt; NK cells             261          615         1117          234          675</span></span>
-<span><span class="co">#&gt; Undefined            165           48          208           96           43</span></span>
-<span><span class="co">#&gt; cDC                   24           19           24           29           20</span></span>
-<span><span class="co">#&gt; gdT cells             13           10          396           49           64</span></span>
-<span><span class="co">#&gt; pDC                   56           18           23           28           20</span></span>
+<span><span class="co">#&gt; 26                     9            4           13            1            7</span></span>
+<span><span class="co">#&gt; 27                   166          234          124           41           74</span></span>
+<span><span class="co">#&gt; 28                    21           50           35           22           45</span></span>
+<span><span class="co">#&gt; 29                   105          364          109          254           76</span></span>
+<span><span class="co">#&gt; 30                    10           19            8           10           25</span></span>
+<span><span class="co">#&gt; 31                    51          221           53          124           47</span></span>
+<span><span class="co">#&gt; 32                    10           13           10           14           10</span></span>
+<span><span class="co">#&gt; 33                    24           19           24           29           20</span></span>
+<span><span class="co">#&gt; 34                     8           31           10           16            8</span></span>
+<span><span class="co">#&gt; 35                    10           42           12           36           15</span></span>
+<span><span class="co">#&gt; B cells               36           26          430           49           73</span></span>
+<span><span class="co">#&gt; CD4 T cells          193          211          365          335          577</span></span>
+<span><span class="co">#&gt; CD8 T cells           69           53          537         1122          805</span></span>
+<span><span class="co">#&gt; Monocytes            368          812          912          291          786</span></span>
+<span><span class="co">#&gt; NK T cells           127           35           74           40           23</span></span>
+<span><span class="co">#&gt; NK cells              57           92          197           60           59</span></span>
+<span><span class="co">#&gt; Undefined            115          106          372           58          100</span></span>
+<span><span class="co">#&gt; cDC                   63            8            8            1            3</span></span>
+<span><span class="co">#&gt; gdT cells              4            1           92            7            4</span></span>
+<span><span class="co">#&gt; pDC                  123           43          304            6           18</span></span>
 <span><span class="co">#&gt;             sample_6.fcs</span></span>
-<span><span class="co">#&gt; B cells              167</span></span>
-<span><span class="co">#&gt; CD4 T cells          679</span></span>
-<span><span class="co">#&gt; CD8 T cells          981</span></span>
-<span><span class="co">#&gt; Monocytes            427</span></span>
-<span><span class="co">#&gt; NK T cells            19</span></span>
-<span><span class="co">#&gt; NK cells             246</span></span>
-<span><span class="co">#&gt; Undefined             33</span></span>
-<span><span class="co">#&gt; cDC                   27</span></span>
-<span><span class="co">#&gt; gdT cells             14</span></span>
-<span><span class="co">#&gt; pDC                   15</span></span></code></pre></div>
+<span><span class="co">#&gt; 26                     8</span></span>
+<span><span class="co">#&gt; 27                   117</span></span>
+<span><span class="co">#&gt; 28                    57</span></span>
+<span><span class="co">#&gt; 29                   129</span></span>
+<span><span class="co">#&gt; 30                    33</span></span>
+<span><span class="co">#&gt; 31                    71</span></span>
+<span><span class="co">#&gt; 32                    10</span></span>
+<span><span class="co">#&gt; 33                    27</span></span>
+<span><span class="co">#&gt; 34                    13</span></span>
+<span><span class="co">#&gt; 35                    28</span></span>
+<span><span class="co">#&gt; B cells               61</span></span>
+<span><span class="co">#&gt; CD4 T cells          336</span></span>
+<span><span class="co">#&gt; CD8 T cells         1052</span></span>
+<span><span class="co">#&gt; Monocytes            377</span></span>
+<span><span class="co">#&gt; NK T cells            20</span></span>
+<span><span class="co">#&gt; NK cells              25</span></span>
+<span><span class="co">#&gt; Undefined            222</span></span>
+<span><span class="co">#&gt; cDC                    1</span></span>
+<span><span class="co">#&gt; gdT cells              7</span></span>
+<span><span class="co">#&gt; pDC                   14</span></span></code></pre></div>
 <p>Given any matrix of counts, <code><a href="../reference/plotSampleProportions.html">plotSampleProportions()</a></code>
 visualizes cell type proportions across samples.</p>
 <div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
@@ -1961,22 +2272,42 @@ FDR
 <tbody>
 <tr>
 <td style="text-align:left;">
+cDC
+</td>
+<td style="text-align:center;">
+-3.7651269
+</td>
+<td style="text-align:center;">
+12.67172
+</td>
+<td style="text-align:center;">
+19.6367982
+</td>
+<td style="text-align:center;">
+0.0000094
+</td>
+<td style="text-align:center;">
+0.0001873
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 CD8 T cells
 </td>
 <td style="text-align:center;">
-3.6623055
+3.9582888
 </td>
 <td style="text-align:center;">
-17.89559
+18.03725
 </td>
 <td style="text-align:center;">
-19.2176370
+17.0039740
 </td>
 <td style="text-align:center;">
-0.0000117
+0.0000373
 </td>
 <td style="text-align:center;">
-0.0001166
+0.0003730
 </td>
 </tr>
 <tr>
@@ -1984,19 +2315,19 @@ CD8 T cells
 gdT cells
 </td>
 <td style="text-align:center;">
-2.2784561
+2.3350335
 </td>
 <td style="text-align:center;">
-14.61224
+12.60229
 </td>
 <td style="text-align:center;">
-7.9828538
+5.2020767
 </td>
 <td style="text-align:center;">
-0.0047222
+0.0225599
 </td>
 <td style="text-align:center;">
-0.0236112
+0.1503995
 </td>
 </tr>
 <tr>
@@ -2004,79 +2335,39 @@ gdT cells
 B cells
 </td>
 <td style="text-align:center;">
--1.4097480
+1.7467617
 </td>
 <td style="text-align:center;">
-15.95320
+15.12860
 </td>
 <td style="text-align:center;">
-4.5262772
+4.1817193
 </td>
 <td style="text-align:center;">
-0.0333782
+0.0408622
 </td>
 <td style="text-align:center;">
-0.1112605
+0.2043111
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-pDC
+27
 </td>
 <td style="text-align:center;">
--1.1579266
+-1.3174968
 </td>
 <td style="text-align:center;">
-13.57279
+15.59524
 </td>
 <td style="text-align:center;">
-2.7638714
+3.0938467
 </td>
 <td style="text-align:center;">
-0.0964147
+0.0785888
 </td>
 <td style="text-align:center;">
-0.2183833
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Monocytes
-</td>
-<td style="text-align:center;">
--1.0572831
-</td>
-<td style="text-align:center;">
-17.74244
-</td>
-<td style="text-align:center;">
-2.5658820
-</td>
-<td style="text-align:center;">
-0.1091916
-</td>
-<td style="text-align:center;">
-0.2183833
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Undefined
-</td>
-<td style="text-align:center;">
--0.9770537
-</td>
-<td style="text-align:center;">
-15.23179
-</td>
-<td style="text-align:center;">
-2.1096918
-</td>
-<td style="text-align:center;">
-0.1463688
-</td>
-<td style="text-align:center;">
-0.2439480
+0.2691608
 </td>
 </tr>
 <tr>
@@ -2084,19 +2375,39 @@ Undefined
 NK T cells
 </td>
 <td style="text-align:center;">
--0.5652026
+-1.3282430
 </td>
 <td style="text-align:center;">
-14.36619
+14.42161
 </td>
 <td style="text-align:center;">
-0.6771558
+3.0497770
 </td>
 <td style="text-align:center;">
-0.4105679
+0.0807482
 </td>
 <td style="text-align:center;">
-0.5157025
+0.2691608
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pDC
+</td>
+<td style="text-align:center;">
+-1.1274898
+</td>
+<td style="text-align:center;">
+14.71813
+</td>
+<td style="text-align:center;">
+2.1883188
+</td>
+<td style="text-align:center;">
+0.1390610
+</td>
+<td style="text-align:center;">
+0.3973172
 </td>
 </tr>
 <tr>
@@ -2104,19 +2415,139 @@ NK T cells
 CD4 T cells
 </td>
 <td style="text-align:center;">
-0.5717352
+1.0344152
 </td>
 <td style="text-align:center;">
-17.72041
+17.11514
 </td>
 <td style="text-align:center;">
-0.6714055
+1.6368888
 </td>
 <td style="text-align:center;">
-0.4125620
+0.2007529
 </td>
 <td style="text-align:center;">
-0.5157025
+0.5018822
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+31
+</td>
+<td style="text-align:center;">
+-0.7152660
+</td>
+<td style="text-align:center;">
+15.30686
+</td>
+<td style="text-align:center;">
+0.8858492
+</td>
+<td style="text-align:center;">
+0.3466046
+</td>
+<td style="text-align:center;">
+0.7702325
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+29
+</td>
+<td style="text-align:center;">
+-0.5955501
+</td>
+<td style="text-align:center;">
+16.17769
+</td>
+<td style="text-align:center;">
+0.6171876
+</td>
+<td style="text-align:center;">
+0.4320943
+</td>
+<td style="text-align:center;">
+0.8054287
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+34
+</td>
+<td style="text-align:center;">
+-0.6230041
+</td>
+<td style="text-align:center;">
+12.69379
+</td>
+<td style="text-align:center;">
+0.5885361
+</td>
+<td style="text-align:center;">
+0.4429858
+</td>
+<td style="text-align:center;">
+0.8054287
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Undefined
+</td>
+<td style="text-align:center;">
+0.4693132
+</td>
+<td style="text-align:center;">
+15.81039
+</td>
+<td style="text-align:center;">
+0.3528109
+</td>
+<td style="text-align:center;">
+0.5525262
+</td>
+<td style="text-align:center;">
+0.9208770
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+33
+</td>
+<td style="text-align:center;">
+0.2405540
+</td>
+<td style="text-align:center;">
+13.37792
+</td>
+<td style="text-align:center;">
+0.0870335
+</td>
+<td style="text-align:center;">
+0.7679829
+</td>
+<td style="text-align:center;">
+0.9984792
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+30
+</td>
+<td style="text-align:center;">
+0.2046768
+</td>
+<td style="text-align:center;">
+12.96451
+</td>
+<td style="text-align:center;">
+0.0583372
+</td>
+<td style="text-align:center;">
+0.8091436
+</td>
+<td style="text-align:center;">
+0.9984792
 </td>
 </tr>
 <tr>
@@ -2124,39 +2555,119 @@ CD4 T cells
 NK cells
 </td>
 <td style="text-align:center;">
--0.2700034
+-0.1171831
 </td>
 <td style="text-align:center;">
-17.49211
+14.88648
 </td>
 <td style="text-align:center;">
-0.1603990
+0.0227515
 </td>
 <td style="text-align:center;">
-0.6887894
+0.8801051
 </td>
 <td style="text-align:center;">
-0.7653216
+0.9984792
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-cDC
+26
 </td>
 <td style="text-align:center;">
--0.0706732
+-0.1109586
 </td>
 <td style="text-align:center;">
-13.39673
+11.70795
 </td>
 <td style="text-align:center;">
-0.0095477
+0.0154018
 </td>
 <td style="text-align:center;">
-0.9221609
+0.9012329
 </td>
 <td style="text-align:center;">
-0.9221609
+0.9984792
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+28
+</td>
+<td style="text-align:center;">
+0.0860343
+</td>
+<td style="text-align:center;">
+13.97126
+</td>
+<td style="text-align:center;">
+0.0115634
+</td>
+<td style="text-align:center;">
+0.9143658
+</td>
+<td style="text-align:center;">
+0.9984792
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Monocytes
+</td>
+<td style="text-align:center;">
+-0.0740140
+</td>
+<td style="text-align:center;">
+17.80082
+</td>
+<td style="text-align:center;">
+0.0093045
+</td>
+<td style="text-align:center;">
+0.9231553
+</td>
+<td style="text-align:center;">
+0.9984792
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+32
+</td>
+<td style="text-align:center;">
+-0.0047519
+</td>
+<td style="text-align:center;">
+12.39884
+</td>
+<td style="text-align:center;">
+0.0000361
+</td>
+<td style="text-align:center;">
+0.9952036
+</td>
+<td style="text-align:center;">
+0.9984792
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+35
+</td>
+<td style="text-align:center;">
+-0.0013819
+</td>
+<td style="text-align:center;">
+13.41683
+</td>
+<td style="text-align:center;">
+0.0000036
+</td>
+<td style="text-align:center;">
+0.9984792
+</td>
+<td style="text-align:center;">
+0.9984792
 </td>
 </tr>
 </tbody>
@@ -2187,22 +2698,62 @@ FDR
 <tbody>
 <tr>
 <td style="text-align:left;">
+pDC
+</td>
+<td style="text-align:center;">
+-2.3807569
+</td>
+<td style="text-align:center;">
+14.71813
+</td>
+<td style="text-align:center;">
+6.1353503
+</td>
+<td style="text-align:center;">
+0.0132505
+</td>
+<td style="text-align:center;">
+0.1584515
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 gdT cells
 </td>
 <td style="text-align:center;">
--1.9300313
+-2.4435551
 </td>
 <td style="text-align:center;">
-14.61224
+12.60229
 </td>
 <td style="text-align:center;">
-5.4438493
+5.8199770
 </td>
 <td style="text-align:center;">
-0.0196373
+0.0158452
 </td>
 <td style="text-align:center;">
-0.1871219
+0.1584515
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+30
+</td>
+<td style="text-align:center;">
+1.7488640
+</td>
+<td style="text-align:center;">
+12.96451
+</td>
+<td style="text-align:center;">
+3.1553614
+</td>
+<td style="text-align:center;">
+0.0756779
+</td>
+<td style="text-align:center;">
+0.5045195
 </td>
 </tr>
 <tr>
@@ -2210,39 +2761,19 @@ gdT cells
 B cells
 </td>
 <td style="text-align:center;">
-1.5868599
+-1.1126297
 </td>
 <td style="text-align:center;">
-15.95320
+15.12860
 </td>
 <td style="text-align:center;">
-3.7833727
+1.5035665
 </td>
 <td style="text-align:center;">
-0.0517642
+0.2201234
 </td>
 <td style="text-align:center;">
-0.1871219
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Undefined
-</td>
-<td style="text-align:center;">
--1.5687720
-</td>
-<td style="text-align:center;">
-15.23179
-</td>
-<td style="text-align:center;">
-3.6480008
-</td>
-<td style="text-align:center;">
-0.0561366
-</td>
-<td style="text-align:center;">
-0.1871219
+0.6600647
 </td>
 </tr>
 <tr>
@@ -2250,119 +2781,19 @@ Undefined
 NK T cells
 </td>
 <td style="text-align:center;">
--0.7921997
+-1.0937646
 </td>
 <td style="text-align:center;">
-14.36619
+14.42161
 </td>
 <td style="text-align:center;">
-0.9512847
+1.3803578
 </td>
 <td style="text-align:center;">
-0.3293925
+0.2400402
 </td>
 <td style="text-align:center;">
-0.8234813
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-CD4 T cells
-</td>
-<td style="text-align:center;">
-0.5053760
-</td>
-<td style="text-align:center;">
-17.72041
-</td>
-<td style="text-align:center;">
-0.4118722
-</td>
-<td style="text-align:center;">
-0.5210208
-</td>
-<td style="text-align:center;">
-0.9758713
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-pDC
-</td>
-<td style="text-align:center;">
--0.3963277
-</td>
-<td style="text-align:center;">
-13.57279
-</td>
-<td style="text-align:center;">
-0.2189696
-</td>
-<td style="text-align:center;">
-0.6398261
-</td>
-<td style="text-align:center;">
-0.9758713
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-CD8 T cells
-</td>
-<td style="text-align:center;">
-0.2728881
-</td>
-<td style="text-align:center;">
-17.89559
-</td>
-<td style="text-align:center;">
-0.1206982
-</td>
-<td style="text-align:center;">
-0.7282784
-</td>
-<td style="text-align:center;">
-0.9758713
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Monocytes
-</td>
-<td style="text-align:center;">
--0.0912682
-</td>
-<td style="text-align:center;">
-17.74244
-</td>
-<td style="text-align:center;">
-0.0134538
-</td>
-<td style="text-align:center;">
-0.9076601
-</td>
-<td style="text-align:center;">
-0.9758713
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-cDC
-</td>
-<td style="text-align:center;">
-0.0678355
-</td>
-<td style="text-align:center;">
-13.39673
-</td>
-<td style="text-align:center;">
-0.0065959
-</td>
-<td style="text-align:center;">
-0.9352707
-</td>
-<td style="text-align:center;">
-0.9758713
+0.6600647
 </td>
 </tr>
 <tr>
@@ -2370,19 +2801,299 @@ cDC
 NK cells
 </td>
 <td style="text-align:center;">
--0.0237663
+-1.0671431
 </td>
 <td style="text-align:center;">
-17.49211
+14.88648
 </td>
 <td style="text-align:center;">
-0.0009148
+1.3648476
 </td>
 <td style="text-align:center;">
-0.9758713
+0.2426991
 </td>
 <td style="text-align:center;">
-0.9758713
+0.6600647
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+28
+</td>
+<td style="text-align:center;">
+1.0721412
+</td>
+<td style="text-align:center;">
+13.97126
+</td>
+<td style="text-align:center;">
+1.3358235
+</td>
+<td style="text-align:center;">
+0.2477719
+</td>
+<td style="text-align:center;">
+0.6600647
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+29
+</td>
+<td style="text-align:center;">
+-1.0094303
+</td>
+<td style="text-align:center;">
+16.17769
+</td>
+<td style="text-align:center;">
+1.2475242
+</td>
+<td style="text-align:center;">
+0.2640259
+</td>
+<td style="text-align:center;">
+0.6600647
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+31
+</td>
+<td style="text-align:center;">
+-0.7542249
+</td>
+<td style="text-align:center;">
+15.30686
+</td>
+<td style="text-align:center;">
+0.6911796
+</td>
+<td style="text-align:center;">
+0.4057634
+</td>
+<td style="text-align:center;">
+0.8937357
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+27
+</td>
+<td style="text-align:center;">
+0.6190904
+</td>
+<td style="text-align:center;">
+15.59524
+</td>
+<td style="text-align:center;">
+0.4697341
+</td>
+<td style="text-align:center;">
+0.4931095
+</td>
+<td style="text-align:center;">
+0.8937357
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+26
+</td>
+<td style="text-align:center;">
+0.7049993
+</td>
+<td style="text-align:center;">
+11.70795
+</td>
+<td style="text-align:center;">
+0.4675487
+</td>
+<td style="text-align:center;">
+0.4941170
+</td>
+<td style="text-align:center;">
+0.8937357
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+CD4 T cells
+</td>
+<td style="text-align:center;">
+0.5519135
+</td>
+<td style="text-align:center;">
+17.11514
+</td>
+<td style="text-align:center;">
+0.3825504
+</td>
+<td style="text-align:center;">
+0.5362414
+</td>
+<td style="text-align:center;">
+0.8937357
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Monocytes
+</td>
+<td style="text-align:center;">
+0.4786227
+</td>
+<td style="text-align:center;">
+17.80082
+</td>
+<td style="text-align:center;">
+0.2887697
+</td>
+<td style="text-align:center;">
+0.5910100
+</td>
+<td style="text-align:center;">
+0.9092462
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cDC
+</td>
+<td style="text-align:center;">
+-0.5564371
+</td>
+<td style="text-align:center;">
+12.67172
+</td>
+<td style="text-align:center;">
+0.2205538
+</td>
+<td style="text-align:center;">
+0.6386183
+</td>
+<td style="text-align:center;">
+0.9123119
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+35
+</td>
+<td style="text-align:center;">
+-0.3650014
+</td>
+<td style="text-align:center;">
+13.41683
+</td>
+<td style="text-align:center;">
+0.1518197
+</td>
+<td style="text-align:center;">
+0.6968024
+</td>
+<td style="text-align:center;">
+0.9202165
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+34
+</td>
+<td style="text-align:center;">
+-0.3308023
+</td>
+<td style="text-align:center;">
+12.69379
+</td>
+<td style="text-align:center;">
+0.1135186
+</td>
+<td style="text-align:center;">
+0.7361732
+</td>
+<td style="text-align:center;">
+0.9202165
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+32
+</td>
+<td style="text-align:center;">
+-0.2124137
+</td>
+<td style="text-align:center;">
+12.39884
+</td>
+<td style="text-align:center;">
+0.0461951
+</td>
+<td style="text-align:center;">
+0.8298216
+</td>
+<td style="text-align:center;">
+0.9282212
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Undefined
+</td>
+<td style="text-align:center;">
+0.1580130
+</td>
+<td style="text-align:center;">
+15.81039
+</td>
+<td style="text-align:center;">
+0.0313012
+</td>
+<td style="text-align:center;">
+0.8595700
+</td>
+<td style="text-align:center;">
+0.9282212
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+33
+</td>
+<td style="text-align:center;">
+-0.1387510
+</td>
+<td style="text-align:center;">
+13.37792
+</td>
+<td style="text-align:center;">
+0.0221042
+</td>
+<td style="text-align:center;">
+0.8818101
+</td>
+<td style="text-align:center;">
+0.9282212
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+CD8 T cells
+</td>
+<td style="text-align:center;">
+0.0213681
+</td>
+<td style="text-align:center;">
+18.03725
+</td>
+<td style="text-align:center;">
+0.0005791
+</td>
+<td style="text-align:center;">
+0.9808014
+</td>
+<td style="text-align:center;">
+0.9808014
 </td>
 </tr>
 </tbody>
@@ -2454,70 +3165,19 @@ adj.P.Val
 <tbody>
 <tr>
 <td style="text-align:left;">
-16
+26
 </td>
 <td style="text-align:center;">
-CD4 T cells.BV711-A
+30.BV711-A
 </td>
 <td style="text-align:center;">
-1.055500
+1.447045
 </td>
 <td style="text-align:center;">
-0.0504731
+0.0309944
 </td>
 <td style="text-align:center;">
-0.8443881
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-17
-</td>
-<td style="text-align:center;">
-gdT cells.FITC-A
-</td>
-<td style="text-align:center;">
-2.532910
-</td>
-<td style="text-align:center;">
-0.0938209
-</td>
-<td style="text-align:center;">
-0.8443881
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-6
-</td>
-<td style="text-align:center;">
-NK T cells.BV711-A
-</td>
-<td style="text-align:center;">
-1.363133
-</td>
-<td style="text-align:center;">
-0.1626628
-</td>
-<td style="text-align:center;">
-0.8614871
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-11
-</td>
-<td style="text-align:center;">
-NK cells.FITC-A
-</td>
-<td style="text-align:center;">
-2.704831
-</td>
-<td style="text-align:center;">
-0.2470728
-</td>
-<td style="text-align:center;">
-0.8614871
+0.8354607
 </td>
 </tr>
 <tr>
@@ -2528,98 +3188,149 @@ NK cells.FITC-A
 cDC.BV711-A
 </td>
 <td style="text-align:center;">
+1.438589
+</td>
+<td style="text-align:center;">
+0.0741214
+</td>
+<td style="text-align:center;">
+0.8354607
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+30
+</td>
+<td style="text-align:center;">
+32.BV711-A
+</td>
+<td style="text-align:center;">
+2.488347
+</td>
+<td style="text-align:center;">
+0.0970288
+</td>
+<td style="text-align:center;">
+0.8354607
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:center;">
+27.BV711-A
+</td>
+<td style="text-align:center;">
+1.645825
+</td>
+<td style="text-align:center;">
+0.1086625
+</td>
+<td style="text-align:center;">
+0.8354607
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:center;">
+pDC.BV711-A
+</td>
+<td style="text-align:center;">
+1.355565
+</td>
+<td style="text-align:center;">
+0.1099290
+</td>
+<td style="text-align:center;">
+0.8354607
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+7
+</td>
+<td style="text-align:center;">
+Monocytes.FITC-A
+</td>
+<td style="text-align:center;">
+2.789007
+</td>
+<td style="text-align:center;">
+0.1842389
+</td>
+<td style="text-align:center;">
+0.8677857
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:center;">
+29.BV711-A
+</td>
+<td style="text-align:center;">
+2.107482
+</td>
+<td style="text-align:center;">
+0.1949594
+</td>
+<td style="text-align:center;">
+0.8677857
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+32
+</td>
+<td style="text-align:center;">
+33.BV711-A
+</td>
+<td style="text-align:center;">
 1.852949
 </td>
 <td style="text-align:center;">
-0.2661420
+0.2168838
 </td>
 <td style="text-align:center;">
-0.8614871
+0.8677857
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-15
+11
 </td>
 <td style="text-align:center;">
-CD4 T cells.FITC-A
+NK cells.FITC-A
 </td>
 <td style="text-align:center;">
-2.748324
+2.545653
 </td>
 <td style="text-align:center;">
-0.3199298
+0.2653720
 </td>
 <td style="text-align:center;">
-0.8614871
+0.8677857
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-2
+24
 </td>
 <td style="text-align:center;">
-CD8 T cells.BV711-A
+CD4 T cells.BV711-A
 </td>
 <td style="text-align:center;">
-1.064478
+1.050756
 </td>
 <td style="text-align:center;">
-0.3350227
+0.2812801
 </td>
 <td style="text-align:center;">
-0.8614871
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:center;">
-cDC.FITC-A
-</td>
-<td style="text-align:center;">
-2.762316
-</td>
-<td style="text-align:center;">
-0.4464682
-</td>
-<td style="text-align:center;">
-0.9004886
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-8
-</td>
-<td style="text-align:center;">
-Monocytes.BV711-A
-</td>
-<td style="text-align:center;">
-2.089900
-</td>
-<td style="text-align:center;">
-0.5069092
-</td>
-<td style="text-align:center;">
-0.9004886
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1
-</td>
-<td style="text-align:center;">
-CD8 T cells.FITC-A
-</td>
-<td style="text-align:center;">
-2.737236
-</td>
-<td style="text-align:center;">
-0.5862530
-</td>
-<td style="text-align:center;">
-0.9004886
+0.8677857
 </td>
 </tr>
 </tbody>
@@ -2647,155 +3358,19 @@ adj.P.Val
 <tbody>
 <tr>
 <td style="text-align:left;">
-17
+26
 </td>
 <td style="text-align:center;">
-gdT cells.FITC-A
+30.BV711-A
 </td>
 <td style="text-align:center;">
-2.532910
+1.4470451
 </td>
 <td style="text-align:center;">
-0.0571967
+0.0894841
 </td>
 <td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-6
-</td>
-<td style="text-align:center;">
-NK T cells.BV711-A
-</td>
-<td style="text-align:center;">
-1.363133
-</td>
-<td style="text-align:center;">
-0.0876548
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-12
-</td>
-<td style="text-align:center;">
-NK cells.BV711-A
-</td>
-<td style="text-align:center;">
-1.668804
-</td>
-<td style="text-align:center;">
-0.1552934
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-11
-</td>
-<td style="text-align:center;">
-NK cells.FITC-A
-</td>
-<td style="text-align:center;">
-2.704831
-</td>
-<td style="text-align:center;">
-0.2348162
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-5
-</td>
-<td style="text-align:center;">
-NK T cells.FITC-A
-</td>
-<td style="text-align:center;">
-2.715640
-</td>
-<td style="text-align:center;">
-0.2632072
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-8
-</td>
-<td style="text-align:center;">
-Monocytes.BV711-A
-</td>
-<td style="text-align:center;">
-2.089900
-</td>
-<td style="text-align:center;">
-0.3997030
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:center;">
-gdT cells.BV711-A
-</td>
-<td style="text-align:center;">
-1.230772
-</td>
-<td style="text-align:center;">
-0.4093425
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:center;">
-B cells.BV711-A
-</td>
-<td style="text-align:center;">
-1.013840
-</td>
-<td style="text-align:center;">
-0.4225397
-</td>
-<td style="text-align:center;">
-0.7659479
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3
-</td>
-<td style="text-align:center;">
-B cells.FITC-A
-</td>
-<td style="text-align:center;">
-3.059271
-</td>
-<td style="text-align:center;">
-0.4313804
-</td>
-<td style="text-align:center;">
-0.7659479
+0.977057
 </td>
 </tr>
 <tr>
@@ -2806,13 +3381,149 @@ B cells.FITC-A
 pDC.BV711-A
 </td>
 <td style="text-align:center;">
-1.905086
+1.3555653
 </td>
 <td style="text-align:center;">
-0.4657147
+0.1492064
 </td>
 <td style="text-align:center;">
-0.7659479
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:center;">
+NK cells.BV711-A
+</td>
+<td style="text-align:center;">
+1.2344828
+</td>
+<td style="text-align:center;">
+0.1780325
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:center;">
+cDC.FITC-A
+</td>
+<td style="text-align:center;">
+2.7539539
+</td>
+<td style="text-align:center;">
+0.2274351
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:center;">
+29.BV711-A
+</td>
+<td style="text-align:center;">
+2.1074824
+</td>
+<td style="text-align:center;">
+0.2391172
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+25
+</td>
+<td style="text-align:center;">
+30.FITC-A
+</td>
+<td style="text-align:center;">
+2.6711631
+</td>
+<td style="text-align:center;">
+0.2488472
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+6
+</td>
+<td style="text-align:center;">
+NK T cells.BV711-A
+</td>
+<td style="text-align:center;">
+0.9782847
+</td>
+<td style="text-align:center;">
+0.2534494
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:center;">
+27.BV711-A
+</td>
+<td style="text-align:center;">
+1.6458255
+</td>
+<td style="text-align:center;">
+0.2651490
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+23
+</td>
+<td style="text-align:center;">
+CD4 T cells.FITC-A
+</td>
+<td style="text-align:center;">
+2.7969900
+</td>
+<td style="text-align:center;">
+0.3436624
+</td>
+<td style="text-align:center;">
+0.977057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+37
+</td>
+<td style="text-align:center;">
+gdT cells.FITC-A
+</td>
+<td style="text-align:center;">
+2.8359895
+</td>
+<td style="text-align:center;">
+0.3665761
+</td>
+<td style="text-align:center;">
+0.977057
 </td>
 </tr>
 </tbody>
@@ -2841,12 +3552,12 @@ back-transform data.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   feature       sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> CD8 T cells.…       <span style="text-decoration: underline;">5</span>165.        <span style="text-decoration: underline;">5</span>269.       <span style="text-decoration: underline;">3</span>616.         <span style="text-decoration: underline;">6</span>695.         <span style="text-decoration: underline;">2</span>742.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> CD8 T cells.…        112.         134.        150.          141.          169.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B cells.FITC…       <span style="text-decoration: underline;">8</span>499.       <span style="text-decoration: underline;">10</span>876.       <span style="text-decoration: underline;">8</span>303.        <span style="text-decoration: underline;">13</span>956.         <span style="text-decoration: underline;">7</span>910.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> B cells.BV71…         94.4         91.0         1.89        177.          120.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NK T cells.F…       <span style="text-decoration: underline;">4</span>880.        <span style="text-decoration: underline;">5</span>364.       <span style="text-decoration: underline;">4</span>117.         <span style="text-decoration: underline;">7</span>369.         <span style="text-decoration: underline;">1</span>989.</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NK T cells.B…        411.         484.        287.           75.4         397.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> CD8 T cells.…       <span style="text-decoration: underline;">4</span>922.        <span style="text-decoration: underline;">5</span>280.         <span style="text-decoration: underline;">3</span>817.       <span style="text-decoration: underline;">6</span>861.        <span style="text-decoration: underline;">3</span>146. </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> CD8 T cells.…        161.         150.          155.        155.         178. </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B cells.FITC…       <span style="text-decoration: underline;">3</span>776.        <span style="text-decoration: underline;">3</span>320.         <span style="text-decoration: underline;">3</span>660.       <span style="text-decoration: underline;">3</span>171.        <span style="text-decoration: underline;">1</span>858. </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> B cells.BV71…        165.          98.6         127.        256.         297. </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NK T cells.F…       <span style="text-decoration: underline;">4</span>238.        <span style="text-decoration: underline;">5</span>499.         <span style="text-decoration: underline;">3</span>609.      <span style="text-decoration: underline;">12</span>470.        <span style="text-decoration: underline;">3</span>514. </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NK T cells.B…         94.3        101.          123.         90.3         62.6</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: sample_6.fcs &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Difference in marker expression between groups may be visualized with
 the function <code><a href="../reference/plotGroupMFIBars.html">plotGroupMFIBars()</a></code>. As above, if input is a

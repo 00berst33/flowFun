@@ -38,6 +38,7 @@
     <li><a class="dropdown-item" href="../articles/differentialAnalysis.html">Setting up differential analysis</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Miscellaneous</h6></li>
+    <li><a class="dropdown-item" href="../articles/troubleshooting.html">Installation and troubleshooting</a></li>
     <li><a class="dropdown-item" href="../articles/visualizationVignette.html">Making and editing plots</a></li>
     <li><a class="dropdown-item" href="../articles/applyingControls.html">Applying control FCS files</a></li>
   </ul>
@@ -381,13 +382,12 @@ column names in your table of sample info, which in this case are
 <code>age.group</code>, <code>treatment</code>, and <code>sex</code>.
 This tells R which columns to check to find the info it needs to make
 that particular comparison.</p>
-Finally, for each column/variable relevant to that comparison, we
+<p>Finally, for each column/variable relevant to that comparison, we
 specify which group(s) are of interest. For comparison 1, by setting
 <code>age.group = list("&lt;65", "65+")</code> we indicate that we’d
 like to test for differences between old and young groups (referencing
-the table above, this would be sample 1, 5, and 6 vs. 2, 3, and 4).
-:::{.border style=“padding: 10px; border: 1px solid #dee2e6
-!important;”}
+the table above, this would be sample 1, 5, and 6 vs. 2, 3, and 4).</p>
+<div class="border" style="padding: 10px; border: 1px solid #dee2e6 !important;">
 <table class="table">
 <thead><tr>
 <th style="text-align:left;">
@@ -469,7 +469,7 @@ sample_6.fcs
 </tr>
 </tbody>
 </table>
-<p>:::</p>
+</div>
 <p>For comparison 2, by setting <code>treatment = "Treatment"</code>, we
 indicate that we only want to test within the treatment group, and by
 setting <code>sex = list("female", "male")</code> we indicate that

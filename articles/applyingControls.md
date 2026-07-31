@@ -1,7 +1,7 @@
-# Applying controls to samples
+# Applying control FCS files
 
 If you have control samples, they may be used to calculate delta MFIs,
-which can then be used to plotting and differential expression testing.
+which can then be used for plotting and differential expression testing.
 Doing so requires a few more steps than the basic ones outlined in the
 main workflow article.
 
