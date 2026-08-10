@@ -10,17 +10,36 @@ generateGatingTable(gs, collapse_data = TRUE, ld_stain = NULL)
 \item{gs}{A \code{GatingSet}}
 
 \item{collapse_data}{A \code{boolean}, indicating if samples should be collapsed
-into one. Default is \code{TRUE}}
+into one when drawing gates. Default is \code{TRUE}}
 
 \item{ld_stain}{If the experiment contains a live/dead stain, a \code{character}
 indicating which channel}
 }
 \value{
-A data.table, to be used for creation of a \code{gatingTemplate}
+A \code{data.table}, to be used for creation of a \code{gatingTemplate}
 }
 \description{
-generateGatingTable
+Generates a default gating template for preprocessing
+}
+\details{
+The package \code{openCyto} provides functions to automatically draw gates for cytometry
+data. To work, it requires a \code{\link[openCyto:gatingTemplate]{gatingTemplate}}
+object specifying basic information about the gates to be drawn.
+
+This function generates a simple gating scheme for use with \code{openCyto}
+containing the following steps:
+\itemize{
+\item Remove margin events
+\item Remove debris
+\item Remove doublets
+\item Remove dead cells (if a viability stain was used in the panel)
+}
+
+The argument \code{collapse_data} affects how gates are drawn. If \code{TRUE} (default),
+all samples are aggregated into one, and gates are drawn using said aggregated sample.
+If \code{FALSE}, gates are instead drawn separately for each sample.
 }
 \seealso{
-\code{\link[openCyto:gatingTemplate-class]{openCyto::gatingTemplate()}}
+\code{\link[openCyto:gatingTemplate]{gatingTemplate()}},
+\code{\link[openCyto:gatingTemplate]{gt_gating()}}
 }

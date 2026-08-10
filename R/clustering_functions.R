@@ -13,6 +13,20 @@
 #'
 #' @return A data.table annotated with cluster and metacluster assignments.
 #'
+#' @examples
+#' # Define markers/columns to use for clustering
+#' cols_to_cluster <- c("BB700-P-A", "APC-A", "Alexa Fluor 700-A", "APC-Cy7-A", "BV480-A",
+#'                      "BV605-A", "BV650-A", "BV711-A", "BV750-P-A", "BV786-A", "BUV395-A",
+#'                      "BUV563-A", "BUV615-P-A", "BUV661-A", "BUV737-A", "BUV805-A", "PE-A",
+#'                      "PE-CF594-A", "PE-Cy5-A", "PE-Cy7-A")
+#'
+#' # not run: assume `fs` is a previously created flowSet
+#' fsom_dt <- flowSOMWrapper(fs,
+#'                           cols_to_cluster = cols_to_cluster,
+#'                           num_clus = 35, # create 35 metaclusters
+#'                           xdim = 12,
+#'                           ydim = 12, # use a 12x12 grid, i.e. 144 nodes in the SOM
+#'                           seed = 42) # set a seed for reproducibility
 #' @export
 flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
                            fsom_file = NULL, ...) {
@@ -61,9 +75,12 @@ flowSOMWrapper <- function(input, cols_to_cluster, num_clus, seed = NULL,
 
 #' overwriteMetaclusterNames
 #'
+#' Overwrites metacluster names based on a reclustering
+#'
 #' @param fsom_parent Table with all cells of interest
 #' @param fsom_sub Subset of table used for reclustering
 #'
+#' @details
 #' The rows in `fsom_parent` and `fsom_sub` are matched to each other based on
 #' the `cell_id` column. Note that the numbers in the `cell_id` column of `fsom_sub`
 #' correspond to row indices of the root clustering. i.e. if `cell_id` is equal to
@@ -108,29 +125,34 @@ overwriteMetaclusterNames <- function(fsom_parent, fsom_sub) {
 #' Merge or relabel metaclusters, and reassign clusters.
 #'
 #' @param table A data table with columns for "Metacluster" and "Cluster".
-#' @param new_labels Optional. A named vector, where names are the original metacluster names,
-#' and values are the new labels.
+#' @param new_labels Optional. A named vector, where names (LHS) are the original metacluster names,
+#' and values (RHS) are the new labels.
 #' @param cluster_assignments Optional. A named vector, where names are the cluster numbers,
 #' and values are metacluster names.
 #' @param level_order A character vector giving the desired order of the metacluster labels.
 #'
+#' When performing cell type identification using the human-in-the-loop approach, the user
+#' is expected to iteratively merge metaclusters based on their own biological knowledge and
+#' examination of various plots.
+#'
+#' The `new_labels` parameter facilitates metacluster merging, and name edits.
+#'
 #' @return A data.table with an added column \code{Meta_edited}.
 #'
-#' @export
-#'
 #' @examples
+#' # not run: assume `fsom_table` is the result of a call to `flowSOMWrapper()`
 #' fsom_table <- editTableMetaclusters(fsom_table,
-#'                                     new_labels = c(
-#'                                     "9" = "1",
-#'                                     "2" = "1",
-#'                                     "8" = "4",
-#'                                     "23" = "15",
-#'                                     "21" = "15",
-#'                                     "20" = "15",
-#'                                     "22" = "15",
-#'                                     "7" = "6"),
-#'                                     cluster_assignments = c("4" = "Undefined")
+#'                                     new_labels = c("9" = "1",
+#'                                                    "2" = "1", # merge metaclusters 2 and 9 into 1
+#'                                                    "8" = "4", # merge metacluster 8 and 4
+#'                                                    "23" = "15",
+#'                                                    "21" = "15",
+#'                                                    "20" = "15",
+#'                                                    "22" = "15", # merge metaclusters 23,21,20, and 22 into 15
+#'                                                    "7" = "6"), # merge metaclusters 7 and 6
+#'                                     cluster_assignments = c("87" = "Undefined")
 #'                                     )
+#' @export
 editTableMetaclusters <- function(table, new_labels = NULL, cluster_assignments = NULL, level_order = NULL) {
   # Check if a merging has already been done, to determine whether to edit or create column
   Metacluster <- NULL

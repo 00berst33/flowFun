@@ -7,9 +7,9 @@
 addMetaToTable(table, sample_dt, join_col)
 }
 \arguments{
-\item{table}{Table containing expression data for all samples}
+\item{table}{\code{data.frame} or \code{data.table} containing expression data for all samples}
 
-\item{sample_dt}{Table containing sample info}
+\item{sample_dt}{\code{data.frame} or \code{data.table} containing sample info}
 
 \item{join_col}{Column on which to join the two tables described above. Or,
 to join on different variables between tables, an expression (e.g. \code{a == b}).}

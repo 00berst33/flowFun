@@ -29,16 +29,16 @@ A data.table with an added column \code{Meta_edited}.
 Merge or relabel metaclusters, and reassign clusters.
 }
 \examples{
+# not run: assume `fsom_table` is the result of a call to `flowSOMWrapper()`
 fsom_table <- editTableMetaclusters(fsom_table,
-                                    new_labels = c(
-                                    "9" = "1",
-                                    "2" = "1",
-                                    "8" = "4",
-                                    "23" = "15",
-                                    "21" = "15",
-                                    "20" = "15",
-                                    "22" = "15",
-                                    "7" = "6"),
-                                    cluster_assignments = c("4" = "Undefined")
+                                    new_labels = c("9" = "1",
+                                                   "2" = "1", # merge metaclusters 2 and 9 into 1
+                                                   "8" = "4", # merge metacluster 8 and 4
+                                                   "23" = "15",
+                                                   "21" = "15",
+                                                   "20" = "15",
+                                                   "22" = "15", # merge metaclusters 23,21,20, and 22 into 15
+                                                   "7" = "6"), # merge metaclusters 7 and 6
+                                    cluster_assignments = c("87" = "Undefined")
                                     )
 }

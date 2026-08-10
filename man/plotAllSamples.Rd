@@ -15,13 +15,40 @@ plotAllSamples(gs, xdim, ydim, subset, node)
 
 \item{subset}{The population whose cells should be displayed on the plot}
 
-\item{node}{The gate to be visualized
-
-Note that to use this function, \code{gs} must have at least one gate.}
+\item{node}{The gate to be visualized}
 }
 \value{
 A \code{ggplot} drawn with \code{ggcyto}
 }
 \description{
 Plot chosen gate for all samples
+}
+\details{
+Intended for checking the results of newly added gates, typically after a
+call to \code{\link[openCyto:gt_gating]{gt_gating()}}. Note that to use this
+function, \code{gs} must have at least one gate.
+}
+\examples{
+# load in data
+files <- system.file("extdata", "samples", package = "flowFunData")
+cs <- flowWorkspace::load_cytoset_from_fcs(path=dir, pattern=".fcs", truncate_max_range = TRUE)
+
+# Make GatingSet
+gs <- flowWorkspace::GatingSet(cs)
+
+# Generate default gating scheme
+gt_table <- generateGatingTable(gs, collapse_data = TRUE)
+gt <- openCyto::gatingTemplate(gt_table)
+
+# Apply gating scheme
+  # not run: assume transformations and compensations were performed as needed
+openCyto::gt_gating(gt, gs)
+
+## Plotting results
+# View nonDebris gate
+plotAllSamples(gs, "FSC-A", "SSC-A", "nonMargins", "nonDebris")
+
+# View singlets gate
+plotAllSamples(gs, "FSC-A", "FSC-H", "nonDebris", "singlets")
+
 }

@@ -7,7 +7,7 @@
 getChannelMarkerPairs(ff, save_res = TRUE)
 }
 \arguments{
-\item{ff}{A flowFrame or filepath to a .fcs file}
+\item{ff}{A \code{flowFrame} or filepath to a .fcs file}
 
 \item{save_res}{Boolean; should the results be saved to the current working directory}
 }
@@ -15,5 +15,5 @@ getChannelMarkerPairs(ff, save_res = TRUE)
 A two column table specifying channel/marker pairs
 }
 \description{
-...
+Helper to get a table of channel/marker pairs from a \code{flowFrame}
 }

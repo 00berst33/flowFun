@@ -7,7 +7,7 @@
 addClustersToGatingSet(table, gs, parent_gate, fsom_file = NULL)
 }
 \arguments{
-\item{table}{A data.table or tibble containing expression data for all samples.
+\item{table}{A \code{data.table} or \code{tibble} containing expression data for all samples.
 Must have a column named \code{.id} indicating sample ID, and a column
 \code{Metacluster} with cluster labels.}
 
@@ -17,14 +17,15 @@ Must have a column named \code{.id} indicating sample ID, and a column
 the clusters.}
 
 \item{fsom_file}{Optional, a character giving a path to an .rds file for a FlowSOM
-object. Default is \code{NULL}, which checks for a filename in \code{attr(table, "fsom_filename")}
-
+object. Default is \code{NULL}, which checks for a filename in \code{attr(table, "fsom_filename")}}
+}
+\description{
+Uses cluster labels to add corresponding gates to a \code{GatingSet}
+}
+\details{
 This function should be used after a satisfactory clustering has been obtained
 using the human-in-the-loop approach outlined by the vignette. The resulting
 table should contain expression data for each sample, with each cell assigned
 a cluster label. These labels will then be used to construct a gate for each
-cluster.}
-}
-\description{
-Uses cluster labels to add corresponding gates to the GatingSet
+cluster. The new gating scheme may be viewed with \code{\link[openCyto:plot]{plot()}}.
 }

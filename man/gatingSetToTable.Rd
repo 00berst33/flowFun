@@ -7,14 +7,22 @@
 gatingSetToTable(gs, population = "root")
 }
 \arguments{
-\item{gs}{Preprocessed GatingSet to convert}
+\item{gs}{Preprocessed \code{GatingSet} to convert}
 
 \item{population}{A string giving the name of the gated population to use for
-table creation}
+table creation
+
+Two columns are added to the returned \code{data.table} that are not present in
+the \code{GatingSet}:
+\itemize{
+\item \code{.id}, indicating which sample the cell belongs to
+\item \code{cell_id}, indicating a unique key for each cell in the table. Mostly applicable
+when subsetting
+}}
 }
 \value{
-A data.table, created from the given GatingSet
+A \code{data.table}, created from the given \code{GatingSet}
 }
 \description{
-gatingSetToTable
+Utility function for converting between data types
 }

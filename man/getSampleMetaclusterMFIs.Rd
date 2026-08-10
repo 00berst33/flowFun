@@ -27,8 +27,36 @@ and \code{inverse = TRUE}}
 Only valid when \code{input} is a \code{GatingSet} containing a transformation.}
 }
 \value{
-A table, where rows are samples and columns are metaclusters.
+A \code{data.table}, where rows are samples and columns are metaclusters.
 }
 \description{
-Get a table of MFIs, where each row is a sample and each column is a metacluster.
+Generate a table of MFIs from clustered data, where each row is a sample and each
+column is a metacluster.
+}
+\examples{
+## data.table method
+  file <- system.file("extdata", "fsom_dt.rds", package = "flowFunData")
+  table <- readRDS(file)
+
+  # define populations of interest
+  pop_of_interest <- c("CD8 T cells", "CD4 T cells", "NK T cells", "gdT cells", "B cells")
+
+  mfis <- getSampleMetaclusterMFIs(table,
+                                   col = "FITC-A",
+                                   populations = pop_of_interest)
+
+## GatingSet method
+  # not run: assume gs is a GatingSet
+
+  # get all children nodes/subpopulations of "live" population
+  subpops <- gs_pop_get_children(gs, "live")
+
+  mfis <- getSampleMetaclusterMFIs(gs,
+                                   col = "FITC-A",
+                                   populations = subpops,
+                                   inverse = TRUE) # no need to specify `transformation` parameter
+
+## Save table
+write.csv(mfis, "mfi_table_fitc.csv")
+
 }

@@ -7,14 +7,14 @@
 tableToFlowSet(table, id_col = .id)
 }
 \arguments{
-\item{table}{The data table to convert to a flowSet}
+\item{table}{The \code{data.table} to convert to a \code{flowSet}}
 
-\item{id_col}{The column containing sample IDs for the experiment}
+\item{id_col}{The name of the column in \code{table} containing sample IDs for the
+experiment}
 }
 \value{
-A flowSet
+A \code{flowSet}
 }
 \description{
-Convert a table of single-cell data
-!!! from here, add function to save .fcs files
+Utility function for converting between data types
 }

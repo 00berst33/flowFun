@@ -1,8 +1,16 @@
+#' getFullNames
+#'
+#' @param substr A character vector of names to be matched
+#' @param target_names A character vector of names that the elements of `substr`
+#' will attempt to be matched to. Should contain longer names than `substr`
+#' @param keep_names Boolean, whether the returned vector should have names indicating
+#' which element of `substr` was matched to the full name
+#'
+#' @details
 #' Function to match a character vector whose elements are either markers or
 #' channels to a parent vector whose elements contain both markers and
 #' the corresponding channel. i.e. match "CD3" to "CD3 <Alexa Fluor 700-A>".
 #'
-#' @keywords internal
 #' @export
 getFullNames <- function(substr, target_names, keep_names = FALSE) {
   # Helper to escape regex metacharacters
@@ -36,8 +44,8 @@ getFullNames <- function(substr, target_names, keep_names = FALSE) {
 
 #' addMetaToTable
 #'
-#' @param table Table containing expression data for all samples
-#' @param sample_dt Table containing sample info
+#' @param table `data.frame` or `data.table` containing expression data for all samples
+#' @param sample_dt `data.frame` or `data.table` containing sample info
 #' @param join_col Column on which to join the two tables described above. Or,
 #' to join on different variables between tables, an expression (e.g. `a == b`).
 #'
@@ -89,12 +97,38 @@ getPrettyColNamesFromGatingSet <- function(input) {
 
 #' prepareCompensationMatrix
 #'
-#' Changes columns of compensation matrix to channels, markers, or both (pretty)
-#' and checks order of columns
+#' Prepares a compensation matrix for use with the
+#' \code{\link[flowWorkspace:compensate]{compensate()}} function.
 #'
-#' @param matrix The compensation matrix to prepare
-#' @param gs The `GatingSet` whose parameter names the compensation matrix's
-#' columns should be matched to
+#' @param matrix A `matrix` or `data.frame`; the compensation matrix to prepare
+#' @param gs The `GatingSet` whose column names the compensation
+#' matrix's columns should be matched to
+#'
+#' @details
+#' For the `flowWorkspace` function \code{\link[flowWorkspace:compensate]{compensate()}}
+#' to work, the column names (checked by calling `colnames()` on an object)
+#' of the `GatingSet` and compensation matrix must match.
+#' Oftentimes, by default, there will be minor name differences between these two objects
+#' e.g. two corresponding columns may be named `BUV805-A` and `BUV805-A :: CD4`
+#' in the `GatingSet` and compensation matrix, respectively.
+#'
+#' This function simplifies the process of matching and editing such column names by using substrings.
+#' In the example above, the compensation matrix column `BUV805-A :: CD4` would search
+#' for a column in the `GatingSet` named either `CD4` or `BUV805-A`, and be renamed
+#' to the match it finds.
+#'
+#' An additional check that columns are in the correct order is done by ensuring
+#' that the compensation matrix's main diagonal contains only 1s.
+#'
+#' @examples
+#' # reading in compensation matrix
+#'   comp_mat <- system.file("extdata", "auto_compensation_matrix.csv", package = "flowFun")
+#'   comp_mat <- read.csv(comp_mat,
+#'                        check.names = FALSE) # prevents column names from being edited
+#'
+#'  # edit column names and reorder columns
+#'   # not run: assume gs is a GatingSet
+#'   prepareCompensationMatrix(comp_mat, gs)
 #'
 #' @export
 prepareCompensationMatrix <- function(matrix, gs) {
@@ -140,11 +174,19 @@ prepareCompensationMatrix <- function(matrix, gs) {
 
 #' gatingSetToTable
 #'
-#' @param gs Preprocessed GatingSet to convert
+#' Utility function for converting between data types
+#'
+#' @param gs Preprocessed `GatingSet` to convert
 #' @param population A string giving the name of the gated population to use for
 #' table creation
 #'
-#' @return A data.table, created from the given GatingSet
+#' Two columns are added to the returned `data.table` that are not present in
+#' the `GatingSet`:
+#'  - `.id`, indicating which sample the cell belongs to
+#'  - `cell_id`, indicating a unique key for each cell in the table. Mostly applicable
+#'  when subsetting
+#'
+#' @return A `data.table`, created from the given `GatingSet`
 #' @export
 gatingSetToTable <- function(gs, population = "root") {
   # Get cytoset with desired gated population
@@ -177,13 +219,13 @@ gatingSetToTable <- function(gs, population = "root") {
 
 #' tableToFlowSet
 #'
-#' Convert a table of single-cell data
-#' !!! from here, add function to save .fcs files
+#' Utility function for converting between data types
 #'
-#' @param table The data table to convert to a flowSet
-#' @param id_col The column containing sample IDs for the experiment
+#' @param table The `data.table` to convert to a `flowSet`
+#' @param id_col The name of the column in `table` containing sample IDs for the
+#' experiment
 #'
-#' @return A flowSet
+#' @return A `flowSet`
 #' @export
 tableToFlowSet <- function(table, id_col = .id) {
   id_col <- rlang::enquo(id_col)
@@ -214,6 +256,12 @@ tableToFlowSet <- function(table, id_col = .id) {
 }
 
 
+#' flowSetToTable
+#'
+#' Utility function for converting between data types
+#'
+#' @param table The `flowSet` to convert to a `data.table`
+#'
 #' @keywords internal
 #' @export
 flowSetToTable <- function(fs) {
@@ -247,11 +295,11 @@ flowSetMakePrettyNames <- function(fs) {
 
 #' flowSOMToTable
 #'
-#' Convert FlowSOM object to a tidytable
+#' Utility function for converting between data types
 #'
-#' @param fsom
+#' @param fsom A \code{\link[FlowSOM:FlowSOM]{FlowSOM()}} object
 #'
-#' @return A tidytable
+#' @return A `data.table`
 #' @export
 flowSOMToTable <- function(fsom) {
   # Get metacluster and cluster labels
@@ -302,9 +350,9 @@ flowSOMToTable <- function(fsom) {
 
 #' getChannelMarkerPairs
 #'
-#' ...
+#' Helper to get a table of channel/marker pairs from a `flowFrame`
 #'
-#' @param ff A flowFrame or filepath to a .fcs file
+#' @param ff A `flowFrame` or filepath to a .fcs file
 #' @param save_res Boolean; should the results be saved to the current working directory
 #'
 #' @return A two column table specifying channel/marker pairs
@@ -330,8 +378,6 @@ getChannelMarkerPairs <- function(ff, save_res = TRUE) {
 }
 
 
-#' NEED TO HANDLE MISSING PARAMETERS FROM TRANSFORMATION
-#'
 #' @keywords internal
 #' @export
 inverseTransformTable <- function(input, transformation) {
@@ -374,6 +420,7 @@ inverseTransformTable <- function(input, transformation) {
 
   return(input)
 }
+
 
 #' saveFlowSOMEmbedding
 #'
@@ -430,7 +477,8 @@ loadFlowSOMEmbedding <- function(file, newData) {
 
 #' getSampleMetaclusterMFIs
 #'
-#' Get a table of MFIs, where each row is a sample and each column is a metacluster.
+#' Generate a table of MFIs from clustered data, where each row is a sample and each
+#' column is a metacluster.
 #'
 #' @param input A `data.table` or `GatingSet`
 #' @param col The channel to find sample-metacluster MFIs for.
@@ -441,7 +489,34 @@ loadFlowSOMEmbedding <- function(file, newData) {
 #' @param inverse Boolean, whether data should be back-transformed before calculating MFIs.
 #' Only valid when `input` is a `GatingSet` containing a transformation.
 #'
-#' @return A table, where rows are samples and columns are metaclusters.
+#' @return A `data.table`, where rows are samples and columns are metaclusters.
+#'
+#' @examples
+#' ## data.table method
+#'   file <- system.file("extdata", "fsom_dt.rds", package = "flowFunData")
+#'   table <- readRDS(file)
+#'
+#'   # define populations of interest
+#'   pop_of_interest <- c("CD8 T cells", "CD4 T cells", "NK T cells", "gdT cells", "B cells")
+#'
+#'   mfis <- getSampleMetaclusterMFIs(table,
+#'                                    col = "FITC-A",
+#'                                    populations = pop_of_interest)
+#'
+#' ## GatingSet method
+#'   # not run: assume gs is a GatingSet
+#'
+#'   # get all children nodes/subpopulations of "live" population
+#'   subpops <- gs_pop_get_children(gs, "live")
+#'
+#'   mfis <- getSampleMetaclusterMFIs(gs,
+#'                                    col = "FITC-A",
+#'                                    populations = subpops,
+#'                                    inverse = TRUE) # no need to specify `transformation` parameter
+#'
+#' ## Save table
+#' write.csv(mfis, "mfi_table_fitc.csv")
+#'
 #' @export
 getSampleMetaclusterMFIs <- function(input, col, populations = NULL,
                                      transformation = NULL, inverse = FALSE) {
@@ -581,9 +656,9 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 
 #' addClustersToGatingSet
 #'
-#' Uses cluster labels to add corresponding gates to the GatingSet
+#' Uses cluster labels to add corresponding gates to a `GatingSet`
 #'
-#' @param table A data.table or tibble containing expression data for all samples.
+#' @param table A `data.table` or `tibble` containing expression data for all samples.
 #' Must have a column named `.id` indicating sample ID, and a column
 #' `Metacluster` with cluster labels.
 #' @param gs The `GatingSet` to add gates to.
@@ -592,11 +667,12 @@ getClusterIndicesBySample <- function(table) { # .id and Metacluster column assu
 #' @param fsom_file Optional, a character giving a path to an .rds file for a FlowSOM
 #' object. Default is `NULL`, which checks for a filename in `attr(table, "fsom_filename")`
 #'
+#' @details
 #' This function should be used after a satisfactory clustering has been obtained
 #' using the human-in-the-loop approach outlined by the vignette. The resulting
 #' table should contain expression data for each sample, with each cell assigned
 #' a cluster label. These labels will then be used to construct a gate for each
-#' cluster.
+#' cluster. The new gating scheme may be viewed with \code{\link[openCyto:plot]{plot()}}.
 #'
 #' @export
 addClustersToGatingSet <- function(table, gs, parent_gate, fsom_file = NULL) {

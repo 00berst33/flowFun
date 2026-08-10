@@ -2,15 +2,24 @@
 % Please edit documentation in R/utility_functions.R
 \name{getFullNames}
 \alias{getFullNames}
-\title{Function to match a character vector whose elements are either markers or
-channels to a parent vector whose elements contain both markers and
-the corresponding channel. i.e. match "CD3" to "CD3 <Alexa Fluor 700-A>".}
+\title{getFullNames}
 \usage{
 getFullNames(substr, target_names, keep_names = FALSE)
 }
+\arguments{
+\item{substr}{A character vector of names to be matched}
+
+\item{target_names}{A character vector of names that the elements of \code{substr}
+will attempt to be matched to. Should contain longer names than \code{substr}}
+
+\item{keep_names}{Boolean, whether the returned vector should have names indicating
+which element of \code{substr} was matched to the full name}
+}
 \description{
+getFullNames
+}
+\details{
 Function to match a character vector whose elements are either markers or
 channels to a parent vector whose elements contain both markers and
 the corresponding channel. i.e. match "CD3" to "CD3 <Alexa Fluor 700-A>".
 }
-\keyword{internal}

@@ -7,12 +7,39 @@
 prepareCompensationMatrix(matrix, gs)
 }
 \arguments{
-\item{matrix}{The compensation matrix to prepare}
+\item{matrix}{A \code{matrix} or \code{data.frame}; the compensation matrix to prepare}
 
-\item{gs}{The \code{GatingSet} whose parameter names the compensation matrix's
-columns should be matched to}
+\item{gs}{The \code{GatingSet} whose column names the compensation
+matrix's columns should be matched to}
 }
 \description{
-Changes columns of compensation matrix to channels, markers, or both (pretty)
-and checks order of columns
+Prepares a compensation matrix for use with the
+\code{\link[flowWorkspace:compensate]{compensate()}} function.
+}
+\details{
+For the \code{flowWorkspace} function \code{\link[flowWorkspace:compensate]{compensate()}}
+to work, the column names (checked by calling \code{colnames()} on an object)
+of the \code{GatingSet} and compensation matrix must match.
+Oftentimes, by default, there will be minor name differences between these two objects
+e.g. two corresponding columns may be named \code{BUV805-A} and \code{BUV805-A :: CD4}
+in the \code{GatingSet} and compensation matrix, respectively.
+
+This function simplifies the process of matching and editing such column names by using substrings.
+In the example above, the compensation matrix column \code{BUV805-A :: CD4} would search
+for a column in the \code{GatingSet} named either \code{CD4} or \code{BUV805-A}, and be renamed
+to the match it finds.
+
+An additional check that columns are in the correct order is done by ensuring
+that the compensation matrix's main diagonal contains only 1s.
+}
+\examples{
+# reading in compensation matrix
+  comp_mat <- system.file("extdata", "auto_compensation_matrix.csv", package = "flowFun")
+  comp_mat <- read.csv(comp_mat,
+                       check.names = FALSE) # prevents column names from being edited
+
+ # edit column names and reorder columns
+  # not run: assume gs is a GatingSet
+  prepareCompensationMatrix(comp_mat, gs)
+
 }

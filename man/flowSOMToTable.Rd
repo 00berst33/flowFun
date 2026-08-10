@@ -7,11 +7,11 @@
 flowSOMToTable(fsom)
 }
 \arguments{
-\item{fsom}{}
+\item{fsom}{A \code{\link[FlowSOM:FlowSOM]{FlowSOM()}} object}
 }
 \value{
-A tidytable
+A \code{data.table}
 }
 \description{
-Convert FlowSOM object to a tidytable
+Utility function for converting between data types
 }
