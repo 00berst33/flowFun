@@ -35,6 +35,7 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/flagMarkerNames.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/flowSOMToTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/flowSOMWrapper.html</loc></url>
+<url><loc>https://00berst33.github.io/flowFun/reference/flowSetToTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/gatingSetToTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/generateGatingTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/getChannel.html</loc></url>
@@ -50,7 +51,6 @@
 <url><loc>https://00berst33.github.io/flowFun/reference/gs_makeDeltaMFIs.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/gs_makeMFIMatrix.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/index.html</loc></url>
-<url><loc>https://00berst33.github.io/flowFun/reference/inverseTransformTable.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/loadFlowSOMEmbedding.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/makeBoolean.html</loc></url>
 <url><loc>https://00berst33.github.io/flowFun/reference/makeContrastsMatrix.html</loc></url>

@@ -12,11 +12,12 @@ addMetaToTable(table, sample_dt, join_col)
 
 - table:
 
-  Table containing expression data for all samples
+  `data.frame` or `data.table` containing expression data for all
+  samples
 
 - sample_dt:
 
-  Table containing sample info
+  `data.frame` or `data.table` containing sample info
 
 - join_col:
 

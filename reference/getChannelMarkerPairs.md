@@ -1,6 +1,6 @@
 # getChannelMarkerPairs
 
-...
+Helper to get a table of channel/marker pairs from a `flowFrame`
 
 ## Usage
 
@@ -12,7 +12,7 @@ getChannelMarkerPairs(ff, save_res = TRUE)
 
 - ff:
 
-  A flowFrame or filepath to a .fcs file
+  A `flowFrame` or filepath to a .fcs file
 
 - save_res:
 

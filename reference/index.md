@@ -44,6 +44,8 @@
   : getClusterMFIs
 - [`getExprMatDE()`](https://00berst33.github.io/flowFun/reference/getExprMatDE.md)
   : getExprMatDE
+- [`getFullNames()`](https://00berst33.github.io/flowFun/reference/getFullNames.md)
+  : getFullNames
 - [`getMarker()`](https://00berst33.github.io/flowFun/reference/getMarker.md)
   : getMarker
 - [`getMetaclusterMFIs()`](https://00berst33.github.io/flowFun/reference/getMetaclusterMFIs.md)

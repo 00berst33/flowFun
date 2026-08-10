@@ -1,6 +1,6 @@
 # addClustersToGatingSet
 
-Uses cluster labels to add corresponding gates to the GatingSet
+Uses cluster labels to add corresponding gates to a `GatingSet`
 
 ## Usage
 
@@ -12,7 +12,7 @@ addClustersToGatingSet(table, gs, parent_gate, fsom_file = NULL)
 
 - table:
 
-  A data.table or tibble containing expression data for all samples.
+  A `data.table` or `tibble` containing expression data for all samples.
   Must have a column named `.id` indicating sample ID, and a column
   `Metacluster` with cluster labels.
 
@@ -30,8 +30,11 @@ addClustersToGatingSet(table, gs, parent_gate, fsom_file = NULL)
   object. Default is `NULL`, which checks for a filename in
   `attr(table, "fsom_filename")`
 
-  This function should be used after a satisfactory clustering has been
-  obtained using the human-in-the-loop approach outlined by the
-  vignette. The resulting table should contain expression data for each
-  sample, with each cell assigned a cluster label. These labels will
-  then be used to construct a gate for each cluster.
+## Details
+
+This function should be used after a satisfactory clustering has been
+obtained using the human-in-the-loop approach outlined by the vignette.
+The resulting table should contain expression data for each sample, with
+each cell assigned a cluster label. These labels will then be used to
+construct a gate for each cluster. The new gating scheme may be viewed
+with [`plot()`](https://rdrr.io/r/graphics/plot.default.html).

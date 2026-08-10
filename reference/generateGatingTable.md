@@ -1,6 +1,6 @@
 # generateGatingTable
 
-generateGatingTable
+Generates a default gating template for preprocessing
 
 ## Usage
 
@@ -16,8 +16,8 @@ generateGatingTable(gs, collapse_data = TRUE, ld_stain = NULL)
 
 - collapse_data:
 
-  A `boolean`, indicating if samples should be collapsed into one.
-  Default is `TRUE`
+  A `boolean`, indicating if samples should be collapsed into one when
+  drawing gates. Default is `TRUE`
 
 - ld_stain:
 
@@ -26,8 +26,32 @@ generateGatingTable(gs, collapse_data = TRUE, ld_stain = NULL)
 
 ## Value
 
-A data.table, to be used for creation of a `gatingTemplate`
+A `data.table`, to be used for creation of a `gatingTemplate`
+
+## Details
+
+The package `openCyto` provides functions to automatically draw gates
+for cytometry data. To work, it requires a
+[`gatingTemplate`](https://rdrr.io/pkg/openCyto/man/gatingTemplate-class.html)
+object specifying basic information about the gates to be drawn.
+
+This function generates a simple gating scheme for use with `openCyto`
+containing the following steps:
+
+- Remove margin events
+
+- Remove debris
+
+- Remove doublets
+
+- Remove dead cells (if a viability stain was used in the panel)
+
+The argument `collapse_data` affects how gates are drawn. If `TRUE`
+(default), all samples are aggregated into one, and gates are drawn
+using said aggregated sample. If `FALSE`, gates are instead drawn
+separately for each sample.
 
 ## See also
 
-[`openCyto::gatingTemplate()`](https://rdrr.io/pkg/openCyto/man/gatingTemplate-class.html)
+[`gatingTemplate()`](https://rdrr.io/pkg/openCyto/man/gatingTemplate-class.html),
+[`gt_gating()`](https://rdrr.io/pkg/openCyto/man/gatingTemplate-class.html)

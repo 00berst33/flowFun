@@ -1,7 +1,6 @@
 # tableToFlowSet
 
-Convert a table of single-cell data !!! from here, add function to save
-.fcs files
+Utility function for converting between data types
 
 ## Usage
 
@@ -13,12 +12,13 @@ tableToFlowSet(table, id_col = .id)
 
 - table:
 
-  The data table to convert to a flowSet
+  The `data.table` to convert to a `flowSet`
 
 - id_col:
 
-  The column containing sample IDs for the experiment
+  The name of the column in `table` containing sample IDs for the
+  experiment
 
 ## Value
 
-A flowSet
+A `flowSet`

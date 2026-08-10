@@ -1,6 +1,6 @@
 # flowSOMToTable
 
-Convert FlowSOM object to a tidytable
+Utility function for converting between data types
 
 ## Usage
 
@@ -12,6 +12,8 @@ flowSOMToTable(fsom)
 
 - fsom:
 
+  A [`FlowSOM()`](https://rdrr.io/pkg/FlowSOM/man/FlowSOM.html) object
+
 ## Value
 
-A tidytable
+A `data.table`
