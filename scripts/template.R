@@ -21,7 +21,7 @@ library(ggplot2)
 set.seed(84)
 
 # Set the directory you would like to store analysis results in.
-work_dir <- file.path("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/Bioinformatics/High Parameter Flow Data/Testing FlowFun/April 2026/26-04-16_Analysis")
+work_dir <- file.path("/DIRECTORY/TO/STORE/ANALYSIS")
 
 ##################
 # PRE-PROCESSING #
@@ -34,7 +34,7 @@ work_dir <- file.path("/Users/morganroberts/Library/CloudStorage/OneDrive-Vancou
 ### LOAD FCS FILES ###
 
 # Indicate the name of the directory containing the .fcs files to analyze
-data_dir <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples"
+data_dir <- "DIRECTORY/WITH/RAW/FILES"
 
 # Get all filenames and create a GatingSet
 files <- list.files(data_dir,
@@ -52,7 +52,7 @@ gs1 <- flowWorkspace::gs_clone(gs)
 ### APPLY COMPENSTATION ####
 
 # Load the compensation matrix
-comp_mat <- read.csv("/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012_Comp_Matrix_noQC_fixed_names.csv",
+comp_mat <- read.csv("DIRECTORY/TO/COMPENSATION/MATRIX",
                      check.names = FALSE) # note check.names
 
 # Check column names
@@ -178,12 +178,12 @@ flowWorkspace::save_gs(gs1, path = file.path(work_dir, "template_gs"))
 # FlowJo workspace which includes pre-existing gates and compensation.
 
 # Open FlowJo workspace in R from .xml file (FIGURE OUT XML vs WSP ISSUE)
-flowjo_file <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Test for flowFun.wsp"
+flowjo_file <- "PATH/TO/FLOWJO/WORKSPACE"
 ws <- CytoML::open_flowjo_xml(flowjo_file)
 
 # Make GatingSet from FlowJo workspace
 gs1 <- CytoML::flowjo_to_gatingset(ws,
-                                  path = "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples") # or cytoset = ... (?WHAT DOES THIS MEAN?)
+                                  path = flowjo_file) # or cytoset = ... (?WHAT DOES THIS MEAN?)
 # Get first sample
 gh <- gs1[[1]]
 
@@ -303,7 +303,7 @@ openCyto::plot(gs1)
 # group and/or corresponding control files that are relevant to differential
 # analysis should also be included in the table; see the workflow vignette for
 # more details.
-file <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/Bioinformatics/High Parameter Flow Data/Testing FlowFun/April 2026/SL012 Sample Info.csv"
+file <- "PATH/TO/SAMPLE/INFO/CSV"
 
 # Define list of comparisons you would like to make between groups for either the
 # differential abundance or differential expression analysis.
@@ -440,7 +440,7 @@ openCyto::gs_add_gating_method(gs1,
 ## Optionally, apply controls to find delta MFIs
 
 # Specify directory containing the control FCS files you'd like to apply
-ctrl_dir <- "/Users/morganroberts/Library/CloudStorage/OneDrive-VancouverProstateCentre/Data/FACS Data/24-12-18 SL012 Aged Mice Blood Spl Bladder/SL012 Spleen Samples/SL012 Spleen FMO Controls"
+ctrl_dir <- "PATH/TO/CONTROL/FCS/FILES"
 
 # Read FCS files into a cytoset
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
