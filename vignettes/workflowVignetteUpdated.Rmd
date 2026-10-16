@@ -72,6 +72,7 @@ Most often, a user has a directory or set of directories containing FCS files th
 library(flowWorkspace)
 library(flowFun)
 library(data.table)
+set.seed(42)
 
 # Specify path to .fcs file
 dir <- system.file("extdata", "samples", package = "flowFunData")
@@ -495,13 +496,29 @@ knitr::include_graphics("images/workflow_final/umap1.png")
 
 This plot is most useful to check metaclusters' relative sizes, and how similar they are to one another. The closer clusters (and cells) are to each other, the more similar they are to each other. However, the opposite is not necessarily true.
 
-By examining these plots, it starts to become clear which metaclusters are more similar to one another, and what their phenotype may be. For example, we see that metaclusters 1, 2, and 7 are all somewhat closely linked by the dendrogram in the heatmap, and are rather close to one another in the UMAP. They all have a high expression of the markers CD3 and CD8, but differ noticeably in markers PD1, CCR7, and CD45RA. It seems that these metaclusters are each a subset of CD8 T cells, and it is reasonable to merge them. Depending on the question being investigated, the user may wish to instead keep them separate, and perhaps specify exhausted and non-exhausted CD8 T cells, which could also be reasonable. 
+By examining these plots, it starts to become clear which metaclusters are more similar to one another, and what their phenotype may be. For example, we see that metaclusters 1, 2, and 3 are all somewhat closely linked by the dendrogram in the heatmap, and are rather close to one another in the UMAP. They all have a high expression of the markers CD3 and CD8, but differ noticeably in markers PD1, CCR7, and CD45RA. It seems that these metaclusters are each a subset of CD8 T cells, and it is reasonable to merge them. Depending on the question being investigated, the user may wish to instead keep them separate, and perhaps specify exhausted and non-exhausted CD8 T cells, which could also be reasonable. 
 
 It should be noted that if a user does desire to look at a particular cell type in greater resolution, this workflow allows for backgating on and reclustering cells belonging to a particular metacluster; therefore identifying every sub-population of interest is not necessary at this step. For now, this example will find an initial low-resolution clustering.
 
 The function `editTableMetaclusters()` can be used to merge and rename metaclusters. A new column, `Meta_original`, is added to the given table, specifying the metaclusters that were found when the clustering algorithm was first called. The existing `Metaclusters` column is edited to contain the new assignments. 
 
 ```{r first-merge}
+# Merge metaclusters
+fsom_dt <- editTableMetaclusters(fsom_dt, 
+                                 new_labels = c("2" = "1",
+                                                "3" = "1",
+                                                "19" = "14", 
+                                                "18" = "14",
+                                                "10" = "8",
+                                                "7" = "4",
+                                                "5" = "4",
+                                                "6" = "4",
+                                                "8" = "4",
+                                                "28" = "26"))
+
+```
+
+```{r first-merge-alt, include=FALSE, eval=FALSE}
 # Merge metaclusters
 fsom_dt <- editTableMetaclusters(fsom_dt, 
                                  new_labels = c("7" = "1",
@@ -513,10 +530,6 @@ fsom_dt <- editTableMetaclusters(fsom_dt,
                                                 "13" = "10",
                                                 "22" = "17"))
 
-```
-
-```{r first-merge-alt, include=FALSE, eval=FALSE}
-# Merge metaclusters
 fsom <- readRDS("vignettes/test_fsom.rds")
 fsom <- FlowSOM::UpdateMetaclusters(fsom, 
                                     newLabels = c("9" = "1",
@@ -554,22 +567,42 @@ Examining this heatmap suggests that metacluster 9 may be a subset of gdT cells,
 
 ```{r cluster-heatmap, fig.height=4, fig.width=7, fig.align='center'}
 # Generate cluster MFI heatmap
-plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = 9)
+plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = c(13, 16))
 ```
 
-It seems that clusters 55, 57, 58, 69, and 70 have a particularly low expression of TCRgd compared to other nodes in this metacluster. This may be further investigated with the second notable function, `plotLabeled2DScatter()`. It creates a 2D scatterplot colored by metacluster, where each cluster center is labeled with its cluster's number. Below, this function is called on these five clusters.
+It seems that clusters 55, 57, 58, and 67 have a particularly low expression of TCRgd compared to other nodes in this metacluster. This may be further investigated with the second notable function, `plotLabeled2DScatter()`. It creates a 2D scatterplot colored by metacluster, where each cluster center is labeled with its cluster's number. Below, this function is called on these five clusters.
 
 ```{r 2d-scatter, fig.height=5, fig.width=6, fig.align='center'}
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt, 
                      channelpair = c("APC-Cy7-A", "BUV563-A"), 
-                     clusters = c(55, 57, 58, 69, 70),
+                     clusters = c(55, 57, 58, 67, 70),
                      metaclusters = NULL)
 ```
 
 Cluster 55 clearly does not have a high enough expression of TCRgd to justify classifying it as gdT cells. Additionally, although it has appropriately high expression of TCRgd, cluster 70 also has high expression of multiple unrelated phenotyping markers (as seen in the heatmap), suggesting that it may be a population of cells that were stuck together. In the next merging step performed below, these clusters are reassigned to a new metacluster named `"Undefined"`. It is recommended to avoid reassigning clusters as much as possible, as doing so increases the subjectivity of the analysis, but it is ultimately up to the user to determine when this step is appropriate.
 
 ```{r second-merge}
+# Merge metaclusters
+fsom_dt <- editTableMetaclusters(fsom_dt,
+                                 new_labels = c("15" = "8",
+                                                "30" = "23",
+                                                "25" = "23",
+                                                "11" = "1",
+                                                "29" = "27",
+                                                "31" = "27",
+                                                "24" = "20",
+                                                "26" = "20",
+                                                "27" = "20",
+                                                "35" = "20",
+                                                "34" = "20",
+                                                "17" = "9",
+                                                "32" = "21"),
+                                 cluster_assignments = c("55" = "Undefined",
+                                                         "70" = "Undefined"))
+```
+
+```{r second-merge-alt, include=FALSE, eval=FALSE}
 # Merge metaclusters
 fsom_dt <- editTableMetaclusters(fsom_dt,
                                  new_labels = c("19" = "14",
@@ -580,12 +613,10 @@ fsom_dt <- editTableMetaclusters(fsom_dt,
                                                 "16" = "8",
                                                 "11" = "8",
                                                 "23" = "15"),
-                                 cluster_assignments = c("55" = "Undefined",
+                                 cluster_assignments = c("48" = "Undefined",
+                                                         "55" = "Undefined",
                                                          "70" = "Undefined"))
-```
 
-```{r second-merge-alt, include=FALSE, eval=FALSE}
-# Merge metaclusters
 fsom <- FlowSOM::UpdateMetaclusters(fsom, 
                                     newLabels = c("12" = "5",
                                                   "13" = "5",
@@ -618,16 +649,19 @@ Finally, once the clustering is complete, the remaining metaclusters may be labe
 
 ```{r new-labels, fig.height=5, fig.width=6, fig.align='center'}
 # Label metaclusters
-fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("14" = "Monocytes",
-                                                         "24" = "cDC",
-                                                         "10" = "B cells",
-                                                         "12" = "NK T cells",
-                                                         "17" = "NK cells",
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("20" = "Monocytes",
+                                                         "27" = "Monocytes",
+                                                         "33" = "cDC",
+                                                         "14" = "B cells",
+                                                         "9" = "NK T cells",
+                                                         "23" = "NK cells",
                                                          "1" = "CD8 T cells",
-                                                         "9" = "gdT cells",
-                                                         "3" = "CD4 T cells",
-                                                         "15" = "pDC",
-                                                         "8" = "Undefined"))
+                                                         "13" = "gdT cells",
+                                                         "4" = "CD4 T cells",
+                                                         "8" = "CD4 T cells",
+                                                         "21" = "pDC",
+                                                         "12" = "Undefined",
+                                                         "22" = "Undefined"))
 
 # Generate final heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
@@ -785,7 +819,7 @@ plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
 
 ```{r print-reclustering, echo=FALSE, out.width='50%', fig.align='center'}
 # Restate since last chunk wasn't evaluated
-cols_of_interest <- c("APC-Cy7-A", "Alexa Fluor 700-A", "BUV395-A", "BV750-P-A", "PE-A", "BV786-A", "BV480-A", "BUV615-P-A")
+cols_of_interest <- c("APC-Cy7-A", "Alexa Fluor 700-A", "BUV395-A", "BV750-P-A", "PE-A", "BV786-A", "BV480-A")
 
 knitr::include_graphics("images/workflow_final/reclustered_heatmap.png")
 knitr::include_graphics("images/workflow_final/reclustered_umap.png")
