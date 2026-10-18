@@ -31,7 +31,7 @@ devtools::install_github("00berst33/flowFun", dependencies = TRUE, build_vignett
 
 ## Data Import
 
-Blob Cytometry data often contains millions of cells, so to facilitate
+Flow Cytometry data often contains millions of cells, so to facilitate
 fast and efficient manipulation of these large datasets, this package
 implements data structures from the `flowWorkspace` package;
 particularly the `cytoframe`, `cytoset`, `GatingHierarchy`, and
