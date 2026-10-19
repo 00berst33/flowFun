@@ -593,11 +593,15 @@ fsom_projected <- clusterControls(ctrl_gs, gs1, "live_cells")
 ctrl_dt <- flowSOMToTable(fsom_projected)
 addClustersToGatingSet(ctrl_dt, ctrl_gs, "live_cells")
 
-# Read in table of sample info, if you have one. This may be the result of
-# `prepareSampleInfo()`, like the data frame created above for differential analysis.
-# MUST have a column called "filename".
-### NOTE: THIS IS CONFUSING, DO YOU NEED TO DO THIS IF YOU ALREADY READ IN A SAMPLE_INFO FILE ABOVE?"
+# If you wish to apply controls, your table of sample info (defined as `sample_info`
+# and created with `prepareSampleInfo()` above) should have an additional
+# column specifying control files and which sample/file they belong to.
+# If your initial table did not have this info, you should either edit it or make
+# a new one and read it in here.
 sample_info <- read.csv("path/to/sample/info/csv")
+# See the "Applying control FCS files" article for more information, and an example of an
+# appropriate table.
+
 
 # Add metadata to GatingSet
 addMetadataToGatingSet(gs1, sample_info)
