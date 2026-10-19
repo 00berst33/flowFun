@@ -329,7 +329,12 @@ flowSOMToTable <- function(fsom) {
       clustered <- eval(clustered)
     }
     if (is.character(clustered)) { # if input was character, match it to prettyColNames
+      # if input is channels
       match_idx <- match(clustered, names(fsom$prettyColnames))
+      # if input is markers
+      if (any(is.na(match_idx))) {
+        match_idx <- match(clustered, sub("\\s*<.*", "", fsom$prettyColnames))
+      }
       clustered <- fsom$prettyColnames[match_idx]
       names(clustered) <- NULL
     }
