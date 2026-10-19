@@ -57,7 +57,7 @@ generateGatingTable <- function(gs, collapse_data = TRUE, ld_stain = NULL) {
     live_gate <- data.table::data.table(alias = "live",
                                         pop = "-",
                                         parent = "singlets",
-                                        dims = "BUV496-A",
+                                        dims = ld_stain,
                                         gating_method = "gate_mindensity",
                                         gating_args = NA,
                                         collapseDataForGating = collapse_data,
