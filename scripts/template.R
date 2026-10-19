@@ -51,10 +51,22 @@ gs1 <- flowWorkspace::gs_clone(gs)
 
 ### APPLY COMPENSTATION ####
 
+# READING IN COMPENSATION MATRIX
+
+# Option 1: If a spillover matrix was saved in the FCS files by FACSDiva, it may be
+# extracted with the following code.
+spill <- flowCore::spillover(fs[[1]])
+spill   # check which keyword holds the matrix ($SPILLOVER, SPILL, etc.)
+comp_mat <- spill$SPILL # select the appropriate keyword and assign to `comp_mat`
+
+# Option 2: If your spillover matrix is not saved within your FCS files, it may
+# also be read from a CSV file.
 # Load the compensation matrix
 comp_mat <- read.csv("DIRECTORY/TO/COMPENSATION/MATRIX",
                      check.names = FALSE) # note check.names
 
+# The matrix must then be checked to ensure it has appropriate column names that
+# match the data you are attempting to apply it to.
 # Check column names
 colnames(comp_mat)
 colnames(gs1)
@@ -90,7 +102,7 @@ ld_stain <- "BUV496-A"
 # Prepare gatingTemplate for preprocessing
 gt_table <- generateGatingTable(gs1,
                                 collapse_data = TRUE, # if TRUE, gates are drawn on collapsed data and replicated across all samples
-                                ld_stain = "BUV496-A") # remove this argument if your data has no L/D stain
+                                ld_stain = ld_stain) # remove this argument if your data has no L/D stain
 
 # Check resulting table
 gt_table
@@ -270,6 +282,12 @@ addClustersToGatingSet(fsom_dt,
                        parent_gate = "live_cells",
                        fsom_file = NULL) # by default, this argument is NULL
 
+################
+# Reclustering #
+################
+
+
+
 ###
 ## The following notes are relevant only if you intend to apply controls later:
 
@@ -407,33 +425,63 @@ write.csv(plot_mat, "tim3_mfis.csv")
 
 #### Optionally, apply 1D boundary gates after clustering
 # Plot channel marker densities by sample/metacluster
+# Here FITC-A is plotted for each child of the population `live_cells`
 plot1DMarkerDensities(gs1,
                       channel = "FITC-A",
-                      population = "live_cells",
-                      facet_by = "subpopulations", # may also facet by "samples"
+                      population = "live_cells", # when `facet_by` == "subpopulations",
+                      facet_by = "subpopulations", # the selected population must have children
+                      inverse = FALSE)
+
+# There is also the option to facet by "samples" for a single population. Here,
+# the expression of FITC-A within CD4 T cells is plotted for each sample
+plot1DMarkerDensities(gs1,
+                      channel = "FITC-A",
+                      population = "CD4 T cells",
+                      facet_by = "samples",
                       inverse = FALSE)
 
 # Add gate to GatingSet with openCyto
 # Add boundary gate on channel; note arguments here are the same as column names for
 #   the earlier gatingTemplate
 # Also note: you can alter where the gate is being drawn by limiting the range the gate
-# can fall in by adding the argument 'gating_args = "gate_range=c(1.5,3)"' to 'gs_add_gating_method; below.
-# in this example I am limiting it to FITC values between between 1.5 and 3.
+# can fall in by adding the argument 'gating_args = "gate_range=c(1,3)"' to 'gs_add_gating_method; below.
+# in this example I am limiting it to FITC values between between 1 and 3 (recall that this channel
+# had a transformation applied to it).
 openCyto::gs_add_gating_method(gs1,
                                alias = "+FITC-A",
-                               parent = "10",         # add +FITC-A gate to metacluster 9
+                               parent = "CD4 T cells",         # add +FITC-A gate to CD4 T cells
                                dims = "FITC-A",
+                               gating_args = "gate_range=c(1,3)",
                                gating_method = "gate_mindensity",
                                collapseDataForGating = TRUE,
                                groupBy = length(gs1))
 
 # Check the 1D boundary gate
-### WRITE CODE HERE ###
+ggcyto(gs1,
+       ggplot2::aes(x = "FITC-A"), # the channel the gate was drawn on
+       subset = "CD4 T cells") + # the population the gate was drawn for
+  geom_density() +
+  geom_gate()
 
 # Optional: If you want to redraw the 1D boundary gate run the following code then check
 # the gate and repeat until you are happy with it.
-### WRITE CODE HERE ###
-# need to remove the FITC gate first then redraw it with the 'gating_args = "gate_range=c(1.5,3)"' argument
+#   This function removes the most recent gate added with the function `openCyto::gs_add_gating_method()`
+openCyto::gs_remove_gating_method(gs1)
+
+#   You may also be more specific and remove populations added at any point in the workflow with
+#   flowWorkspace::gs_pop_remove()
+#   CAREFUL: any existing children of the selected node will also be deleted
+flowWorkspace::gs_pop_remove(gs1, "+FITC-A")
+
+#   You may then call `gs_add_gating_method()` again, with changes to the `gating_args` parameter.
+openCyto::gs_add_gating_method(gs1,
+                               alias = "+FITC-A",
+                               parent = "CD4 T cells",
+                               dims = "FITC-A",
+                               gating_args = "gate_range=c(1.5,3)",
+                               gating_method = "gate_mindensity",
+                               collapseDataForGating = TRUE,
+                               groupBy = length(gs1))
 
 
 ####
