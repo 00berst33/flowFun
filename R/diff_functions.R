@@ -718,7 +718,7 @@ doDEAnalysis <- function(input, cols_to_test, design, contrasts, counts = NULL,
   lm_model <- limma::lmFit(object = collapsed,
                            design = design,
                            weights = weights)
-  return(lm_model)
+  #return(lm_model)
 
   # For each comparison to be made, fit contrast and get results
   all_res <- lapply(seq_len(ncol(contrasts)), function(i) {
