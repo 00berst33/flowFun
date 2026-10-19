@@ -490,8 +490,10 @@ plotGroupMFIBars(gs1,
 
 # If you would like to get a table of sample/metacluster MFIs to use for your own plotting,
 # use `getSampleMetaclusterMFIs()`.
-plot_mat <- getSampleMetaclusterMFIs(gs1, "BV711-A", sample_df = sample_info,
-                                     populations = subpops, inverse = TRUE)
+plot_mat <- getSampleMetaclusterMFIs(gs1,
+                                     "BV711-A",
+                                     populations = subpops,
+                                     inverse = TRUE)
 write.csv(plot_mat, "tim3_mfis.csv")
 
 #### Optionally, apply 1D boundary gates after clustering
@@ -563,13 +565,16 @@ ctrl_dir <- "PATH/TO/CONTROL/FCS/FILES"
 
 # Read FCS files into a cytoset
 ctrl <- flowWorkspace::load_cytoset_from_fcs(list.files(ctrl_dir, full.names = TRUE), which.lines = 20000)
-# Apply transformations, compensations and gates to control gs
-ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template") # make sure to exclude boolean
 
 # Apply transformations, compensations and gates created above for main data (the `gs1` object)
 # to this cytoset. Essentially, we are pre-processing the control data exactly
-# as we did for our data earlier
+# as we did for our data earlier.
 ctrl_gs <- flowWorkspace::gh_apply_to_cs(gs1[[1]], ctrl, compensation_source = "template")
+# Gates that were determined for your primary data during clustering should NOT
+# be applied yet, ensure that this is the case with `openCyto::plot()`:
+openCyto::plot(gs1)
+# If you see anything other than your preprocessing gates, remove them with
+# flowWorkspace::gs_pop_remove()
 
 # Check that the gates are appropriate and don't need adjustment
 # non-debris gate
