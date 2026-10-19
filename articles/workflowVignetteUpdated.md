@@ -73,6 +73,7 @@ demonstrates how to prepare a set of FCS files as a `GatingSet`.
 library(flowWorkspace)
 library(flowFun)
 library(data.table)
+set.seed(42)
 
 # Specify path to .fcs file
 dir <- system.file("extdata", "samples", package = "flowFunData")
@@ -636,7 +637,7 @@ opposite is not necessarily true.
 
 By examining these plots, it starts to become clear which metaclusters
 are more similar to one another, and what their phenotype may be. For
-example, we see that metaclusters 1, 2, and 7 are all somewhat closely
+example, we see that metaclusters 1, 2, and 3 are all somewhat closely
 linked by the dendrogram in the heatmap, and are rather close to one
 another in the UMAP. They all have a high expression of the markers CD3
 and CD8, but differ noticeably in markers PD1, CCR7, and CD45RA. It
@@ -665,23 +666,25 @@ assignments.
 
 # Merge metaclusters
 fsom_dt <- editTableMetaclusters(fsom_dt, 
-                                 new_labels = c("7" = "1",
-                                                "2" = "1",
-                                                "5" = "3",
-                                                "4" = "3",
-                                                "5" = "3",
-                                                "6" = "3",
-                                                "13" = "10",
-                                                "22" = "17"))
+                                 new_labels = c("2" = "1",
+                                                "3" = "1",
+                                                "19" = "14", 
+                                                "18" = "14",
+                                                "10" = "8",
+                                                "7" = "4",
+                                                "5" = "4",
+                                                "6" = "4",
+                                                "8" = "4",
+                                                "28" = "26"))
 ```
 
 | Meta_original | Metacluster | Cluster |
 |:-------------:|:-----------:|:-------:|
 |      12       |     12      |   66    |
 |      34       |     34      |   138   |
-|       5       |      3      |   23    |
-|       8       |      8      |   35    |
-|      18       |     18      |   85    |
+|       5       |      4      |   23    |
+|       8       |      4      |   35    |
+|      18       |     14      |   85    |
 
 A new heatmap may be generated to reflect the new clustering, and help
 decide whether any further merging should be performed.
@@ -711,12 +714,12 @@ metacluster 9.
 ``` r
 
 # Generate cluster MFI heatmap
-plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = 9)
+plotClusterMFIs(fsom_dt, cols_to_cluster, metaclusters = c(13, 16))
 ```
 
 ![](workflowVignetteUpdated_files/figure-html/cluster-heatmap-1.png)
 
-It seems that clusters 55, 57, 58, 69, and 70 have a particularly low
+It seems that clusters 55, 57, 58, and 67 have a particularly low
 expression of TCRgd compared to other nodes in this metacluster. This
 may be further investigated with the second notable function,
 [`plotLabeled2DScatter()`](https://00berst33.github.io/flowFun/reference/plotLabeled2DScatter.md).
@@ -729,7 +732,7 @@ called on these five clusters.
 # Generate 2D scatterplot
 plotLabeled2DScatter(fsom_dt, 
                      channelpair = c("APC-Cy7-A", "BUV563-A"), 
-                     clusters = c(55, 57, 58, 69, 70),
+                     clusters = c(55, 57, 58, 67, 70),
                      metaclusters = NULL)
 #> [1] "CD3 <APC-Cy7-A>"  "TCRgd <BUV563-A>"
 ```
@@ -751,14 +754,19 @@ to the user to determine when this step is appropriate.
 
 # Merge metaclusters
 fsom_dt <- editTableMetaclusters(fsom_dt,
-                                 new_labels = c("19" = "14",
-                                                "20" = "14",
-                                                "21" = "14",
-                                                "18" = "14",
-                                                "25" = "14",
-                                                "16" = "8",
-                                                "11" = "8",
-                                                "23" = "15"),
+                                 new_labels = c("15" = "8",
+                                                "30" = "23",
+                                                "25" = "23",
+                                                "11" = "1",
+                                                "29" = "27",
+                                                "31" = "27",
+                                                "24" = "20",
+                                                "26" = "20",
+                                                "27" = "20",
+                                                "35" = "20",
+                                                "34" = "20",
+                                                "17" = "9",
+                                                "32" = "21"),
                                  cluster_assignments = c("55" = "Undefined",
                                                          "70" = "Undefined"))
 ```
@@ -783,16 +791,19 @@ of another metacluster to be merged into.
 ``` r
 
 # Label metaclusters
-fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("14" = "Monocytes",
-                                                         "24" = "cDC",
-                                                         "10" = "B cells",
-                                                         "12" = "NK T cells",
-                                                         "17" = "NK cells",
+fsom_dt <- editTableMetaclusters(fsom_dt, new_labels = c("20" = "Monocytes",
+                                                         "27" = "Monocytes",
+                                                         "33" = "cDC",
+                                                         "14" = "B cells",
+                                                         "9" = "NK T cells",
+                                                         "23" = "NK cells",
                                                          "1" = "CD8 T cells",
-                                                         "9" = "gdT cells",
-                                                         "3" = "CD4 T cells",
-                                                         "15" = "pDC",
-                                                         "8" = "Undefined"))
+                                                         "13" = "gdT cells",
+                                                         "4" = "CD4 T cells",
+                                                         "8" = "CD4 T cells",
+                                                         "21" = "pDC",
+                                                         "12" = "Undefined",
+                                                         "22" = "Undefined"))
 
 # Generate final heatmap
 plotMetaclusterMFIs(fsom_dt, cols_to_cluster)
@@ -894,18 +905,18 @@ flowWorkspace::gs_pop_get_count_fast(gs1,
 #> 12: sample_6.fcs /nonMargins/nonDebris/singlets/live/CD4 T cells
 #>                                  Parent Frequency ParentFrequency
 #>                                  <char>     <num>           <num>
-#>  1: /nonMargins/nonDebris/singlets/live    0.0138          0.3138
-#>  2: /nonMargins/nonDebris/singlets/live    0.0386          0.3138
-#>  3: /nonMargins/nonDebris/singlets/live    0.0106          0.4768
-#>  4: /nonMargins/nonDebris/singlets/live    0.0422          0.4768
-#>  5: /nonMargins/nonDebris/singlets/live    0.1074          0.7378
-#>  6: /nonMargins/nonDebris/singlets/live    0.0730          0.7378
-#>  7: /nonMargins/nonDebris/singlets/live    0.2244          0.5032
-#>  8: /nonMargins/nonDebris/singlets/live    0.0670          0.5032
-#>  9: /nonMargins/nonDebris/singlets/live    0.1610          0.5550
-#> 10: /nonMargins/nonDebris/singlets/live    0.1154          0.5550
-#> 11: /nonMargins/nonDebris/singlets/live    0.2104          0.5216
-#> 12: /nonMargins/nonDebris/singlets/live    0.0672          0.5216
+#>  1: /nonMargins/nonDebris/singlets/live    0.0106          0.3138
+#>  2: /nonMargins/nonDebris/singlets/live    0.0684          0.3138
+#>  3: /nonMargins/nonDebris/singlets/live    0.0124          0.4768
+#>  4: /nonMargins/nonDebris/singlets/live    0.0646          0.4768
+#>  5: /nonMargins/nonDebris/singlets/live    0.1206          0.7378
+#>  6: /nonMargins/nonDebris/singlets/live    0.1174          0.7378
+#>  7: /nonMargins/nonDebris/singlets/live    0.2000          0.5032
+#>  8: /nonMargins/nonDebris/singlets/live    0.1018          0.5032
+#>  9: /nonMargins/nonDebris/singlets/live    0.1612          0.5550
+#> 10: /nonMargins/nonDebris/singlets/live    0.1350          0.5550
+#> 11: /nonMargins/nonDebris/singlets/live    0.1962          0.5216
+#> 12: /nonMargins/nonDebris/singlets/live    0.1350          0.5216
 ```
 
 It is also simple to extract a subset of data using one of these gates,
@@ -1222,26 +1233,16 @@ counts <- makeCountMatrix(fsom_dt,
 
 |  | sample_1.fcs | sample_2.fcs | sample_3.fcs | sample_4.fcs | sample_5.fcs | sample_6.fcs |
 |:---|:--:|:--:|:--:|:--:|:--:|:--:|
-| CD8 T cells | 69 | 53 | 537 | 1122 | 805 | 1052 |
-| B cells | 36 | 26 | 430 | 49 | 73 | 61 |
-| NK T cells | 127 | 35 | 74 | 40 | 23 | 20 |
-| Monocytes | 368 | 812 | 912 | 291 | 786 | 377 |
-| pDC | 123 | 43 | 304 | 6 | 18 | 14 |
-| NK cells | 57 | 92 | 197 | 60 | 59 | 25 |
-| cDC | 63 | 8 | 8 | 1 | 3 | 1 |
-| 26 | 9 | 4 | 13 | 1 | 7 | 8 |
-| 27 | 166 | 234 | 124 | 41 | 74 | 117 |
-| 28 | 21 | 50 | 35 | 22 | 45 | 57 |
-| 29 | 105 | 364 | 109 | 254 | 76 | 129 |
-| CD4 T cells | 193 | 211 | 365 | 335 | 577 | 336 |
-| 30 | 10 | 19 | 8 | 10 | 25 | 33 |
-| 31 | 51 | 221 | 53 | 124 | 47 | 71 |
-| 32 | 10 | 13 | 10 | 14 | 10 | 10 |
-| 33 | 24 | 19 | 24 | 29 | 20 | 27 |
-| 34 | 8 | 31 | 10 | 16 | 8 | 13 |
-| 35 | 10 | 42 | 12 | 36 | 15 | 28 |
-| Undefined | 115 | 106 | 372 | 58 | 100 | 222 |
-| gdT cells | 4 | 1 | 92 | 7 | 4 | 7 |
+| CD8 T cells | 53 | 62 | 603 | 1000 | 806 | 981 |
+| Undefined | 164 | 47 | 206 | 94 | 42 | 30 |
+| gdT cells | 13 | 10 | 396 | 49 | 64 | 14 |
+| B cells | 176 | 246 | 80 | 54 | 140 | 167 |
+| Monocytes | 450 | 961 | 376 | 498 | 278 | 427 |
+| pDC | 56 | 18 | 23 | 28 | 20 | 15 |
+| NK cells | 261 | 615 | 1117 | 234 | 675 | 246 |
+| cDC | 24 | 19 | 24 | 29 | 20 | 27 |
+| CD4 T cells | 342 | 323 | 587 | 509 | 675 | 675 |
+| NK T cells | 30 | 83 | 277 | 21 | 55 | 26 |
 
 To instead get counts from a `GatingSet`, the function
 [`flowWorkspace::gs_pop_get_count_fast()`](https://rdrr.io/pkg/flowWorkspace/man/gs_pop_get_count_fast.html)
@@ -1258,180 +1259,120 @@ gs_counts
 #> /nonMargins/nonDebris                                                  2338
 #> /nonMargins/nonDebris/singlets                                         2138
 #> /nonMargins/nonDebris/singlets/live                                    1569
-#> /nonMargins/nonDebris/singlets/live/26                                    9
-#> /nonMargins/nonDebris/singlets/live/27                                  166
-#> /nonMargins/nonDebris/singlets/live/28                                   21
-#> /nonMargins/nonDebris/singlets/live/29                                  105
-#> /nonMargins/nonDebris/singlets/live/30                                   10
-#> /nonMargins/nonDebris/singlets/live/31                                   51
-#> /nonMargins/nonDebris/singlets/live/32                                   10
-#> /nonMargins/nonDebris/singlets/live/33                                   24
-#> /nonMargins/nonDebris/singlets/live/34                                    8
-#> /nonMargins/nonDebris/singlets/live/35                                   10
-#> /nonMargins/nonDebris/singlets/live/B cells                              36
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         193
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                          69
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            7
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           43
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            4
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           15
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           368
-#> /nonMargins/nonDebris/singlets/live/NK T cells                          127
-#> /nonMargins/nonDebris/singlets/live/NK cells                             57
-#> /nonMargins/nonDebris/singlets/live/Undefined                           115
-#> /nonMargins/nonDebris/singlets/live/cDC                                  63
-#> /nonMargins/nonDebris/singlets/live/gdT cells                             4
-#> /nonMargins/nonDebris/singlets/live/pDC                                 123
+#> /nonMargins/nonDebris/singlets/live/B cells                             176
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         342
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                          53
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            9
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           20
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            3
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           21
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           450
+#> /nonMargins/nonDebris/singlets/live/NK T cells                           30
+#> /nonMargins/nonDebris/singlets/live/NK cells                            261
+#> /nonMargins/nonDebris/singlets/live/Undefined                           164
+#> /nonMargins/nonDebris/singlets/live/cDC                                  24
+#> /nonMargins/nonDebris/singlets/live/gdT cells                            13
+#> /nonMargins/nonDebris/singlets/live/pDC                                  56
 #> root                                                                   5000
 #>                                                                sample_2.fcs
 #> /nonMargins                                                            4971
 #> /nonMargins/nonDebris                                                  3411
 #> /nonMargins/nonDebris/singlets                                         3164
 #> /nonMargins/nonDebris/singlets/live                                    2384
-#> /nonMargins/nonDebris/singlets/live/26                                    4
-#> /nonMargins/nonDebris/singlets/live/27                                  234
-#> /nonMargins/nonDebris/singlets/live/28                                   50
-#> /nonMargins/nonDebris/singlets/live/29                                  364
-#> /nonMargins/nonDebris/singlets/live/30                                   19
-#> /nonMargins/nonDebris/singlets/live/31                                  221
-#> /nonMargins/nonDebris/singlets/live/32                                   13
-#> /nonMargins/nonDebris/singlets/live/33                                   19
-#> /nonMargins/nonDebris/singlets/live/34                                   31
-#> /nonMargins/nonDebris/singlets/live/35                                   42
-#> /nonMargins/nonDebris/singlets/live/B cells                              26
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         211
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                          53
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+            8
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           29
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            1
+#> /nonMargins/nonDebris/singlets/live/B cells                             246
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         323
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                          62
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           18
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-           26
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            3
 #> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           15
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           812
-#> /nonMargins/nonDebris/singlets/live/NK T cells                           35
-#> /nonMargins/nonDebris/singlets/live/NK cells                             92
-#> /nonMargins/nonDebris/singlets/live/Undefined                           106
-#> /nonMargins/nonDebris/singlets/live/cDC                                   8
-#> /nonMargins/nonDebris/singlets/live/gdT cells                             1
-#> /nonMargins/nonDebris/singlets/live/pDC                                  43
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           961
+#> /nonMargins/nonDebris/singlets/live/NK T cells                           83
+#> /nonMargins/nonDebris/singlets/live/NK cells                            615
+#> /nonMargins/nonDebris/singlets/live/Undefined                            47
+#> /nonMargins/nonDebris/singlets/live/cDC                                  19
+#> /nonMargins/nonDebris/singlets/live/gdT cells                            10
+#> /nonMargins/nonDebris/singlets/live/pDC                                  18
 #> root                                                                   5000
 #>                                                                sample_3.fcs
 #> /nonMargins                                                            4943
 #> /nonMargins/nonDebris                                                  4438
 #> /nonMargins/nonDebris/singlets                                         4230
 #> /nonMargins/nonDebris/singlets/live                                    3689
-#> /nonMargins/nonDebris/singlets/live/26                                   13
-#> /nonMargins/nonDebris/singlets/live/27                                  124
-#> /nonMargins/nonDebris/singlets/live/28                                   35
-#> /nonMargins/nonDebris/singlets/live/29                                  109
-#> /nonMargins/nonDebris/singlets/live/30                                    8
-#> /nonMargins/nonDebris/singlets/live/31                                   53
-#> /nonMargins/nonDebris/singlets/live/32                                   10
-#> /nonMargins/nonDebris/singlets/live/33                                   24
-#> /nonMargins/nonDebris/singlets/live/34                                   10
-#> /nonMargins/nonDebris/singlets/live/35                                   12
-#> /nonMargins/nonDebris/singlets/live/B cells                             430
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         365
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                         537
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           98
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          244
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           40
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          155
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           912
-#> /nonMargins/nonDebris/singlets/live/NK T cells                           74
-#> /nonMargins/nonDebris/singlets/live/NK cells                            197
-#> /nonMargins/nonDebris/singlets/live/Undefined                           372
-#> /nonMargins/nonDebris/singlets/live/cDC                                   8
-#> /nonMargins/nonDebris/singlets/live/gdT cells                            92
-#> /nonMargins/nonDebris/singlets/live/pDC                                 304
+#> /nonMargins/nonDebris/singlets/live/B cells                              80
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         587
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                         603
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           62
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          388
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           16
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          137
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           376
+#> /nonMargins/nonDebris/singlets/live/NK T cells                          277
+#> /nonMargins/nonDebris/singlets/live/NK cells                           1117
+#> /nonMargins/nonDebris/singlets/live/Undefined                           206
+#> /nonMargins/nonDebris/singlets/live/cDC                                  24
+#> /nonMargins/nonDebris/singlets/live/gdT cells                           396
+#> /nonMargins/nonDebris/singlets/live/pDC                                  23
 #> root                                                                   5000
 #>                                                                sample_4.fcs
 #> /nonMargins                                                            4961
 #> /nonMargins/nonDebris                                                  3077
 #> /nonMargins/nonDebris/singlets                                         2770
 #> /nonMargins/nonDebris/singlets/live                                    2516
-#> /nonMargins/nonDebris/singlets/live/26                                    1
-#> /nonMargins/nonDebris/singlets/live/27                                   41
-#> /nonMargins/nonDebris/singlets/live/28                                   22
-#> /nonMargins/nonDebris/singlets/live/29                                  254
-#> /nonMargins/nonDebris/singlets/live/30                                   10
-#> /nonMargins/nonDebris/singlets/live/31                                  124
-#> /nonMargins/nonDebris/singlets/live/32                                   14
-#> /nonMargins/nonDebris/singlets/live/33                                   29
-#> /nonMargins/nonDebris/singlets/live/34                                   16
-#> /nonMargins/nonDebris/singlets/live/35                                   36
-#> /nonMargins/nonDebris/singlets/live/B cells                              49
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         335
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                        1122
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+          124
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          390
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+          239
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          369
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           291
-#> /nonMargins/nonDebris/singlets/live/NK T cells                           40
-#> /nonMargins/nonDebris/singlets/live/NK cells                             60
-#> /nonMargins/nonDebris/singlets/live/Undefined                            58
-#> /nonMargins/nonDebris/singlets/live/cDC                                   1
-#> /nonMargins/nonDebris/singlets/live/gdT cells                             7
-#> /nonMargins/nonDebris/singlets/live/pDC                                   6
+#> /nonMargins/nonDebris/singlets/live/B cells                              54
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         509
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                        1000
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           43
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          870
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            6
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           81
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           498
+#> /nonMargins/nonDebris/singlets/live/NK T cells                           21
+#> /nonMargins/nonDebris/singlets/live/NK cells                            234
+#> /nonMargins/nonDebris/singlets/live/Undefined                            94
+#> /nonMargins/nonDebris/singlets/live/cDC                                  29
+#> /nonMargins/nonDebris/singlets/live/gdT cells                            49
+#> /nonMargins/nonDebris/singlets/live/pDC                                  28
 #> root                                                                   5000
 #>                                                                sample_5.fcs
 #> /nonMargins                                                            4896
 #> /nonMargins/nonDebris                                                  3791
 #> /nonMargins/nonDebris/singlets                                         3513
 #> /nonMargins/nonDebris/singlets/live                                    2775
-#> /nonMargins/nonDebris/singlets/live/26                                    7
-#> /nonMargins/nonDebris/singlets/live/27                                   74
-#> /nonMargins/nonDebris/singlets/live/28                                   45
-#> /nonMargins/nonDebris/singlets/live/29                                   76
-#> /nonMargins/nonDebris/singlets/live/30                                   25
-#> /nonMargins/nonDebris/singlets/live/31                                   47
-#> /nonMargins/nonDebris/singlets/live/32                                   10
-#> /nonMargins/nonDebris/singlets/live/33                                   20
-#> /nonMargins/nonDebris/singlets/live/34                                    8
-#> /nonMargins/nonDebris/singlets/live/35                                   15
-#> /nonMargins/nonDebris/singlets/live/B cells                              73
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         577
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                         805
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           29
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          389
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           88
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          299
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           786
-#> /nonMargins/nonDebris/singlets/live/NK T cells                           23
-#> /nonMargins/nonDebris/singlets/live/NK cells                             59
-#> /nonMargins/nonDebris/singlets/live/Undefined                           100
-#> /nonMargins/nonDebris/singlets/live/cDC                                   3
-#> /nonMargins/nonDebris/singlets/live/gdT cells                             4
-#> /nonMargins/nonDebris/singlets/live/pDC                                  18
+#> /nonMargins/nonDebris/singlets/live/B cells                             140
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         675
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                         806
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           51
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          554
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+           13
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          188
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           278
+#> /nonMargins/nonDebris/singlets/live/NK T cells                           55
+#> /nonMargins/nonDebris/singlets/live/NK cells                            675
+#> /nonMargins/nonDebris/singlets/live/Undefined                            42
+#> /nonMargins/nonDebris/singlets/live/cDC                                  20
+#> /nonMargins/nonDebris/singlets/live/gdT cells                            64
+#> /nonMargins/nonDebris/singlets/live/pDC                                  20
 #> root                                                                   5000
 #>                                                                sample_6.fcs
 #> /nonMargins                                                            4922
 #> /nonMargins/nonDebris                                                  3648
 #> /nonMargins/nonDebris/singlets                                         3464
 #> /nonMargins/nonDebris/singlets/live                                    2608
-#> /nonMargins/nonDebris/singlets/live/26                                    8
-#> /nonMargins/nonDebris/singlets/live/27                                  117
-#> /nonMargins/nonDebris/singlets/live/28                                   57
-#> /nonMargins/nonDebris/singlets/live/29                                  129
-#> /nonMargins/nonDebris/singlets/live/30                                   33
-#> /nonMargins/nonDebris/singlets/live/31                                   71
-#> /nonMargins/nonDebris/singlets/live/32                                   10
-#> /nonMargins/nonDebris/singlets/live/33                                   27
-#> /nonMargins/nonDebris/singlets/live/34                                   13
-#> /nonMargins/nonDebris/singlets/live/35                                   28
-#> /nonMargins/nonDebris/singlets/live/B cells                              61
-#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         336
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells                        1052
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           63
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          291
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+          169
-#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-          529
-#> /nonMargins/nonDebris/singlets/live/Monocytes                           377
-#> /nonMargins/nonDebris/singlets/live/NK T cells                           20
-#> /nonMargins/nonDebris/singlets/live/NK cells                             25
-#> /nonMargins/nonDebris/singlets/live/Undefined                           222
-#> /nonMargins/nonDebris/singlets/live/cDC                                   1
-#> /nonMargins/nonDebris/singlets/live/gdT cells                             7
-#> /nonMargins/nonDebris/singlets/live/pDC                                  14
+#> /nonMargins/nonDebris/singlets/live/B cells                             167
+#> /nonMargins/nonDebris/singlets/live/CD4 T cells                         675
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells                         981
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7+           60
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA+, CCR7-          879
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7+            7
+#> /nonMargins/nonDebris/singlets/live/CD8 T cells/CD45RA-, CCR7-           35
+#> /nonMargins/nonDebris/singlets/live/Monocytes                           427
+#> /nonMargins/nonDebris/singlets/live/NK T cells                           26
+#> /nonMargins/nonDebris/singlets/live/NK cells                            246
+#> /nonMargins/nonDebris/singlets/live/Undefined                            30
+#> /nonMargins/nonDebris/singlets/live/cDC                                  27
+#> /nonMargins/nonDebris/singlets/live/gdT cells                            14
+#> /nonMargins/nonDebris/singlets/live/pDC                                  15
 #> root                                                                   5000
 ```
 
@@ -1462,47 +1403,27 @@ clust_counts <- clust_counts[, samples]
 rownames(clust_counts) <- sub("^.*/", "", rownames(clust_counts))
 clust_counts
 #>             sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs
-#> 26                     9            4           13            1            7
-#> 27                   166          234          124           41           74
-#> 28                    21           50           35           22           45
-#> 29                   105          364          109          254           76
-#> 30                    10           19            8           10           25
-#> 31                    51          221           53          124           47
-#> 32                    10           13           10           14           10
-#> 33                    24           19           24           29           20
-#> 34                     8           31           10           16            8
-#> 35                    10           42           12           36           15
-#> B cells               36           26          430           49           73
-#> CD4 T cells          193          211          365          335          577
-#> CD8 T cells           69           53          537         1122          805
-#> Monocytes            368          812          912          291          786
-#> NK T cells           127           35           74           40           23
-#> NK cells              57           92          197           60           59
-#> Undefined            115          106          372           58          100
-#> cDC                   63            8            8            1            3
-#> gdT cells              4            1           92            7            4
-#> pDC                  123           43          304            6           18
+#> B cells              176          246           80           54          140
+#> CD4 T cells          342          323          587          509          675
+#> CD8 T cells           53           62          603         1000          806
+#> Monocytes            450          961          376          498          278
+#> NK T cells            30           83          277           21           55
+#> NK cells             261          615         1117          234          675
+#> Undefined            164           47          206           94           42
+#> cDC                   24           19           24           29           20
+#> gdT cells             13           10          396           49           64
+#> pDC                   56           18           23           28           20
 #>             sample_6.fcs
-#> 26                     8
-#> 27                   117
-#> 28                    57
-#> 29                   129
-#> 30                    33
-#> 31                    71
-#> 32                    10
-#> 33                    27
-#> 34                    13
-#> 35                    28
-#> B cells               61
-#> CD4 T cells          336
-#> CD8 T cells         1052
-#> Monocytes            377
-#> NK T cells            20
-#> NK cells              25
-#> Undefined            222
-#> cDC                    1
-#> gdT cells              7
-#> pDC                   14
+#> B cells              167
+#> CD4 T cells          675
+#> CD8 T cells          981
+#> Monocytes            427
+#> NK T cells            26
+#> NK cells             246
+#> Undefined             30
+#> cDC                   27
+#> gdT cells             14
+#> pDC                   15
 ```
 
 Given any matrix of counts,
@@ -1544,51 +1465,31 @@ were tested, so the resulting list contains two tables:
 
 |             |   logFC    |  logCPM  |     LR     |  PValue   |    FDR    |
 |:------------|:----------:|:--------:|:----------:|:---------:|:---------:|
-| cDC         | -3.7651269 | 12.67172 | 19.6367982 | 0.0000094 | 0.0001873 |
-| CD8 T cells | 3.9582888  | 18.03725 | 17.0039740 | 0.0000373 | 0.0003730 |
-| gdT cells   | 2.3350335  | 12.60229 | 5.2020767  | 0.0225599 | 0.1503995 |
-| B cells     | 1.7467617  | 15.12860 | 4.1817193  | 0.0408622 | 0.2043111 |
-| 27          | -1.3174968 | 15.59524 | 3.0938467  | 0.0785888 | 0.2691608 |
-| NK T cells  | -1.3282430 | 14.42161 | 3.0497770  | 0.0807482 | 0.2691608 |
-| pDC         | -1.1274898 | 14.71813 | 2.1883188  | 0.1390610 | 0.3973172 |
-| CD4 T cells | 1.0344152  | 17.11514 | 1.6368888  | 0.2007529 | 0.5018822 |
-| 31          | -0.7152660 | 15.30686 | 0.8858492  | 0.3466046 | 0.7702325 |
-| 29          | -0.5955501 | 16.17769 | 0.6171876  | 0.4320943 | 0.8054287 |
-| 34          | -0.6230041 | 12.69379 | 0.5885361  | 0.4429858 | 0.8054287 |
-| Undefined   | 0.4693132  | 15.81039 | 0.3528109  | 0.5525262 | 0.9208770 |
-| 33          | 0.2405540  | 13.37792 | 0.0870335  | 0.7679829 | 0.9984792 |
-| 30          | 0.2046768  | 12.96451 | 0.0583372  | 0.8091436 | 0.9984792 |
-| NK cells    | -0.1171831 | 14.88648 | 0.0227515  | 0.8801051 | 0.9984792 |
-| 26          | -0.1109586 | 11.70795 | 0.0154018  | 0.9012329 | 0.9984792 |
-| 28          | 0.0860343  | 13.97126 | 0.0115634  | 0.9143658 | 0.9984792 |
-| Monocytes   | -0.0740140 | 17.80082 | 0.0093045  | 0.9231553 | 0.9984792 |
-| 32          | -0.0047519 | 12.39884 | 0.0000361  | 0.9952036 | 0.9984792 |
-| 35          | -0.0013819 | 13.41683 | 0.0000036  | 0.9984792 | 0.9984792 |
+| CD8 T cells | 3.6386805  | 17.87577 | 19.5608803 | 0.0000097 | 0.0000974 |
+| gdT cells   | 2.2991045  | 14.64095 | 8.3213749  | 0.0039181 | 0.0195906 |
+| B cells     | -1.4177093 | 15.95181 | 4.7087009  | 0.0300103 | 0.1000344 |
+| pDC         | -1.1763017 | 13.56520 | 2.9284108  | 0.0870331 | 0.1958380 |
+| Monocytes   | -1.0766935 | 17.73156 | 2.7391148  | 0.0979190 | 0.1958380 |
+| Undefined   | -1.0238688 | 15.20394 | 2.3825864  | 0.1226943 | 0.2044904 |
+| CD4 T cells | 0.5219118  | 17.68440 | 0.5780453  | 0.4470795 | 0.6386850 |
+| NK cells    | -0.2557349 | 17.49981 | 0.1478696  | 0.7005797 | 0.8615007 |
+| NK T cells  | -0.1947224 | 14.69369 | 0.0814436  | 0.7753506 | 0.8615007 |
+| cDC         | -0.0878890 | 13.38766 | 0.0151454  | 0.9020542 | 0.9020542 |
 
 Ctrl vs. MIBC {.table}
 
 |             |   logFC    |  logCPM  |    LR     |  PValue   |    FDR    |
 |:------------|:----------:|:--------:|:---------:|:---------:|:---------:|
-| pDC         | -2.3807569 | 14.71813 | 6.1353503 | 0.0132505 | 0.1584515 |
-| gdT cells   | -2.4435551 | 12.60229 | 5.8199770 | 0.0158452 | 0.1584515 |
-| 30          | 1.7488640  | 12.96451 | 3.1553614 | 0.0756779 | 0.5045195 |
-| B cells     | -1.1126297 | 15.12860 | 1.5035665 | 0.2201234 | 0.6600647 |
-| NK T cells  | -1.0937646 | 14.42161 | 1.3803578 | 0.2400402 | 0.6600647 |
-| NK cells    | -1.0671431 | 14.88648 | 1.3648476 | 0.2426991 | 0.6600647 |
-| 28          | 1.0721412  | 13.97126 | 1.3358235 | 0.2477719 | 0.6600647 |
-| 29          | -1.0094303 | 16.17769 | 1.2475242 | 0.2640259 | 0.6600647 |
-| 31          | -0.7542249 | 15.30686 | 0.6911796 | 0.4057634 | 0.8937357 |
-| 27          | 0.6190904  | 15.59524 | 0.4697341 | 0.4931095 | 0.8937357 |
-| 26          | 0.7049993  | 11.70795 | 0.4675487 | 0.4941170 | 0.8937357 |
-| CD4 T cells | 0.5519135  | 17.11514 | 0.3825504 | 0.5362414 | 0.8937357 |
-| Monocytes   | 0.4786227  | 17.80082 | 0.2887697 | 0.5910100 | 0.9092462 |
-| cDC         | -0.5564371 | 12.67172 | 0.2205538 | 0.6386183 | 0.9123119 |
-| 35          | -0.3650014 | 13.41683 | 0.1518197 | 0.6968024 | 0.9202165 |
-| 34          | -0.3308023 | 12.69379 | 0.1135186 | 0.7361732 | 0.9202165 |
-| 32          | -0.2124137 | 12.39884 | 0.0461951 | 0.8298216 | 0.9282212 |
-| Undefined   | 0.1580130  | 15.81039 | 0.0313012 | 0.8595700 | 0.9282212 |
-| 33          | -0.1387510 | 13.37792 | 0.0221042 | 0.8818101 | 0.9282212 |
-| CD8 T cells | 0.0213681  | 18.03725 | 0.0005791 | 0.9808014 | 0.9808014 |
+| gdT cells   | -1.9628662 | 14.64095 | 5.7761453 | 0.0162451 | 0.1514556 |
+| B cells     | 1.6117608  | 15.95181 | 4.0102347 | 0.0452249 | 0.1514556 |
+| Undefined   | -1.6247865 | 15.20394 | 4.0023569 | 0.0454367 | 0.1514556 |
+| NK T cells  | -1.1658595 | 14.69369 | 2.1146969 | 0.1458909 | 0.3647273 |
+| CD4 T cells | 0.6106829  | 17.68440 | 0.6171153 | 0.4321213 | 0.8642425 |
+| pDC         | -0.3551985 | 13.56520 | 0.1806311 | 0.6708314 | 0.9578943 |
+| CD8 T cells | 0.3285106  | 17.87577 | 0.1798221 | 0.6715262 | 0.9578943 |
+| cDC         | 0.1085768  | 13.38766 | 0.0173302 | 0.8952657 | 0.9578943 |
+| Monocytes   | -0.0419352 | 17.73156 | 0.0029220 | 0.9568908 | 0.9578943 |
+| NK cells    | -0.0409034 | 17.49981 | 0.0027874 | 0.9578943 | 0.9578943 |
 
 NAC vs. No NAC {.table}
 
@@ -1641,89 +1542,49 @@ output from
 returned instead of tables by setting `print_table=FALSE`). These tables
 are printed neatly below.
 
-|  Ctrl_X   | MIBC_NAC  | MIBC_No.NAC |
-|:---------:|:---------:|:-----------:|
-| 2.7752128 | 2.7036740 |  2.7764469  |
-| 1.0948151 | 1.0876747 |  1.0940220  |
-| 2.6113283 | 2.4868329 |  2.5938907  |
-| 1.0536996 | 1.1585773 |  1.1509620  |
-| 2.7507389 | 2.7325526 |  2.8957611  |
-| 0.9946193 | 0.9294050 |  1.0108297  |
-| 2.8915848 | 2.7020617 |  2.7733731  |
-| 1.4614352 | 1.5826974 |  1.5323702  |
-| 2.6627426 | 2.5957556 |  2.5334974  |
-| 1.4809217 | 1.3882520 |  1.1975221  |
-| 2.7326816 | 2.5473377 |  2.3569395  |
-| 1.3079426 | 1.3258470 |  1.0696589  |
-| 2.9515291 | 2.8736278 |  2.4367049  |
-| 1.7174328 | 1.3779621 |  1.2203727  |
-| 2.7698251 | 2.7476427 |  2.8978313  |
-| 0.7539766 | 0.7863174 |  0.7755172  |
-| 3.2217065 | 3.2008727 |  3.1705052  |
-| 2.0523656 | 1.6696045 |  1.2155066  |
-| 3.0548319 | 3.0679278 |  3.0620334  |
-| 1.8890108 | 1.8791540 |  1.8417370  |
-| 3.1867400 | 3.1468184 |  3.1774635  |
-| 2.2133555 | 1.9726037 |  2.1364879  |
-| 2.7537351 | 2.7578061 |  2.8794287  |
-| 0.9923584 | 1.0605324 |  1.0993760  |
-| 2.7567234 | 2.4945123 |  2.7622536  |
-| 1.7826523 | 1.4854272 |  1.0730557  |
-| 3.1837451 | 3.1583203 |  3.1699445  |
-| 2.3754419 | 2.2301533 |  2.3121723  |
-| 2.5886083 | 2.4623907 |  2.5888142  |
-| 2.7939553 | 2.3351218 |  2.3359634  |
-| 2.8603506 | 2.6947581 |  2.7318391  |
-| 2.0184685 | 1.7971035 |  1.7432754  |
-| 2.9831529 | 2.7625465 |  2.9035543  |
-| 2.6804596 | 2.5042479 |  2.5537776  |
-| 2.8671712 | 2.7111781 |  2.8241923  |
-| 2.4105255 | 2.1971313 |  2.3378892  |
-| 2.7847634 | 2.7573784 |  2.9658266  |
-| 1.1125609 | 1.4058297 |  1.2622483  |
+|  Ctrl_X   | MIBC_NAC | MIBC_No.NAC |
+|:---------:|:--------:|:-----------:|
+| 2.7855564 | 2.667346 |  2.7588056  |
+| 1.0390216 | 1.076870 |  1.0775427  |
+| 2.6690873 | 2.324393 |  2.6052508  |
+| 1.2619589 | 1.274789 |  1.1555673  |
+| 3.0569705 | 3.014163 |  3.1066802  |
+| 0.9860405 | 1.078604 |  0.9768756  |
+| 3.1779855 | 3.122219 |  3.1566660  |
+| 2.1529250 | 1.988101 |  2.1286736  |
+| 2.7480515 | 2.659299 |  2.7985683  |
+| 1.8924649 | 2.101605 |  1.7211867  |
+| 2.7794092 | 2.600984 |  2.7341004  |
+| 1.6834801 | 1.781238 |  1.5416937  |
+| 2.8603506 | 2.694758 |  2.7318391  |
+| 2.0184685 | 1.797103 |  1.7432754  |
+| 2.6758766 | 2.755166 |  2.7998000  |
+| 0.9825741 | 1.072596 |  1.0868731  |
+| 2.7807695 | 2.569836 |  2.8693436  |
+| 1.4979497 | 1.458222 |  1.2017288  |
 
 Ctrl vs. MIBC {.table}
 
 |  Ctrl_X   | MIBC_NAC  | MIBC_No.NAC |
 |:---------:|:---------:|:-----------:|
-| 0.0117234 | 0.0117234 |  0.0117234  |
-| 0.0117234 | 0.0117234 |  0.0117234  |
-| 0.0272166 | 0.0272166 |  0.0272166  |
-| 0.0272166 | 0.0272166 |  0.0272166  |
-| 0.0395904 | 0.0395904 |  0.0395904  |
-| 0.0395904 | 0.0395904 |  0.0395904  |
-| 0.0118745 | 0.0118745 |  0.0118745  |
-| 0.0118745 | 0.0118745 |  0.0118745  |
-| 0.0313728 | 0.0313728 |  0.0313728  |
-| 0.0313728 | 0.0313728 |  0.0313728  |
-| 0.0319438 | 0.0319438 |  0.0319438  |
-| 0.0319438 | 0.0319438 |  0.0319438  |
-| 0.0771517 | 0.0771517 |  0.0771517  |
-| 0.0771517 | 0.0771517 |  0.0771517  |
-| 0.1091089 | 0.1091089 |  0.1091089  |
-| 0.1091089 | 0.1091089 |  0.1091089  |
-| 0.0257172 | 0.0257172 |  0.0257172  |
-| 0.0257172 | 0.0257172 |  0.0257172  |
-| 0.0466252 | 0.0466252 |  0.0466252  |
-| 0.0466252 | 0.0466252 |  0.0466252  |
-| 0.0219581 | 0.0219581 |  0.0219581  |
-| 0.0219581 | 0.0219581 |  0.0219581  |
-| 0.0157446 | 0.0157446 |  0.0157446  |
-| 0.0157446 | 0.0157446 |  0.0157446  |
-| 0.0690066 | 0.0690066 |  0.0690066  |
-| 0.0690066 | 0.0690066 |  0.0690066  |
-| 0.0296957 | 0.0296957 |  0.0296957  |
-| 0.0296957 | 0.0296957 |  0.0296957  |
-| 0.0863868 | 0.0863868 |  0.0863868  |
-| 0.0863868 | 0.0863868 |  0.0863868  |
+| 0.0119438 | 0.0119438 |  0.0119438  |
+| 0.0119438 | 0.0119438 |  0.0119438  |
+| 0.0302614 | 0.0302614 |  0.0302614  |
+| 0.0302614 | 0.0302614 |  0.0302614  |
+| 0.0240702 | 0.0240702 |  0.0240702  |
+| 0.0240702 | 0.0240702 |  0.0240702  |
+| 0.0129315 | 0.0129315 |  0.0129315  |
+| 0.0129315 | 0.0129315 |  0.0129315  |
+| 0.0559017 | 0.0559017 |  0.0559017  |
+| 0.0559017 | 0.0559017 |  0.0559017  |
+| 0.0126028 | 0.0126028 |  0.0126028  |
+| 0.0126028 | 0.0126028 |  0.0126028  |
 | 0.0591312 | 0.0591312 |  0.0591312  |
 | 0.0591312 | 0.0591312 |  0.0591312  |
-| 0.0762493 | 0.0762493 |  0.0762493  |
-| 0.0762493 | 0.0762493 |  0.0762493  |
-| 0.0591312 | 0.0591312 |  0.0591312  |
-| 0.0591312 | 0.0591312 |  0.0591312  |
-| 0.0659380 | 0.0659380 |  0.0659380  |
-| 0.0659380 | 0.0659380 |  0.0659380  |
+| 0.0126775 | 0.0126775 |  0.0126775  |
+| 0.0126775 | 0.0126775 |  0.0126775  |
+| 0.0318788 | 0.0318788 |  0.0318788  |
+| 0.0318788 | 0.0318788 |  0.0318788  |
 
 NAC vs. No NAC {.table}
 
@@ -1756,12 +1617,12 @@ gs_makeMFIMatrix(gs1,
 #> # A tibble: 6 × 7
 #>   feature       sample_1.fcs sample_2.fcs sample_3.fcs sample_4.fcs sample_5.fcs
 #>   <chr>                <dbl>        <dbl>        <dbl>        <dbl>        <dbl>
-#> 1 CD8 T cells.…       4922.        5280.         3817.       6861.        3146. 
-#> 2 CD8 T cells.…        161.         150.          155.        155.         178. 
-#> 3 B cells.FITC…       3776.        3320.         3660.       3171.        1858. 
-#> 4 B cells.BV71…        165.          98.6         127.        256.         297. 
-#> 5 NK T cells.F…       4238.        5499.         3609.      12470.        3514. 
-#> 6 NK T cells.B…         94.3        101.          123.         90.3         62.6
+#> 1 CD8 T cells.…       5165.        5269.       3616.          6695.        2742.
+#> 2 CD8 T cells.…        112.         134.        150.           141.         169.
+#> 3 gdT cells.FI…       3791.        4287.       3849.          3171.        1688.
+#> 4 gdT cells.BV…        253.         269.        132.           256.         363.
+#> 5 B cells.FITC…       8499.       10876.       8303.         13956.        7910.
+#> 6 B cells.BV71…         94.4         91.0         1.89         177.         120.
 #> # ℹ 1 more variable: sample_6.fcs <dbl>
 ```
 
