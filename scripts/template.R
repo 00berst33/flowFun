@@ -286,6 +286,77 @@ addClustersToGatingSet(fsom_dt,
 # Reclustering #
 ################
 
+# This script also allows the user to perform backgating and reclustering on any
+# identified cell types of particular interest. This clustering may be done using
+# either a selected number of principal components obtained from PCA, or a new subset
+# of markers defined by the user.
+
+# First, get table containing only cells belonging to the population you are interested in.
+# This must be the name of a population that was saved to your GatingSet with the function
+# `addClustersToGatingSet()`.
+new_table <- createFilteredAggregate(fsom_dt,
+                                     num_cells = Inf,
+                                     metaclusters = "CD8 T cells",
+                                     clusters = NULL)
+
+# Option 1: RECLUSTER WITH PCA
+# Perform PCA; you may choose this option if you are unsure of what channels/markers
+# should be selected for this particular population.
+pca_obj <- doPCA(new_table, cols_to_cluster)
+
+# Draw scree plot
+plotPCAScree(pca_obj)
+
+# Pick number of components based on where plot which has an "elbow"; see
+# the main workflow vignette for a more thorough example.
+# Recluster CD8 T cells
+fsom_sub <- clusterSubsetWithPCA(new_table,
+                                 pca_obj = pca_obj,
+                                 num_components = 6,
+                                 num_clus = 10, # typically fewer metaclusters are needed for good results when reclustering
+                                 seed = 3,
+                                 fsom_file = "fsom_sub.rds")
+
+# Option 2: RECLUSTER WITHOUT PCA
+# Define new channels/markers to use for this clustering; you may choose this option
+# if you are confident in the markers/channels that should be selected for this
+# population's reclustering.
+vars_to_use <- c("CD45RA", "CCR7", "CD3", "CD8", "PD1")
+
+# Create new clustering
+fsom_sub <- flowSOMWrapper(new_table,
+                           cols_to_cluster = vars_to_use,
+                           num_clus = 10,
+                           seed = 3,
+                           fsom_file = "fsom_sub.rds")
+
+# After choosing either option 1 or 2, the workflow proceeds as it does for the
+# inital clustering, where metaclusters are merged iteratively using the available
+# plotting functions to help.
+
+# Generate heatmap for subsetted cells
+plotMetaclusterMFIs(fsom_sub, cols_of_interest)
+
+# Likewise, generate UMAP
+plotUMAP(fsom_sub, num_cells = 5000, seed = 33)
+
+# Merge metaclusters and rename
+fsom_sub <- editTableMetaclusters(fsom_sub, new_labels = c("1" = "CD45RA+, CCR7-",
+                                                           "2" = "CD45RA+, CCR7-",
+                                                           "3" = "CD45RA+, CCR7-",
+                                                           "4" = "CD45RA+, CCR7-",
+                                                           "5" = "CD45RA+, CCR7-",
+                                                           "6" = "CD45RA+, CCR7-",
+                                                           "7" = "CD45RA-, CCR7-",
+                                                           "8" = "CD45RA+, CCR7-",
+                                                           "9" = "CD45RA+, CCR7-",
+                                                           "10" = "CD45RA+, CCR7+"))
+
+# Finally, the results should again be saved to the GatingSet
+addClustersToGatingSet(fsom_sub, gs1, parent_gate = "CD8 T cells")
+
+# Visualize new gating template
+openCyto::plot(gs1)
 
 
 ###
