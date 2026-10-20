@@ -728,7 +728,7 @@ doDEAnalysis <- function(input, cols_to_test, design, contrasts, counts = NULL,
 
     # Return results as a summarized table, if desired (default)
     if (print_table) {
-      res <- limma::topTable(res, sort.by = "P") %>%
+      res <- limma::topTable(res, sort.by = "P", number = 100) %>%
         dplyr::select(feature, AveExpr, P.Value, adj.P.Val)
     }
 
