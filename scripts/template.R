@@ -476,7 +476,10 @@ de_res <- doDEAnalysis(gs1,
                                        # data is back-transformed before testing
 
 # View results
-limma::topTable(de_res)
+de_res
+
+# May select specific comparisons with `[[`, if you made more than one
+de_res[[1]]
 
 # Plots
 # Generate MFI bar plot
