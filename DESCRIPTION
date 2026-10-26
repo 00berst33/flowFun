@@ -1,8 +1,10 @@
 Package: flowFun
-Title: Functions for Flow Cytometry Data Analysis Pipeline
+Title: An R Pipeline for Flow and Mass Cytometry Analysis
 Version: 0.0.0.9000
-Authors@R: 
-    person("Bella", "Erstad", , "first.last@example.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Bella", "Erstad", email = "first.last@example.com", role = c("aut", "cre")),
+    person("Morgan E.", "Roberts", role = "aut")
+    )
 Description: What the package does (one paragraph).
 License: GPL (>= 3)
 Encoding: UTF-8
